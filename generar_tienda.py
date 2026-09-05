@@ -1,6 +1,6 @@
 # =========================================================
 # INVASIÓN PIXELADA — GENERADOR DE TIENDA
-# VERSIÓN INTERNA: IP-STOREGEN-008
+# VERSIÓN INTERNA: IP-STOREGEN-009
 # =========================================================
 
 from pathlib import Path
@@ -117,7 +117,19 @@ def buscar_portada(titulo):
 
     parametros = {
         "title": titulo,
-        "limit": 20
+        "limit": 20,
+        "fields": (
+            "key,"
+            "title,"
+            "cover_i,"
+            "editions,"
+            "editions.key,"
+            "editions.title,"
+            "editions.cover_i,"
+            "editions.language,"
+            "editions.isbn,"
+            "editions.isbn13"
+        )
     }
 
     ultimo_error = None
@@ -146,69 +158,127 @@ def buscar_portada(titulo):
 
             candidatos = []
 
+            # -------------------------------------------------
+            # BUSCAR EN LAS EDICIONES
+            # -------------------------------------------------
+
             for libro in libros:
 
-                titulo_encontrado = libro.get("title", "")
-
-                if not titulo_encontrado:
-                    continue
-
-                titulo_normalizado = normalizar_titulo(
-                    titulo_encontrado
+                ediciones = libro.get("editions", {})
+                documentos_ediciones = ediciones.get(
+                    "docs",
+                    []
                 )
 
-                # -----------------------------------------
-                # SOLO ACEPTAMOS TÍTULOS EXACTOS
-                # -----------------------------------------
+                for edicion in documentos_ediciones:
 
-                if titulo_normalizado != titulo_buscado:
-                    continue
+                    titulo_edicion = edicion.get(
+                        "title",
+                        ""
+                    )
 
-                cover_id = libro.get("cover_i")
+                    if not titulo_edicion:
+                        continue
 
-                if not cover_id:
-                    continue
+                    titulo_normalizado = normalizar_titulo(
+                        titulo_edicion
+                    )
 
-                idiomas = libro.get("language", [])
+                    # -----------------------------------------
+                    # SOLO TÍTULOS EXACTOS
+                    # -----------------------------------------
 
-                if not isinstance(idiomas, list):
-                    idiomas = []
+                    if titulo_normalizado != titulo_buscado:
+                        continue
 
-                # -----------------------------------------
-                # PUNTUACIÓN
-                #
-                # El español se PRIORIZA cuando Open
-                # Library lo indica, pero nunca se exige.
-                # -----------------------------------------
+                    cover_id = edicion.get(
+                        "cover_i"
+                    )
 
-                puntuacion = 100
+                    if not cover_id:
+                        continue
 
-                if "spa" in idiomas:
-                    puntuacion += 50
+                    idiomas = edicion.get(
+                        "language",
+                        []
+                    )
 
-                candidatos.append({
-                    "puntuacion": puntuacion,
-                    "titulo": titulo_encontrado,
-                    "cover_id": cover_id,
-                    "idiomas": idiomas
-                })
+                    if not isinstance(
+                        idiomas,
+                        list
+                    ):
+                        idiomas = []
+
+                    puntuacion = 100
+
+                    # -----------------------------------------
+                    # PREFERIMOS ESPAÑOL
+                    # PERO NO ES OBLIGATORIO
+                    # -----------------------------------------
+
+                    if "spa" in idiomas:
+                        puntuacion += 50
+
+                    candidatos.append({
+                        "puntuacion": puntuacion,
+                        "titulo": titulo_edicion,
+                        "cover_id": cover_id,
+                        "idiomas": idiomas,
+                        "key": edicion.get(
+                            "key",
+                            ""
+                        )
+                    })
+
+            # -------------------------------------------------
+            # SI NO HAY EDICIONES CON PORTADA
+            # -------------------------------------------------
 
             if not candidatos:
 
                 print(
-                    "  - No existe una coincidencia "
-                    "exacta con portada"
+                    "  - No se ha encontrado una "
+                    "edición exacta con portada"
                 )
+
+                # ---------------------------------------------
+                # RESPALDO: PORTADA DE LA OBRA
+                # ---------------------------------------------
+
+                for libro in libros:
+
+                    titulo_encontrado = libro.get(
+                        "title",
+                        ""
+                    )
+
+                    if normalizar_titulo(
+                        titulo_encontrado
+                    ) != titulo_buscado:
+
+                        continue
+
+                    cover_id = libro.get(
+                        "cover_i"
+                    )
+
+                    if cover_id:
+
+                        print(
+                            "  ✓ Portada encontrada "
+                            "a nivel de obra"
+                        )
+
+                        return (
+                            "https://covers.openlibrary.org/"
+                            f"b/id/{cover_id}-L.jpg"
+                        )
 
                 return None
 
-            # -----------------------------------------
-            # ORDENAR
-            #
-            # Primero las ediciones marcadas como español.
-            # Si Open Library no informa del idioma,
-            # siguen siendo candidatas válidas.
-            # -----------------------------------------
+            # -------------------------------------------------
+            # ORDENAR CANDIDATOS
+            # -------------------------------------------------
 
             candidatos.sort(
                 key=lambda x: x["puntuacion"],
@@ -218,7 +288,7 @@ def buscar_portada(titulo):
             mejor = candidatos[0]
 
             print(
-                f"  ✓ Coincidencia exacta: "
+                f"  ✓ Edición exacta encontrada: "
                 f"{mejor['titulo']}"
             )
 
@@ -231,23 +301,30 @@ def buscar_portada(titulo):
             elif mejor["idiomas"]:
 
                 print(
-                    "  - Idioma disponible, "
-                    "sin español entre los datos"
+                    "  - Edición encontrada; "
+                    "Open Library no la marca como español"
                 )
 
             else:
 
                 print(
-                    "  - Open Library no indica "
-                    "el idioma de esta edición"
+                    "  - Edición encontrada; "
+                    "sin información de idioma"
                 )
 
             if mejor["idiomas"]:
 
                 print(
-                    f"  ✓ Idiomas: "
-                    f"{', '.join(mejor['idiomas'])}"
+                    "  ✓ Idiomas: "
+                    + ", ".join(
+                        mejor["idiomas"]
+                    )
                 )
+
+            print(
+                f"  ✓ Cover ID: "
+                f"{mejor['cover_id']}"
+            )
 
             return (
                 "https://covers.openlibrary.org/"
@@ -473,7 +550,7 @@ def main():
     print("")
     print("==============================================")
     print(" INVASIÓN PIXELADA — GENERADOR DE TIENDA")
-    print(" VERSIÓN: IP-STOREGEN-008")
+    print(" VERSIÓN: IP-STOREGEN-009")
     print("==============================================")
     print("")
 
