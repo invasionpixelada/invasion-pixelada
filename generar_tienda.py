@@ -1,6 +1,6 @@
 # =========================================================
 # INVASIÓN PIXELADA — GENERADOR DE TIENDA
-# VERSIÓN INTERNA: IP-STOREGEN-010
+# VERSIÓN INTERNA: IP-STOREGEN-011
 # =========================================================
 
 from pathlib import Path
@@ -709,5 +709,5 @@ def main():
     print("")
 
 
-if __name__ == "__main__":
+if __main__ == "__main__":
     main()
