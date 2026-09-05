@@ -2,7 +2,7 @@
 <!--
     INVASIÓN PIXELADA
     PÁGINA DE TODAS LAS RESEÑAS
-    VERSIÓN INTERNA: IP-REVIEWS-001
+    VERSIÓN INTERNA: IP-REVIEWS-002
 -->
 <html lang="es">
 
@@ -28,6 +28,104 @@
         rel="stylesheet"
         href="style.css"
     >
+
+    <style>
+
+        /* =================================================
+           BUSCADOR DE RESEÑAS
+           ================================================= */
+
+        .reviews-search {
+            max-width: 700px;
+
+            margin: 0 auto 55px;
+        }
+
+        .reviews-search-label {
+            display: block;
+
+            margin-bottom: 10px;
+
+            color: var(--text-muted);
+
+            font-size: 12px;
+            font-weight: 700;
+
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .reviews-search-input {
+            width: 100%;
+
+            padding: 16px 20px;
+
+            background: var(--bg-card);
+
+            color: var(--text-main);
+
+            border: 1px solid var(--border);
+            border-radius: 4px;
+
+            font-family: inherit;
+            font-size: 16px;
+
+            outline: none;
+
+            transition:
+                border-color 0.2s ease,
+                box-shadow 0.2s ease;
+        }
+
+        .reviews-search-input::placeholder {
+            color: var(--text-dark);
+        }
+
+        .reviews-search-input:focus {
+            border-color: var(--neon-purple);
+
+            box-shadow:
+                0 0 15px rgba(176, 38, 255, 0.18);
+        }
+
+        .reviews-search-results {
+            margin-top: 14px;
+
+            color: var(--text-muted);
+
+            font-size: 14px;
+        }
+
+        .reviews-no-results {
+            grid-column: 1 / -1;
+
+            padding: 60px 30px;
+
+            background: var(--bg-card);
+
+            border: 1px solid var(--border);
+            border-radius: 6px;
+
+            color: var(--text-muted);
+
+            text-align: center;
+        }
+
+        @media (max-width: 700px) {
+
+            .reviews-search {
+                margin-bottom: 40px;
+            }
+
+            .reviews-search-input {
+                padding: 14px 16px;
+
+                font-size: 15px;
+            }
+
+        }
+
+    </style>
 
 </head>
 
@@ -107,6 +205,34 @@
             </div>
 
 
+            <!-- BUSCADOR -->
+
+            <div class="reviews-search">
+
+                <label
+                    class="reviews-search-label"
+                    for="reviews-search-input"
+                >
+                    Buscar reseña
+                </label>
+
+                <input
+                    type="search"
+                    id="reviews-search-input"
+                    class="reviews-search-input"
+                    placeholder="Busca por título o contenido de la reseña..."
+                    autocomplete="off"
+                >
+
+                <div
+                    id="reviews-search-results"
+                    class="reviews-search-results"
+                    aria-live="polite"
+                ></div>
+
+            </div>
+
+
             <!-- TODAS LAS RESEÑAS -->
 
             <div class="all-reviews-container">
@@ -143,7 +269,151 @@
     </footer>
 
 
-    <script src="script.js"></script>
+    <script>
+
+        /* =================================================
+           BUSCADOR DE RESEÑAS
+           VERSIÓN INTERNA: IP-SEARCH-001
+           ================================================= */
+
+        const buscador =
+            document.getElementById(
+                "reviews-search-input"
+            );
+
+        const resultados =
+            document.getElementById(
+                "reviews-search-results"
+            );
+
+        const contenedor =
+            document.querySelector(
+                ".all-reviews-container .reviews-grid"
+            );
+
+
+        function normalizarTexto(texto) {
+
+            return texto
+                .toLowerCase()
+                .normalize("NFD")
+                .replace(
+                    /[\u0300-\u036f]/g,
+                    ""
+                );
+
+        }
+
+
+        function buscarResenas() {
+
+            const consulta =
+                normalizarTexto(
+                    buscador.value.trim()
+                );
+
+            const tarjetas =
+                contenedor.querySelectorAll(
+                    ".review-card"
+                );
+
+            let visibles = 0;
+
+
+            tarjetas.forEach(
+                tarjeta => {
+
+                    const contenido =
+                        normalizarTexto(
+                            tarjeta.dataset.search || ""
+                        );
+
+                    const coincide =
+                        consulta === ""
+                        ||
+                        contenido.includes(
+                            consulta
+                        );
+
+                    tarjeta.style.display =
+                        coincide
+                        ? ""
+                        : "none";
+
+                    if (coincide) {
+                        visibles++;
+                    }
+
+                }
+            );
+
+
+            let mensaje =
+                contenedor.querySelector(
+                    ".reviews-no-results"
+                );
+
+
+            if (mensaje) {
+                mensaje.remove();
+            }
+
+
+            if (
+                consulta !== ""
+                &&
+                visibles === 0
+            ) {
+
+                mensaje =
+                    document.createElement(
+                        "div"
+                    );
+
+                mensaje.className =
+                    "reviews-no-results";
+
+                mensaje.textContent =
+                    "No se ha encontrado ninguna reseña.";
+
+                contenedor.appendChild(
+                    mensaje
+                );
+
+            }
+
+
+            if (consulta === "") {
+
+                resultados.textContent = "";
+
+            } else {
+
+                resultados.textContent =
+                    visibles === 1
+                    ? "1 reseña encontrada"
+                    : `${visibles} reseñas encontradas`;
+
+            }
+
+        }
+
+
+        buscador.addEventListener(
+            "input",
+            buscarResenas
+        );
+
+
+        /*
+           El generador de reseñas introduce las tarjetas
+           automáticamente. Esperamos un instante para
+           asegurarnos de que el DOM esté preparado.
+        */
+
+        buscarResenas();
+
+    </script>
 
 </body>
 
