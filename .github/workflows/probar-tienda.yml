@@ -1,0 +1,41 @@
+# =========================================================
+# INVASIÓN PIXELADA — PRUEBA GENERADOR DE TIENDA
+# VERSIÓN INTERNA: IP-ACTIONS-STORE-001
+# =========================================================
+
+name: Probar generador de tienda
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  probar:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Instalar dependencias
+        run: |
+          pip install python-docx requests
+
+      - name: Ejecutar prueba
+        run: |
+          python generar_tienda.py
+
+      - name: Guardar portadas encontradas
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add tienda/prueba_portadas
+          git diff --cached --quiet || git commit -m "Prueba búsqueda de portadas"
+          git push
