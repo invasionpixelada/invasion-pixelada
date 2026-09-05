@@ -1,6 +1,6 @@
 # =========================================================
 # INVASIÓN PIXELADA — GENERADOR DE RESEÑAS
-# VERSIÓN INTERNA: IP-GEN-003
+# VERSIÓN INTERNA: IP-GEN-004
 # =========================================================
 
 from pathlib import Path
@@ -367,28 +367,26 @@ def crear_contenido(
             posiciones[nombre] = indice
 
     # -----------------------------------------------------
-    # Calculamos posiciones de las imágenes
+    # POSICIONES DE LAS IMÁGENES
+    #
+    # Cada imagen tiene una posición independiente.
     # -----------------------------------------------------
 
-    total_bloques = len(bloques)
-
-    objetivos = []
+    objetivos = {}
 
     # -----------------------------------------------------
-    # Imagen 1
+    # IMAGEN 1
     # -----------------------------------------------------
 
     if "ambientación" in posiciones:
 
-        objetivos.append(
-            max(
-                1,
-                posiciones["ambientación"] - 1
-            )
+        objetivos[1] = max(
+            1,
+            posiciones["ambientación"] - 1
         )
 
     # -----------------------------------------------------
-    # Imagen 2
+    # IMAGEN 2
     # -----------------------------------------------------
 
     if "ambientación" in posiciones:
@@ -409,15 +407,13 @@ def crear_contenido(
                     posiciones[nombre]
                 )
 
-        objetivos.append(
-            min(
-                inicio + 3,
-                siguiente - 1
-            )
+        objetivos[2] = min(
+            inicio + 3,
+            siguiente - 1
         )
 
     # -----------------------------------------------------
-    # Imagen 3
+    # IMAGEN 3
     # -----------------------------------------------------
 
     if "jugabilidad" in posiciones:
@@ -439,18 +435,21 @@ def crear_contenido(
                     posiciones[nombre]
                 )
 
-        objetivos.append(
-            min(
-                inicio + 4,
-                siguiente - 1
-            )
+        objetivos[3] = min(
+            inicio + 4,
+            siguiente - 1
         )
 
     # -----------------------------------------------------
-    # Imagen 4
+    # IMAGEN 4
     #
-    # Ahora dejamos dos bloques de texto después de
-    # "Sonido" / "Impacto emocional" antes de mostrarla.
+    # SONIDO
+    # párrafo
+    # párrafo
+    # IMAGEN 4
+    #
+    # La posición se fija directamente a tres bloques
+    # después del encabezado.
     # -----------------------------------------------------
 
     inicio_sonido = None
@@ -467,12 +466,12 @@ def crear_contenido(
 
     if inicio_sonido is not None:
 
-        objetivos.append(
+        objetivos[4] = (
             inicio_sonido + 3
         )
 
     # -----------------------------------------------------
-    # Imagen 5
+    # IMAGEN 5
     # -----------------------------------------------------
 
     inicio_final = None
@@ -490,101 +489,98 @@ def crear_contenido(
 
     if inicio_final is not None:
 
-        objetivos.append(
+        objetivos[5] = (
             inicio_final + 2
         )
 
     # -----------------------------------------------------
-    # Si no hemos encontrado suficientes posiciones,
-    # repartimos las imágenes restantes.
+    # COMPLETAMOS POSICIONES QUE NO HAYAMOS PODIDO
+    # DETERMINAR.
+    #
+    # Importante:
+    # NO sustituimos las posiciones que ya hemos definido.
     # -----------------------------------------------------
 
-    if len(objetivos) < len(imagenes):
-
-        objetivos = []
-
-        for numero in range(
-            len(imagenes)
-        ):
-
-            posicion = round(
-                total_bloques
-                * (numero + 1)
-                / (len(imagenes) + 1)
-            )
-
-            objetivos.append(
-                posicion
-            )
-
-    # -----------------------------------------------------
-    # Evitamos posiciones repetidas
-    # -----------------------------------------------------
-
-    objetivos_unicos = []
-
-    for posicion in objetivos:
-
-        if posicion not in objetivos_unicos:
-
-            objetivos_unicos.append(
-                posicion
-            )
-
-    objetivos = sorted(
-        objetivos_unicos
+    posiciones_ocupadas = set(
+        objetivos.values()
     )
 
-    # -----------------------------------------------------
-    # Si todavía faltan posiciones
-    # -----------------------------------------------------
+    total_bloques = len(bloques)
 
-    while len(objetivos) < len(imagenes):
+    for numero in range(
+        1,
+        len(imagenes) + 1
+    ):
 
-        for candidato in range(
+        if numero in objetivos:
+            continue
+
+        posicion = round(
+            total_bloques
+            * numero
+            / (len(imagenes) + 1)
+        )
+
+        posicion = max(
             1,
-            total_bloques + 1
-        ):
+            min(
+                posicion,
+                total_bloques
+            )
+        )
 
-            if candidato not in objetivos:
+        while posicion in posiciones_ocupadas:
 
-                objetivos.append(
-                    candidato
-                )
+            posicion += 1
 
-                if len(objetivos) == len(imagenes):
-                    break
+            if posicion > total_bloques:
 
-    objetivos = sorted(
-        objetivos[:len(imagenes)]
-    )
+                posicion = 1
+
+        objetivos[numero] = posicion
+
+        posiciones_ocupadas.add(
+            posicion
+        )
 
     # -----------------------------------------------------
-    # Generamos el HTML
+    # GENERAMOS EL HTML
     # -----------------------------------------------------
 
     resultado = []
 
-    indice_imagen = 0
+    imagenes_pendientes = {
+        numero: imagen
+        for numero, imagen
+        in enumerate(
+            imagenes,
+            start=1
+        )
+    }
 
     for indice, bloque in enumerate(
         bloques,
         start=1
     ):
 
-        if (
-            indice_imagen < len(imagenes)
-            and indice in objetivos
+        # Comprobamos si alguna imagen debe aparecer
+        # antes de este bloque.
+        for numero in sorted(
+            imagenes_pendientes
         ):
 
-            resultado.append(
-                crear_bloque_imagen(
-                    imagenes[indice_imagen],
-                    titulo
-                )
-            )
+            if objetivos.get(numero) == indice:
 
-            indice_imagen += 1
+                resultado.append(
+                    crear_bloque_imagen(
+                        imagenes_pendientes[numero],
+                        titulo
+                    )
+                )
+
+                del imagenes_pendientes[numero]
+
+                break
 
         if bloque["tipo"] == "heading":
 
@@ -607,19 +603,20 @@ def crear_contenido(
             )
 
     # -----------------------------------------------------
-    # Si queda alguna imagen
+    # Por seguridad, cualquier imagen pendiente se coloca
+    # al final.
     # -----------------------------------------------------
 
-    while indice_imagen < len(imagenes):
+    for numero in sorted(
+        imagenes_pendientes
+    ):
 
         resultado.append(
             crear_bloque_imagen(
-                imagenes[indice_imagen],
+                imagenes_pendientes[numero],
                 titulo
             )
         )
-
-        indice_imagen += 1
 
     return "\n".join(resultado)
 
@@ -906,7 +903,7 @@ def crear_pagina(
 <!--
     INVASIÓN PIXELADA
     PÁGINA GENERADA AUTOMÁTICAMENTE
-    GENERADOR: IP-GEN-003
+    GENERADOR: IP-GEN-004
 -->
 <html lang="es">
 
