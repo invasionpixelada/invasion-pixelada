@@ -1,9 +1,10 @@
 # =========================================================
 # INVASIÓN PIXELADA — GENERADOR DE TIENDA
-# VERSIÓN INTERNA: IP-STOREGEN-005
+# VERSIÓN INTERNA: IP-STOREGEN-006
 # =========================================================
 
 from pathlib import Path
+import re
 import time
 import requests
 from docx import Document
@@ -31,6 +32,11 @@ TIMEOUT = 15
 MARCADOR_INICIO = "<!-- LIBROS AUTOMÁTICOS: INICIO -->"
 MARCADOR_FIN = "<!-- LIBROS AUTOMÁTICOS: FIN -->"
 
+
+# ---------------------------------------------------------
+# IMÁGENES LOCALES
+# ---------------------------------------------------------
+
 IMAGENES_LOCALES = {
     "Ocaso: Elige tu propia aventura": "imagenes/ocaso.jpg",
     "El terror está ahí fuera: Antología de ciencia ficción y terror Vol. 1":
@@ -38,6 +44,23 @@ IMAGENES_LOCALES = {
     "El terror está ahí fuera: Antología de ciencia ficción y terror Vol. 2":
         "imagenes/terror2.jpg",
 }
+
+
+# ---------------------------------------------------------
+# NORMALIZAR TÍTULOS
+# ---------------------------------------------------------
+
+def normalizar_titulo(texto):
+    texto = texto.lower().strip()
+
+    texto = texto.replace("¿", "")
+    texto = texto.replace("?", "")
+    texto = texto.replace("¡", "")
+    texto = texto.replace("!", "")
+
+    texto = re.sub(r"\s+", " ", texto)
+
+    return texto
 
 
 # ---------------------------------------------------------
@@ -52,18 +75,24 @@ def leer_productos():
     enlace_actual = None
 
     for paragraph in document.paragraphs:
+
         texto = paragraph.text.strip()
 
         if not texto:
             continue
 
         if texto.startswith("Título:"):
-            titulo_actual = texto.replace("Título:", "", 1).strip()
+            titulo_actual = (
+                texto.replace("Título:", "", 1).strip()
+            )
 
         elif texto.startswith("Enlace:"):
-            enlace_actual = texto.replace("Enlace:", "", 1).strip()
+            enlace_actual = (
+                texto.replace("Enlace:", "", 1).strip()
+            )
 
         if titulo_actual and enlace_actual:
+
             productos.append({
                 "titulo": titulo_actual,
                 "enlace": enlace_actual
@@ -76,13 +105,15 @@ def leer_productos():
 
 
 # ---------------------------------------------------------
-# BUSCAR PORTADA EN OPEN LIBRARY
+# BUSCAR EN OPEN LIBRARY
 # ---------------------------------------------------------
 
 def buscar_portada(titulo):
+
     parametros = {
         "title": titulo,
-        "limit": 10
+        "language": "spa",
+        "limit": 20
     }
 
     ultimo_error = None
@@ -90,6 +121,7 @@ def buscar_portada(titulo):
     for intento in range(1, MAX_INTENTOS + 1):
 
         try:
+
             respuesta = requests.get(
                 URL_BUSQUEDA,
                 params=parametros,
@@ -100,21 +132,94 @@ def buscar_portada(titulo):
             respuesta.raise_for_status()
 
             datos = respuesta.json()
+
             libros = datos.get("docs", [])
 
             if not libros:
                 return None
 
+            titulo_buscado = normalizar_titulo(titulo)
+
+            candidatos = []
+
             for libro in libros:
+
+                titulo_encontrado = libro.get("title", "")
+
+                if not titulo_encontrado:
+                    continue
+
+                titulo_normalizado = normalizar_titulo(
+                    titulo_encontrado
+                )
+
                 cover_id = libro.get("cover_i")
 
-                if cover_id:
-                    return (
-                        "https://covers.openlibrary.org/"
-                        f"b/id/{cover_id}-L.jpg"
-                    )
+                if not cover_id:
+                    continue
 
-            return None
+                # -----------------------------------------
+                # PUNTUACIÓN DE COINCIDENCIA
+                # -----------------------------------------
+
+                puntuacion = 0
+
+                # Título exactamente igual
+                if titulo_normalizado == titulo_buscado:
+                    puntuacion += 100
+
+                # Uno contiene al otro
+                elif (
+                    titulo_buscado in titulo_normalizado
+                    or titulo_normalizado in titulo_buscado
+                ):
+                    puntuacion += 50
+
+                else:
+                    continue
+
+                # Priorizar español
+                idiomas = libro.get("language", [])
+
+                if "spa" in idiomas:
+                    puntuacion += 50
+
+                candidatos.append({
+                    "puntuacion": puntuacion,
+                    "titulo": titulo_encontrado,
+                    "cover_id": cover_id,
+                    "idiomas": idiomas
+                })
+
+            if not candidatos:
+                return None
+
+            candidatos.sort(
+                key=lambda x: x["puntuacion"],
+                reverse=True
+            )
+
+            mejor = candidatos[0]
+
+            print(
+                f"  ✓ Coincidencia: "
+                f"{mejor['titulo']}"
+            )
+
+            print(
+                f"  ✓ Puntuación: "
+                f"{mejor['puntuacion']}"
+            )
+
+            print(
+                f"  ✓ Idiomas: "
+                f"{', '.join(mejor['idiomas'])}"
+            )
+
+            return (
+                "https://covers.openlibrary.org/"
+                f"b/id/{mejor['cover_id']}-L.jpg"
+            )
 
         except requests.exceptions.RequestException as error:
 
@@ -128,7 +233,10 @@ def buscar_portada(titulo):
             if intento < MAX_INTENTOS:
                 time.sleep(3)
 
-    print(f"  ✗ Open Library no responde: {ultimo_error}")
+    print(
+        f"  ✗ Open Library no responde: "
+        f"{ultimo_error}"
+    )
 
     return None
 
@@ -151,7 +259,7 @@ def buscar_imagen_local(titulo):
 
 
 # ---------------------------------------------------------
-# OBTENER IMAGEN DEL PRODUCTO
+# OBTENER IMAGEN
 # ---------------------------------------------------------
 
 def obtener_imagen(titulo):
@@ -159,10 +267,10 @@ def obtener_imagen(titulo):
     portada = buscar_portada(titulo)
 
     if portada:
-        print("  ✓ Portada encontrada automáticamente")
+        print("  ✓ Portada automática aceptada")
         return portada
 
-    print("  - No encontrada automáticamente")
+    print("  - No se ha encontrado una portada fiable")
 
     imagen_local = buscar_imagen_local(titulo)
 
@@ -170,13 +278,13 @@ def obtener_imagen(titulo):
         print("  ✓ Imagen local encontrada")
         return imagen_local
 
-    print("  ✗ No se ha encontrado ninguna imagen")
+    print("  ✗ Sin imagen")
 
     return None
 
 
 # ---------------------------------------------------------
-# GENERAR TARJETA HTML
+# GENERAR TARJETA
 # ---------------------------------------------------------
 
 def generar_tarjeta(producto, imagen):
@@ -185,20 +293,23 @@ def generar_tarjeta(producto, imagen):
     enlace = producto["enlace"]
 
     if imagen:
+
         imagen_html = f"""
-                        <img
-                            src="{imagen}"
-                            alt="{titulo}"
-                            loading="lazy"
-                        >
+                            <img
+                                src="{imagen}"
+                                alt="{titulo}"
+                                loading="lazy"
+                            >
 """
+
     else:
+
         imagen_html = """
-                        <div class="store-card-placeholder-inner">
-                            <span>
-                                IMAGEN NO DISPONIBLE
-                            </span>
-                        </div>
+                            <div class="store-card-placeholder-inner">
+                                <span>
+                                    IMAGEN NO DISPONIBLE
+                                </span>
+                            </div>
 """
 
     return f"""
@@ -241,17 +352,25 @@ def generar_tarjeta(producto, imagen):
 
 
 # ---------------------------------------------------------
-# ACTUALIZAR TIENDA.HTML
+# ACTUALIZAR TIENDA
 # ---------------------------------------------------------
 
 def actualizar_tienda(productos):
 
-    contenido = TIENDA_HTML.read_text(encoding="utf-8")
+    contenido = TIENDA_HTML.read_text(
+        encoding="utf-8"
+    )
 
-    inicio = contenido.find(MARCADOR_INICIO)
-    fin = contenido.find(MARCADOR_FIN)
+    inicio = contenido.find(
+        MARCADOR_INICIO
+    )
+
+    fin = contenido.find(
+        MARCADOR_FIN
+    )
 
     if inicio == -1 or fin == -1:
+
         raise RuntimeError(
             "No se han encontrado los marcadores "
             "de libros automáticos en tienda.html"
@@ -261,12 +380,20 @@ def actualizar_tienda(productos):
 
     for producto in productos:
 
-        print(f"Generando tarjeta: {producto['titulo']}")
+        print(
+            f"Generando tarjeta: "
+            f"{producto['titulo']}"
+        )
 
-        imagen = obtener_imagen(producto["titulo"])
+        imagen = obtener_imagen(
+            producto["titulo"]
+        )
 
         tarjetas.append(
-            generar_tarjeta(producto, imagen)
+            generar_tarjeta(
+                producto,
+                imagen
+            )
         )
 
     nuevo_bloque = (
@@ -280,7 +407,9 @@ def actualizar_tienda(productos):
     contenido_nuevo = (
         contenido[:inicio]
         + nuevo_bloque
-        + contenido[fin + len(MARCADOR_FIN):]
+        + contenido[
+            fin + len(MARCADOR_FIN):
+        ]
     )
 
     TIENDA_HTML.write_text(
@@ -298,16 +427,18 @@ def main():
     print("")
     print("==============================================")
     print(" INVASIÓN PIXELADA — GENERADOR DE TIENDA")
-    print(" VERSIÓN: IP-STOREGEN-005")
+    print(" VERSIÓN: IP-STOREGEN-006")
     print("==============================================")
     print("")
 
     if not DOCUMENTO.exists():
+
         raise FileNotFoundError(
             f"No se encuentra {DOCUMENTO}"
         )
 
     if not TIENDA_HTML.exists():
+
         raise FileNotFoundError(
             f"No se encuentra {TIENDA_HTML}"
         )
@@ -321,7 +452,9 @@ def main():
 
     print("")
 
-    actualizar_tienda(productos)
+    actualizar_tienda(
+        productos
+    )
 
     print("")
     print("----------------------------------------------")
