@@ -197,7 +197,6 @@ a {
     justify-content: center;
 
     position: relative;
-
     overflow: hidden;
 
     text-align: center;
@@ -205,17 +204,15 @@ a {
     padding: 100px 20px;
 
     background:
-        radial-gradient(
-            circle at 50% 45%,
-            rgba(176, 38, 255, 0.18),
-            transparent 35%
+        linear-gradient(
+            rgba(8, 8, 12, 0.58),
+            rgba(8, 8, 12, 0.72)
         ),
-        radial-gradient(
-            circle at 75% 30%,
-            rgba(0, 229, 255, 0.10),
-            transparent 30%
-        ),
-        var(--bg-main);
+        url("imagenes/ciudad.png");
+
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
 }
 
 .hero::before {
