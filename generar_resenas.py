@@ -3,13 +3,20 @@ from docx import Document
 import html
 import re
 
-
 ROOT = Path("reseñas")
+
+
+def buscar_docx(carpeta):
+    archivos = list(carpeta.glob("*.docx"))
+
+    if not archivos:
+        return None
+
+    return archivos[0]
 
 
 def leer_docx(ruta):
     documento = Document(ruta)
-
     elementos = []
 
     for parrafo in documento.paragraphs:
@@ -30,11 +37,12 @@ def escapar(texto):
 def crear_pagina(nombre_carpeta, contenido):
     carpeta = ROOT / nombre_carpeta
 
-    docx = carpeta / "reseña.docx"
-    portada = carpeta / "portada.jpg"
+    docx = buscar_docx(carpeta)
 
-    if not docx.exists():
+    if not docx:
         return
+
+    portada = carpeta / "portada.jpg"
 
     elementos = leer_docx(docx)
 
@@ -46,11 +54,13 @@ def crear_pagina(nombre_carpeta, contenido):
     bloques = []
 
     for texto in elementos[1:]:
+
         if texto.startswith("[IMAGEN:"):
             numero = re.search(r"\d+", texto)
 
             if numero:
                 n = numero.group()
+
                 imagen = None
 
                 for extension in ["jpg", "jpeg", "png", "webp"]:
@@ -79,9 +89,14 @@ def crear_pagina(nombre_carpeta, contenido):
             "Finales",
             "Conclusiones",
         ]:
-            bloques.append(f"<h2>{escapar(texto)}</h2>")
+            bloques.append(
+                f"<h2>{escapar(texto)}</h2>"
+            )
+
         else:
-            bloques.append(f"<p>{escapar(texto)}</p>")
+            bloques.append(
+                f"<p>{escapar(texto)}</p>"
+            )
 
     portada_html = ""
 
@@ -127,21 +142,10 @@ def crear_pagina(nombre_carpeta, contenido):
 
         <nav class="main-nav">
 
-            <a href="../../index.html#inicio">
-                Inicio
-            </a>
-
-            <a href="../../index.html#videos">
-                Vídeos
-            </a>
-
-            <a href="../../index.html#resenas">
-                Reseñas
-            </a>
-
-            <a href="../../index.html#tienda">
-                Tienda
-            </a>
+            <a href="../../index.html#inicio">Inicio</a>
+            <a href="../../index.html#videos">Vídeos</a>
+            <a href="../../index.html#resenas">Reseñas</a>
+            <a href="../../index.html#tienda">Tienda</a>
 
         </nav>
 
@@ -154,13 +158,9 @@ def crear_pagina(nombre_carpeta, contenido):
 
     <article class="review">
 
-        <p class="section-label">
-            RESEÑA
-        </p>
+        <p class="section-label">RESEÑA</p>
 
-        <h1>
-            {escapar(titulo)}
-        </h1>
+        <h1>{escapar(titulo)}</h1>
 
         <div class="review-publication">
             Publicada originalmente en el CAAD
@@ -181,9 +181,7 @@ def crear_pagina(nombre_carpeta, contenido):
 
 <footer class="site-footer">
 
-    <p>
-        © 2026 Invasión Pixelada
-    </p>
+    <p>© 2026 Invasión Pixelada</p>
 
     <p>
         Aventuras gráficas · Narrativa · Videojuegos
@@ -203,13 +201,18 @@ def crear_pagina(nombre_carpeta, contenido):
 
 
 def main():
+
     if not ROOT.exists():
         return
 
     for carpeta in ROOT.iterdir():
 
         if carpeta.is_dir():
-            crear_pagina(carpeta.name, None)
+
+            crear_pagina(
+                carpeta.name,
+                None
+            )
 
 
 if __name__ == "__main__":
