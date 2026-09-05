@@ -1,3 +1,8 @@
+# =========================================================
+# INVASIÓN PIXELADA — GENERADOR DE RESEÑAS
+# VERSIÓN INTERNA: IP-GEN-002
+# =========================================================
+
 from pathlib import Path
 from docx import Document
 import html
@@ -23,23 +28,30 @@ def buscar_docx(carpeta):
 
 def buscar_imagen(carpeta, numero):
     """
-    Busca imágenes:
+    Busca imágenes con estos nombres:
+
     1.jpg
     01.jpg
+    1.jpeg
+    01.jpeg
     1.png
     01.png
-    etc.
+    1.webp
+    01.webp
     """
 
     numero = str(numero).strip()
 
     try:
         entero = int(numero)
+
         candidatos = [
             str(entero),
             f"{entero:02d}"
         ]
+
     except ValueError:
+
         candidatos = [numero]
 
     for nombre in candidatos:
@@ -155,7 +167,6 @@ def extraer_metadatos(elementos):
         if not encontrado:
 
             leyendo_metadata = False
-
             resto.append(texto)
 
     return metadatos, resto
@@ -184,13 +195,6 @@ def extraer_numero_caad(valor):
 
     valor = str(valor).strip()
 
-    # Ejemplos:
-    # número 72
-    # numero 72
-    # nº 72
-    # n.º 72
-    # n° 72
-
     coincidencia = re.search(
         r"(?:n[ºo°.]?|número|numero)\s*\.?\s*(\d+)",
         valor,
@@ -199,9 +203,6 @@ def extraer_numero_caad(valor):
 
     if coincidencia:
         return coincidencia.group(1)
-
-    # Si simplemente pone:
-    # CAAD: 72
 
     coincidencia = re.search(
         r"\b(\d+)\b",
@@ -215,7 +216,7 @@ def extraer_numero_caad(valor):
 
 
 # =========================================================
-# ENCABEZADOS
+# ENCABEZADOS DE LA RESEÑA
 # =========================================================
 
 ENCABEZADOS = {
@@ -254,15 +255,20 @@ def obtener_imagenes(carpeta):
     return imagenes
 
 
-def crear_bloque_imagen(imagen):
+def crear_bloque_imagen(
+    imagen,
+    titulo
+):
 
     return f"""
     <figure class="review-image">
+
         <img
             src="{escapar(imagen)}"
-            alt=""
+            alt="{escapar(titulo)}"
             loading="lazy"
         >
+
     </figure>
     """
 
@@ -273,41 +279,13 @@ def crear_bloque_imagen(imagen):
 
 def crear_contenido(
     carpeta,
-    elementos
+    elementos,
+    titulo
 ):
 
     imagenes = obtener_imagenes(
         carpeta
     )
-
-    # -----------------------------------------------------
-    # Si no hay imágenes, contenido normal
-    # -----------------------------------------------------
-
-    if not imagenes:
-
-        bloques = []
-
-        for texto in elementos:
-
-            if texto.upper().startswith(
-                "[IMAGEN:"
-            ):
-                continue
-
-            if texto.lower() in ENCABEZADOS:
-
-                bloques.append(
-                    f"<h2>{escapar(texto)}</h2>"
-                )
-
-            else:
-
-                bloques.append(
-                    f"<p>{escapar(texto)}</p>"
-                )
-
-        return "\n".join(bloques)
 
     # -----------------------------------------------------
     # Convertimos el documento en bloques
@@ -317,7 +295,7 @@ def crear_contenido(
 
     for texto in elementos:
 
-        # Los marcadores manuales se ignoran.
+        # Los antiguos marcadores manuales se ignoran.
         # Las imágenes se colocan automáticamente.
 
         if texto.upper().startswith(
@@ -340,193 +318,112 @@ def crear_contenido(
             })
 
     # -----------------------------------------------------
-    # Localizamos apartados
+    # Si no existen imágenes, generamos solamente el texto
     # -----------------------------------------------------
 
-    posiciones = {}
+    if not imagenes:
 
-    for indice, bloque in enumerate(
-        bloques
-    ):
+        resultado = []
 
-        if bloque["tipo"] == "heading":
+        for bloque in bloques:
 
-            nombre = (
-                bloque["texto"]
-                .strip()
-                .lower()
-            )
+            if bloque["tipo"] == "heading":
 
-            posiciones[nombre] = indice
+                resultado.append(
+                    f"""
+                    <h2>
+                        {escapar(bloque["texto"])}
+                    </h2>
+                    """
+                )
+
+            else:
+
+                resultado.append(
+                    f"""
+                    <p>
+                        {escapar(bloque["texto"])}
+                    </p>
+                    """
+                )
+
+        return "\n".join(resultado)
 
     # -----------------------------------------------------
-    # Objetivos para las 5 imágenes
+    # Calculamos posiciones para las imágenes
     #
-    # 1 → introducción
-    # 2 → ambientación
-    # 3 → jugabilidad
-    # 4 → sonido / impacto emocional
-    # 5 → duración / finales
+    # Las imágenes se introducen ENTRE bloques de texto,
+    # nunca dentro de un párrafo.
     # -----------------------------------------------------
 
-    objetivos = []
+    total_bloques = len(bloques)
 
-    # Imagen 1: introducción
-    if "ambientación" in posiciones:
+    posiciones = []
 
-        objetivos.append(
-            max(
-                1,
-                posiciones["ambientación"] - 1
-            )
-        )
-
-    # Imagen 2: ambientación
-    if "ambientación" in posiciones:
-
-        inicio = posiciones["ambientación"]
-
-        siguiente = len(bloques)
-
-        for nombre in [
-            "gráficos",
-            "jugabilidad"
-        ]:
-
-            if nombre in posiciones:
-                siguiente = min(
-                    siguiente,
-                    posiciones[nombre]
-                )
-
-        objetivos.append(
-            min(
-                inicio + 3,
-                siguiente - 1
-            )
-        )
-
-    # Imagen 3: jugabilidad
-    if "jugabilidad" in posiciones:
-
-        inicio = posiciones["jugabilidad"]
-
-        siguiente = len(bloques)
-
-        for nombre in [
-            "dificultad",
-            "guion"
-        ]:
-
-            if nombre in posiciones:
-                siguiente = min(
-                    siguiente,
-                    posiciones[nombre]
-                )
-
-        objetivos.append(
-            min(
-                inicio + 4,
-                siguiente - 1
-            )
-        )
-
-    # Imagen 4: sonido / impacto emocional
-    inicio_sonido = None
-
-    for nombre in [
-        "sonido",
-        "impacto emocional"
-    ]:
-
-        if nombre in posiciones:
-
-            inicio_sonido = posiciones[nombre]
-            break
-
-    if inicio_sonido is not None:
-
-        objetivos.append(
-            inicio_sonido + 2
-        )
-
-    # Imagen 5: duración / finales
-    inicio_final = None
-
-    for nombre in [
-        "duración",
-        "finales",
-        "conclusiones"
-    ]:
-
-        if nombre in posiciones:
-
-            inicio_final = posiciones[nombre]
-            break
-
-    if inicio_final is not None:
-
-        objetivos.append(
-            inicio_final + 2
-        )
-
-    # -----------------------------------------------------
-    # Si por alguna razón no hemos encontrado suficientes
-    # posiciones, las repartimos por todo el artículo.
-    # -----------------------------------------------------
-
-    if len(objetivos) < len(imagenes):
-
-        total = len(bloques)
-
-        objetivos = []
+    if total_bloques > 0:
 
         for numero in range(
             len(imagenes)
         ):
 
             posicion = round(
-                total
+                total_bloques
                 * (numero + 1)
                 / (len(imagenes) + 1)
             )
 
-            objetivos.append(
+            posicion = max(
+                1,
+                min(
+                    posicion,
+                    total_bloques
+                )
+            )
+
+            posiciones.append(
                 posicion
             )
 
-    # Evitamos posiciones repetidas
-    objetivos = sorted(
-        set(objetivos)
-    )
+    # -----------------------------------------------------
+    # Evitamos posiciones duplicadas
+    # -----------------------------------------------------
 
-    # Si todavía faltan posiciones,
-    # las añadimos progresivamente.
+    posiciones_unicas = []
 
-    while len(objetivos) < len(imagenes):
+    for posicion in posiciones:
 
-        candidatos = range(
-            1,
-            len(bloques)
-        )
+        if posicion not in posiciones_unicas:
 
-        for candidato in candidatos:
+            posiciones_unicas.append(
+                posicion
+            )
 
-            if candidato not in objetivos:
+    # Si hay más imágenes que posiciones disponibles,
+    # añadimos las restantes al final.
+    while len(posiciones_unicas) < len(imagenes):
 
-                objetivos.append(
-                    candidato
-                )
+        posicion = total_bloques
 
-                if len(objetivos) == len(imagenes):
-                    break
+        if posicion not in posiciones_unicas:
 
-    objetivos = sorted(
-        objetivos[:len(imagenes)]
+            posiciones_unicas.append(
+                posicion
+            )
+
+        else:
+
+            posicion += 1
+
+            posiciones_unicas.append(
+                posicion
+            )
+
+    posiciones_unicas = sorted(
+        posiciones_unicas
     )
 
     # -----------------------------------------------------
-    # Generamos HTML
+    # Generamos el HTML
     # -----------------------------------------------------
 
     resultado = []
@@ -534,17 +431,21 @@ def crear_contenido(
     indice_imagen = 0
 
     for indice, bloque in enumerate(
-        bloques
+        bloques,
+        start=1
     ):
 
+        # Insertamos la imagen ANTES del bloque
+        # correspondiente.
         if (
             indice_imagen < len(imagenes)
-            and indice >= objetivos[indice_imagen]
+            and indice in posiciones_unicas
         ):
 
             resultado.append(
                 crear_bloque_imagen(
-                    imagenes[indice_imagen]
+                    imagenes[indice_imagen],
+                    titulo
                 )
             )
 
@@ -570,14 +471,16 @@ def crear_contenido(
                 """
             )
 
-    # Por seguridad, si queda alguna imagen,
-    # la colocamos al final.
+    # -----------------------------------------------------
+    # Si queda alguna imagen, la colocamos al final.
+    # -----------------------------------------------------
 
     while indice_imagen < len(imagenes):
 
         resultado.append(
             crear_bloque_imagen(
-                imagenes[indice_imagen]
+                imagenes[indice_imagen],
+                titulo
             )
         )
 
@@ -856,14 +759,20 @@ def crear_pagina(
 
     contenido_html = crear_contenido(
         carpeta,
-        contenido
+        contenido,
+        titulo
     )
 
     # -----------------------------------------------------
-    # HTML
+    # HTML DE LA PÁGINA
     # -----------------------------------------------------
 
     pagina = f"""<!DOCTYPE html>
+<!--
+    INVASIÓN PIXELADA
+    PÁGINA GENERADA AUTOMÁTICAMENTE
+    GENERADOR: IP-GEN-002
+-->
 <html lang="es">
 
 <head>
@@ -1199,7 +1108,7 @@ def actualizar_index():
                 tarjeta
             )
 
-    # Siempre habrá exactamente tres espacios
+    # Siempre exactamente tres espacios
     while len(tarjetas) < 3:
 
         tarjetas.append(
