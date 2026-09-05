@@ -1,6 +1,29 @@
-/* ==============================
+/* =========================================
+   IDENTIDAD VISUAL
+   ========================================= */
+
+:root {
+    --bg-main: #08080c;
+    --bg-section: #0e0e15;
+    --bg-card: #151521;
+    --bg-card-hover: #1b1b29;
+
+    --neon-purple: #b026ff;
+    --neon-cyan: #00e5ff;
+
+    --text-main: #f5f5f7;
+    --text-muted: #a4a4b2;
+    --text-dark: #666674;
+
+    --border: #292936;
+
+    --max-width: 1200px;
+}
+
+
+/* =========================================
    BASE
-   ============================== */
+   ========================================= */
 
 * {
     box-sizing: border-box;
@@ -12,9 +35,12 @@ html {
 
 body {
     margin: 0;
+
     font-family: Arial, sans-serif;
-    background: #0d0d0d;
-    color: #f5f5f5;
+
+    background: var(--bg-main);
+    color: var(--text-main);
+
     line-height: 1.6;
 }
 
@@ -23,171 +49,321 @@ a {
 }
 
 
-/* ==============================
+/* =========================================
    CABECERA
-   ============================== */
+   ========================================= */
 
 .site-header {
     position: sticky;
     top: 0;
     z-index: 1000;
 
-    background: rgba(13, 13, 13, 0.95);
-    border-bottom: 1px solid #2a2a2a;
+    background: rgba(8, 8, 12, 0.92);
+
+    border-bottom: 1px solid var(--border);
+
+    backdrop-filter: blur(12px);
 }
 
 .header-content {
-    max-width: 1200px;
+    max-width: var(--max-width);
+
     margin: 0 auto;
 
-    padding: 20px 30px;
+    padding: 18px 30px;
 
     display: flex;
     align-items: center;
     justify-content: space-between;
+
     gap: 30px;
 }
 
 .logo {
-    color: #ffffff;
+    color: var(--text-main);
+
     text-decoration: none;
-    font-size: 24px;
-    font-weight: bold;
+
+    font-size: 25px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+
+    transition:
+        color 0.2s ease,
+        text-shadow 0.2s ease;
 }
+
+.logo:hover {
+    color: var(--neon-cyan);
+
+    text-shadow:
+        0 0 8px rgba(0, 229, 255, 0.6);
+}
+
+
+/* =========================================
+   NAVEGACIÓN
+   ========================================= */
 
 .main-nav {
     display: flex;
     align-items: center;
-    gap: 28px;
+
+    gap: 30px;
 }
 
 .main-nav a {
-    color: #cccccc;
-    text-decoration: none;
-    font-size: 16px;
+    position: relative;
 
-    transition: color 0.2s ease;
+    color: var(--text-muted);
+
+    text-decoration: none;
+
+    font-size: 15px;
+    font-weight: 600;
+
+    transition:
+        color 0.2s ease;
+}
+
+.main-nav a::after {
+    content: "";
+
+    position: absolute;
+
+    left: 0;
+    bottom: -7px;
+
+    width: 0;
+    height: 2px;
+
+    background: var(--neon-cyan);
+
+    box-shadow:
+        0 0 8px rgba(0, 229, 255, 0.7);
+
+    transition:
+        width 0.2s ease;
 }
 
 .main-nav a:hover {
-    color: #ffffff;
+    color: var(--text-main);
+}
+
+.main-nav a:hover::after {
+    width: 100%;
 }
 
 
-/* ==============================
-   PORTADA
-   ============================== */
+/* =========================================
+   PORTADA / HERO
+   ========================================= */
 
 .hero {
-    min-height: 620px;
+    min-height: 680px;
 
     display: flex;
     align-items: center;
     justify-content: center;
 
+    position: relative;
+
+    overflow: hidden;
+
     text-align: center;
 
-    padding: 80px 20px;
+    padding: 100px 20px;
 
     background:
         radial-gradient(
-            circle at center,
-            #242424 0%,
-            #151515 45%,
-            #0d0d0d 100%
+            circle at 50% 45%,
+            rgba(176, 38, 255, 0.18),
+            transparent 35%
+        ),
+        radial-gradient(
+            circle at 75% 30%,
+            rgba(0, 229, 255, 0.10),
+            transparent 30%
+        ),
+        var(--bg-main);
+}
+
+
+/* Líneas decorativas */
+
+.hero::before {
+    content: "";
+
+    position: absolute;
+
+    inset: 0;
+
+    background:
+        linear-gradient(
+            rgba(255, 255, 255, 0.025) 1px,
+            transparent 1px
+        ),
+        linear-gradient(
+            90deg,
+            rgba(255, 255, 255, 0.025) 1px,
+            transparent 1px
         );
+
+    background-size: 50px 50px;
+
+    mask-image:
+        linear-gradient(
+            to bottom,
+            black,
+            transparent 85%
+        );
+
+    pointer-events: none;
 }
 
 .hero-content {
-    max-width: 850px;
+    position: relative;
+
+    max-width: 900px;
+
+    z-index: 1;
 }
 
-.hero-label,
-.section-label {
-    margin: 0 0 15px;
+.hero-label {
+    margin: 0 0 20px;
 
-    color: #999999;
+    color: var(--neon-cyan);
 
     font-size: 13px;
-    font-weight: bold;
-    letter-spacing: 3px;
+    font-weight: 700;
+
+    letter-spacing: 4px;
+
+    text-shadow:
+        0 0 10px rgba(0, 229, 255, 0.5);
 }
 
 .hero h1 {
     margin: 0;
 
-    font-size: clamp(42px, 7vw, 78px);
-    line-height: 1.05;
+    color: var(--text-main);
+
+    font-size: clamp(44px, 7vw, 82px);
+
+    line-height: 1.02;
+
+    letter-spacing: -2px;
+
+    text-shadow:
+        0 0 30px rgba(176, 38, 255, 0.22);
 }
 
 .hero-description {
-    max-width: 700px;
+    max-width: 720px;
 
-    margin: 30px auto;
+    margin: 35px auto;
 
-    color: #c7c7c7;
+    color: var(--text-muted);
 
     font-size: 19px;
+
+    line-height: 1.7;
 }
+
+
+/* =========================================
+   BOTONES
+   ========================================= */
 
 .button {
     display: inline-block;
 
-    margin-top: 15px;
-    padding: 13px 26px;
+    padding: 14px 30px;
 
-    background: #ffffff;
-    color: #111111;
+    background: var(--neon-purple);
+
+    color: white;
 
     text-decoration: none;
-    font-weight: bold;
+
+    font-weight: 700;
 
     border-radius: 4px;
 
+    box-shadow:
+        0 0 12px rgba(176, 38, 255, 0.45);
+
     transition:
         transform 0.2s ease,
+        box-shadow 0.2s ease,
         background 0.2s ease;
 }
 
 .button:hover {
-    transform: translateY(-2px);
-    background: #dddddd;
+    transform: translateY(-3px);
+
+    background: #c34cff;
+
+    box-shadow:
+        0 0 25px rgba(176, 38, 255, 0.7);
 }
 
 
-/* ==============================
+/* =========================================
    SECCIONES
-   ============================== */
+   ========================================= */
 
 .content-section {
-    max-width: 1200px;
+    max-width: var(--max-width);
 
     margin: 0 auto;
 
-    padding: 100px 30px;
+    padding: 110px 30px;
 }
 
 .section-heading {
-    max-width: 700px;
+    max-width: 720px;
 
-    margin-bottom: 50px;
+    margin-bottom: 55px;
+}
+
+.section-label {
+    margin: 0 0 12px;
+
+    color: var(--neon-purple);
+
+    font-size: 12px;
+
+    font-weight: 700;
+
+    letter-spacing: 3px;
+
+    text-shadow:
+        0 0 10px rgba(176, 38, 255, 0.35);
 }
 
 .section-heading h2 {
-    margin: 0 0 15px;
+    margin: 0 0 18px;
 
-    font-size: 42px;
+    font-size: 46px;
+
+    line-height: 1.1;
+
+    letter-spacing: -1px;
 }
 
-.section-heading p {
-    color: #aaaaaa;
+.section-heading > p {
+    margin: 0;
+
+    color: var(--text-muted);
+
     font-size: 17px;
 }
 
 
-/* ==============================
+/* =========================================
    VÍDEOS
-   ============================== */
+   ========================================= */
 
 .video-grid {
     display: grid;
@@ -199,18 +375,28 @@ a {
 }
 
 .video-card {
-    background: #181818;
+    overflow: hidden;
 
-    border: 1px solid #292929;
+    background: var(--bg-card);
+
+    border: 1px solid var(--border);
+
+    border-radius: 6px;
 
     transition:
-        transform 0.2s ease,
-        border-color 0.2s ease;
+        transform 0.25s ease,
+        border-color 0.25s ease,
+        box-shadow 0.25s ease;
 }
 
 .video-card:hover {
-    transform: translateY(-4px);
-    border-color: #555555;
+    transform: translateY(-6px);
+
+    border-color: rgba(176, 38, 255, 0.6);
+
+    box-shadow:
+        0 10px 35px rgba(0, 0, 0, 0.4),
+        0 0 20px rgba(176, 38, 255, 0.08);
 }
 
 .video-placeholder {
@@ -220,16 +406,24 @@ a {
     align-items: center;
     justify-content: center;
 
-    background: #252525;
+    background:
+        linear-gradient(
+            135deg,
+            #191923,
+            #101018
+        );
 
-    color: #777777;
+    color: var(--text-dark);
 
     font-size: 18px;
-    font-weight: bold;
+
+    font-weight: 700;
+
+    letter-spacing: 2px;
 }
 
 .video-info {
-    padding: 20px;
+    padding: 22px;
 }
 
 .video-info h3 {
@@ -241,44 +435,48 @@ a {
 .video-info p {
     margin: 0;
 
-    color: #888888;
+    color: var(--text-muted);
+
+    font-size: 14px;
 }
 
 
-/* ==============================
-   RESEÑAS Y TIENDA
-   ============================== */
+/* =========================================
+   RESEÑAS / TIENDA
+   ========================================= */
 
 .reviews-section,
 .store-section {
-    border-top: 1px solid #242424;
+    border-top: 1px solid var(--border);
 }
 
 .future-content {
-    padding: 40px;
+    padding: 45px 30px;
 
-    background: #151515;
+    background: var(--bg-card);
 
-    border: 1px solid #292929;
+    border: 1px solid var(--border);
 
-    color: #999999;
+    border-radius: 6px;
+
+    color: var(--text-muted);
 
     text-align: center;
 }
 
 
-/* ==============================
+/* =========================================
    FOOTER
-   ============================== */
+   ========================================= */
 
 .site-footer {
-    padding: 40px 30px;
+    padding: 45px 30px;
 
-    border-top: 1px solid #292929;
+    background: #050508;
 
-    background: #090909;
+    border-top: 1px solid var(--border);
 
-    color: #777777;
+    color: var(--text-dark);
 
     text-align: center;
 }
@@ -288,26 +486,36 @@ a {
 }
 
 
-/* ==============================
-   MÓVIL
-   ============================== */
+/* =========================================
+   RESPONSIVE / MÓVIL
+   ========================================= */
 
 @media (max-width: 700px) {
 
     .header-content {
         flex-direction: column;
+
         padding: 18px 20px;
+
+        gap: 15px;
     }
 
     .main-nav {
         gap: 18px;
+
         flex-wrap: wrap;
+
         justify-content: center;
     }
 
     .hero {
-        min-height: 540px;
-        padding: 60px 20px;
+        min-height: 580px;
+
+        padding: 70px 20px;
+    }
+
+    .hero h1 {
+        letter-spacing: -1px;
     }
 
     .hero-description {
@@ -315,11 +523,11 @@ a {
     }
 
     .content-section {
-        padding: 70px 20px;
+        padding: 75px 20px;
     }
 
     .section-heading h2 {
-        font-size: 34px;
+        font-size: 36px;
     }
 
     .video-grid {
