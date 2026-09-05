@@ -1,6 +1,6 @@
 # =========================================================
 # INVASIÓN PIXELADA — GENERADOR DE RESEÑAS
-# VERSIÓN INTERNA: IP-GEN-006
+# VERSIÓN INTERNA: IP-GEN-007
 # =========================================================
 
 from pathlib import Path
@@ -888,7 +888,7 @@ def crear_pagina(
 <!--
     INVASIÓN PIXELADA
     PÁGINA GENERADA AUTOMÁTICAMENTE
-    GENERADOR: IP-GEN-006
+    GENERADOR: IP-GEN-007
 -->
 <html lang="es">
 
@@ -1060,6 +1060,23 @@ def crear_tarjeta(
         "género"
     )
 
+    # -----------------------------------------------------
+    # TEXTO COMPLETO PARA EL BUSCADOR
+    #
+    # Incluye:
+    # - título
+    # - género
+    # - todo el contenido de la reseña
+    # -----------------------------------------------------
+
+    texto_busqueda = " ".join(
+        contenido
+    )
+
+    contenido_busqueda = escapar(
+        f"{titulo} {genero} {texto_busqueda}"
+    )
+
     portada = buscar_portada(
         carpeta
     )
@@ -1110,7 +1127,10 @@ def crear_tarjeta(
         """
 
     return f"""
-    <article class="review-card">
+    <article
+        class="review-card"
+        data-search="{contenido_busqueda}"
+    >
 
         <a
             href="{escapar(ruta_base)}/{escapar(nombre_carpeta)}/"
@@ -1172,17 +1192,8 @@ def crear_tarjeta_vacia():
 
 
 # =========================================================
-# ACTUALIZAR INDEX PRINCIPAL
+# OBTENER CARPETAS DE RESEÑAS
 # =========================================================
-
-MARCADOR_INICIO = (
-    "<!-- RESEÑAS AUTOMÁTICAS: INICIO -->"
-)
-
-MARCADOR_FIN = (
-    "<!-- RESEÑAS AUTOMÁTICAS: FIN -->"
-)
-
 
 def obtener_carpetas_reseñas():
 
@@ -1209,6 +1220,19 @@ def obtener_carpetas_reseñas():
     )
 
     return carpetas
+
+
+# =========================================================
+# ACTUALIZAR INDEX PRINCIPAL
+# =========================================================
+
+MARCADOR_INICIO = (
+    "<!-- RESEÑAS AUTOMÁTICAS: INICIO -->"
+)
+
+MARCADOR_FIN = (
+    "<!-- RESEÑAS AUTOMÁTICAS: FIN -->"
+)
 
 
 def actualizar_index():
