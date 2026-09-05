@@ -1,6 +1,6 @@
 # =========================================================
 # INVASIÓN PIXELADA — GENERADOR DE TIENDA
-# VERSIÓN INTERNA: IP-STOREGEN-002
+# VERSIÓN INTERNA: IP-STOREGEN-003
 # =========================================================
 
 from pathlib import Path
@@ -18,6 +18,12 @@ URL_BUSQUEDA = "https://openlibrary.org/search.json"
 
 HEADERS = {
     "User-Agent": "InvasionPixelada/1.0 (https://invasionpixelada.github.io/invasion-pixelada/)"
+}
+
+IMAGENES_LOCALES = {
+    "Ocaso: Elige tu propia aventura": "imagenes/ocaso.jpg",
+    "El terror está ahí fuera: Antología de ciencia ficción y terror Vol. 1": "imagenes/terror1.jpg",
+    "El terror está ahí fuera: Antología de ciencia ficción y terror Vol. 2": "imagenes/terror2.jpg",
 }
 
 
@@ -91,13 +97,31 @@ def buscar_portada(titulo):
 
 
 # ---------------------------------------------------------
+# BUSCAR IMAGEN LOCAL
+# ---------------------------------------------------------
+
+def buscar_imagen_local(titulo):
+    ruta = IMAGENES_LOCALES.get(titulo)
+
+    if not ruta:
+        return None
+
+    archivo = Path(ruta)
+
+    if archivo.exists():
+        return ruta
+
+    return None
+
+
+# ---------------------------------------------------------
 # PROGRAMA PRINCIPAL
 # ---------------------------------------------------------
 
 def main():
     print("")
     print("==============================================")
-    print(" INVASIÓN PIXELADA — PRUEBA OPEN LIBRARY")
+    print(" INVASIÓN PIXELADA — PRUEBA DE PORTADAS")
     print("==============================================")
     print("")
 
@@ -115,27 +139,47 @@ def main():
     for producto in productos:
         titulo = producto["titulo"]
 
-        print(f"Buscando: {titulo}")
+        print(f"Producto: {titulo}")
 
         try:
             portada = buscar_portada(titulo)
 
             if portada:
-                print("  ✓ Portada encontrada")
+                print("  ✓ Portada encontrada automáticamente")
                 print(f"  ✓ URL: {portada}")
                 encontrados += 1
+                print("")
+                continue
+
+            print("  - No encontrada en Open Library")
+
+            imagen_local = buscar_imagen_local(titulo)
+
+            if imagen_local:
+                print("  ✓ Imagen local encontrada")
+                print(f"  ✓ Archivo: {imagen_local}")
+                encontrados += 1
             else:
-                print("  ✗ No se ha encontrado portada")
+                print("  ✗ No se ha encontrado ninguna imagen")
 
         except Exception as error:
-            print(f"  ✗ Error: {error}")
+            print(f"  ✗ Error buscando portada: {error}")
+
+            imagen_local = buscar_imagen_local(titulo)
+
+            if imagen_local:
+                print("  ✓ Imagen local encontrada como alternativa")
+                print(f"  ✓ Archivo: {imagen_local}")
+                encontrados += 1
+            else:
+                print("  ✗ Tampoco existe imagen local")
 
         print("")
 
     print("----------------------------------------------")
     print(
         f"Resultado: {encontrados}/{len(productos)} "
-        "portadas encontradas"
+        "productos con imagen"
     )
     print("----------------------------------------------")
     print("")
