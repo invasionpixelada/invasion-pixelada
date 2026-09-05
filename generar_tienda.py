@@ -1,10 +1,9 @@
 # =========================================================
 # INVASIÓN PIXELADA — GENERADOR DE TIENDA
-# VERSIÓN INTERNA: IP-STOREGEN-001
+# VERSIÓN INTERNA: IP-STOREGEN-002
 # =========================================================
 
 from pathlib import Path
-import re
 import requests
 from docx import Document
 
@@ -14,7 +13,12 @@ from docx import Document
 # ---------------------------------------------------------
 
 DOCUMENTO = Path("tienda/Libros.docx")
-CARPETA_PRUEBA = Path("tienda/prueba_portadas")
+
+URL_BUSQUEDA = "https://openlibrary.org/search.json"
+
+HEADERS = {
+    "User-Agent": "InvasionPixelada/1.0 (https://invasionpixelada.github.io/invasion-pixelada/)"
+}
 
 
 # ---------------------------------------------------------
@@ -53,65 +57,37 @@ def leer_productos():
 
 
 # ---------------------------------------------------------
-# BUSCAR LIBRO EN GOOGLE BOOKS
+# BUSCAR PORTADA EN OPEN LIBRARY
 # ---------------------------------------------------------
 
 def buscar_portada(titulo):
-    url = "https://www.googleapis.com/books/v1/volumes"
-
     parametros = {
-        "q": f'intitle:"{titulo}"',
-        "maxResults": 5,
-        "printType": "books"
+        "title": titulo,
+        "limit": 10
     }
 
-    respuesta = requests.get(url, params=parametros, timeout=20)
+    respuesta = requests.get(
+        URL_BUSQUEDA,
+        params=parametros,
+        headers=HEADERS,
+        timeout=30
+    )
+
     respuesta.raise_for_status()
 
     datos = respuesta.json()
-
-    libros = datos.get("items", [])
+    libros = datos.get("docs", [])
 
     if not libros:
         return None
 
     for libro in libros:
-        informacion = libro.get("volumeInfo", {})
-        imagenes = informacion.get("imageLinks", {})
+        cover_id = libro.get("cover_i")
 
-        portada = (
-            imagenes.get("extraLarge")
-            or imagenes.get("large")
-            or imagenes.get("medium")
-            or imagenes.get("thumbnail")
-        )
-
-        if portada:
-            return portada
+        if cover_id:
+            return f"https://covers.openlibrary.org/b/id/{cover_id}-L.jpg"
 
     return None
-
-
-# ---------------------------------------------------------
-# DESCARGAR PORTADA
-# ---------------------------------------------------------
-
-def descargar_portada(titulo, url):
-    CARPETA_PRUEBA.mkdir(parents=True, exist_ok=True)
-
-    nombre = re.sub(r"[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ]+", "_", titulo)
-    nombre = nombre.strip("_")
-
-    extension = ".jpg"
-
-    ruta = CARPETA_PRUEBA / f"{nombre}{extension}"
-
-    respuesta = requests.get(url, timeout=20)
-    respuesta.raise_for_status()
-
-    ruta.write_bytes(respuesta.content)
-
-    return ruta
 
 
 # ---------------------------------------------------------
@@ -121,7 +97,7 @@ def descargar_portada(titulo, url):
 def main():
     print("")
     print("==============================================")
-    print(" INVASIÓN PIXELADA — PRUEBA DE TIENDA")
+    print(" INVASIÓN PIXELADA — PRUEBA OPEN LIBRARY")
     print("==============================================")
     print("")
 
@@ -145,13 +121,9 @@ def main():
             portada = buscar_portada(titulo)
 
             if portada:
-                ruta = descargar_portada(titulo, portada)
-
-                print(f"  ✓ Portada encontrada")
-                print(f"  ✓ Guardada en: {ruta}")
-
+                print("  ✓ Portada encontrada")
+                print(f"  ✓ URL: {portada}")
                 encontrados += 1
-
             else:
                 print("  ✗ No se ha encontrado portada")
 
@@ -161,7 +133,10 @@ def main():
         print("")
 
     print("----------------------------------------------")
-    print(f"Resultado: {encontrados}/{len(productos)} portadas encontradas")
+    print(
+        f"Resultado: {encontrados}/{len(productos)} "
+        "portadas encontradas"
+    )
     print("----------------------------------------------")
     print("")
 
