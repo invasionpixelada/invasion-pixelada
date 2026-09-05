@@ -1,17 +1,400 @@
-/* =========================================================
-   TARJETAS DE RESEÑAS
-   ========================================================= */
+/* =========================================
+   IDENTIDAD VISUAL
+   ========================================= */
 
-.reviews-grid {
-    display: grid;
+:root {
+    --bg-main: #08080c;
+    --bg-section: #0e0e15;
+    --bg-card: #151521;
 
-    grid-template-columns:
-        repeat(3, minmax(0, 1fr));
+    --neon-purple: #b026ff;
+    --neon-cyan: #00e5ff;
+    --neon-pink: #ff2bd6;
+
+    --text-main: #f5f5f7;
+    --text-muted: #a4a4b2;
+    --text-dark: #666674;
+
+    --border: #292936;
+
+    --max-width: 1200px;
+}
+
+
+/* =========================================
+   BASE
+   ========================================= */
+
+* {
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+
+    background: var(--bg-main);
+    color: var(--text-main);
+
+    line-height: 1.6;
+}
+
+a {
+    color: inherit;
+}
+
+
+/* =========================================
+   CABECERA
+   ========================================= */
+
+.site-header {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+
+    background: rgba(8, 8, 12, 0.96);
+
+    border-bottom: 1px solid var(--border);
+
+    backdrop-filter: blur(12px);
+}
+
+.header-content {
+    width: 100%;
+    max-width: var(--max-width);
+
+    height: 90px;
+
+    margin: 0 auto;
+    padding: 10px 30px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
 
     gap: 30px;
 }
 
-.review-card {
+
+/* =========================================
+   LOGO
+   ========================================= */
+
+.logo {
+    display: flex;
+    align-items: center;
+
+    gap: 12px;
+
+    color: var(--text-main);
+
+    text-decoration: none;
+
+    font-size: 24px;
+    font-weight: 800;
+
+    white-space: nowrap;
+
+    transition:
+        color 0.2s ease,
+        text-shadow 0.2s ease;
+}
+
+.logo img {
+    display: block;
+
+    width: 64px;
+    height: 64px;
+
+    object-fit: cover;
+
+    border-radius: 50%;
+}
+
+.logo:hover {
+    color: var(--neon-cyan);
+
+    text-shadow:
+        0 0 8px rgba(0, 229, 255, 0.6);
+}
+
+
+/* =========================================
+   NAVEGACIÓN
+   ========================================= */
+
+.main-nav {
+    display: flex;
+    align-items: center;
+
+    gap: 30px;
+}
+
+.main-nav a {
+    position: relative;
+
+    color: var(--text-muted);
+
+    text-decoration: none;
+
+    font-size: 15px;
+    font-weight: 600;
+
+    transition: color 0.2s ease;
+}
+
+.main-nav a::after {
+    content: "";
+
+    position: absolute;
+
+    left: 0;
+    bottom: -7px;
+
+    width: 0;
+    height: 2px;
+
+    background: var(--neon-cyan);
+
+    box-shadow:
+        0 0 8px rgba(0, 229, 255, 0.7);
+
+    transition: width 0.2s ease;
+}
+
+.main-nav a:hover {
+    color: var(--text-main);
+}
+
+.main-nav a:hover::after {
+    width: 100%;
+}
+
+
+/* =========================================
+   PORTADA
+   ========================================= */
+
+.hero {
+    min-height: 680px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    position: relative;
+    overflow: hidden;
+
+    text-align: center;
+
+    padding: 100px 20px;
+
+    /*
+       La imagen ciudad.png está dentro de:
+       imagenes/ciudad.png
+    */
+
+    background-image:
+        linear-gradient(
+            rgba(8, 8, 12, 0.58),
+            rgba(8, 8, 12, 0.72)
+        ),
+        url("imagenes/ciudad.png");
+
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+.hero::before {
+    content: "";
+
+    position: absolute;
+
+    inset: 0;
+
+    background:
+        linear-gradient(
+            rgba(255, 255, 255, 0.025) 1px,
+            transparent 1px
+        ),
+        linear-gradient(
+            90deg,
+            rgba(255, 255, 255, 0.025) 1px,
+            transparent 1px
+        );
+
+    background-size: 50px 50px;
+
+    pointer-events: none;
+
+    opacity: 0.5;
+}
+
+.hero-content {
+    position: relative;
+
+    z-index: 1;
+
+    max-width: 900px;
+
+    margin: 0 auto;
+}
+
+.hero-label {
+    margin: 0 0 20px;
+
+    color: var(--neon-cyan);
+
+    font-size: 13px;
+    font-weight: 700;
+
+    letter-spacing: 4px;
+
+    text-shadow:
+        0 0 10px rgba(0, 229, 255, 0.5);
+}
+
+.hero h1 {
+    margin: 0;
+
+    color: var(--text-main);
+
+    font-size: clamp(44px, 7vw, 82px);
+
+    line-height: 1.02;
+
+    letter-spacing: -2px;
+
+    text-shadow:
+        0 0 30px rgba(176, 38, 255, 0.35);
+}
+
+.hero-description {
+    max-width: 720px;
+
+    margin: 35px auto;
+
+    color: var(--text-main);
+
+    font-size: 19px;
+
+    line-height: 1.7;
+
+    text-shadow:
+        0 2px 10px rgba(0, 0, 0, 0.8);
+}
+
+
+/* =========================================
+   BOTÓN
+   ========================================= */
+
+.button {
+    display: inline-block;
+
+    padding: 14px 30px;
+
+    background: var(--neon-purple);
+
+    color: white;
+
+    text-decoration: none;
+
+    font-weight: 700;
+
+    border-radius: 4px;
+
+    box-shadow:
+        0 0 12px rgba(176, 38, 255, 0.45);
+
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease,
+        background 0.2s ease;
+}
+
+.button:hover {
+    transform: translateY(-3px);
+
+    background: var(--neon-pink);
+
+    box-shadow:
+        0 0 25px rgba(255, 43, 214, 0.65);
+}
+
+
+/* =========================================
+   SECCIONES
+   ========================================= */
+
+.content-section {
+    max-width: var(--max-width);
+
+    margin: 0 auto;
+
+    padding: 110px 30px;
+}
+
+.section-heading {
+    max-width: 720px;
+
+    margin-bottom: 55px;
+}
+
+.section-label {
+    margin: 0 0 12px;
+
+    color: var(--neon-purple);
+
+    font-size: 12px;
+
+    font-weight: 700;
+
+    letter-spacing: 3px;
+
+    text-shadow:
+        0 0 10px rgba(176, 38, 255, 0.35);
+}
+
+.section-heading h2 {
+    margin: 0 0 18px;
+
+    font-size: 46px;
+
+    line-height: 1.1;
+
+    letter-spacing: -1px;
+}
+
+.section-heading > p {
+    margin: 0;
+
+    color: var(--text-muted);
+
+    font-size: 17px;
+}
+
+
+/* =========================================
+   VÍDEOS
+   ========================================= */
+
+.video-grid {
+    display: grid;
+
+    grid-template-columns:
+        repeat(2, minmax(0, 1fr));
+
+    gap: 30px;
+}
+
+.video-card {
     overflow: hidden;
 
     background: var(--bg-card);
@@ -26,166 +409,465 @@
         box-shadow 0.25s ease;
 }
 
-.review-card:hover {
+.video-card:hover {
     transform: translateY(-6px);
 
-    border-color:
-        rgba(176, 38, 255, 0.6);
+    border-color: rgba(176, 38, 255, 0.6);
 
     box-shadow:
         0 10px 35px rgba(0, 0, 0, 0.4),
         0 0 20px rgba(176, 38, 255, 0.08);
 }
 
-.review-card-image {
-    display: block;
-
+.video-placeholder {
     aspect-ratio: 16 / 9;
 
-    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 
-    background: #101018;
-}
+    background:
+        linear-gradient(
+            135deg,
+            #191923,
+            #101018
+        );
 
-.review-card-image img {
-    display: block;
+    color: var(--text-dark);
 
-    width: 100%;
-    height: 100%;
-
-    object-fit: cover;
-
-    transition:
-        transform 0.3s ease;
-}
-
-.review-card:hover
-.review-card-image img {
-    transform: scale(1.03);
-}
-
-.review-card-content {
-    padding: 25px;
-}
-
-.review-card-genre {
-    margin: 0 0 10px;
-
-    color: var(--neon-purple);
-
-    font-size: 12px;
+    font-size: 18px;
 
     font-weight: 700;
 
-    text-transform: uppercase;
-
-    letter-spacing: 1.5px;
+    letter-spacing: 2px;
 }
 
-.review-card h3 {
-    margin: 0 0 12px;
-
-    font-size: 24px;
+.video-info {
+    padding: 22px;
 }
 
-.review-card-content > p:not(.review-card-genre) {
-    margin: 0 0 22px;
+.video-info h3 {
+    margin: 0 0 8px;
+
+    font-size: 20px;
+}
+
+.video-info p {
+    margin: 0;
 
     color: var(--text-muted);
 
-    font-size: 15px;
-
-    line-height: 1.65;
+    font-size: 14px;
 }
 
-.review-card-link {
+
+/* =========================================
+   RESEÑAS Y TIENDA
+   ========================================= */
+
+.reviews-section,
+.store-section {
+    border-top: 1px solid var(--border);
+}
+
+.future-content {
+    padding: 45px 30px;
+
+    background: var(--bg-card);
+
+    border: 1px solid var(--border);
+
+    border-radius: 6px;
+
+    color: var(--text-muted);
+
+    text-align: center;
+}
+
+
+/* =========================================
+   FOOTER
+   ========================================= */
+
+.site-footer {
+    padding: 45px 30px;
+
+    background: #050508;
+
+    border-top: 1px solid var(--border);
+
+    color: var(--text-dark);
+
+    text-align: center;
+}
+
+.site-footer p {
+    margin: 5px 0;
+}
+
+
+/* =========================================
+   MÓVIL
+   ========================================= */
+
+@media (max-width: 700px) {
+
+    .header-content {
+        height: auto;
+
+        flex-direction: column;
+
+        padding: 15px 20px;
+
+        gap: 12px;
+    }
+
+    .logo {
+        font-size: 21px;
+    }
+
+    .logo img {
+        width: 52px;
+        height: 52px;
+    }
+
+    .main-nav {
+        gap: 18px;
+
+        flex-wrap: wrap;
+
+        justify-content: center;
+    }
+
+    .hero {
+        min-height: 580px;
+
+        padding: 70px 20px;
+
+        background-position: center;
+    }
+
+    .hero h1 {
+        letter-spacing: -1px;
+    }
+
+    .hero-description {
+        font-size: 17px;
+    }
+
+    .content-section {
+        padding: 75px 20px;
+    }
+
+    .section-heading h2 {
+        font-size: 36px;
+    }
+
+    .video-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* =========================================================
+   PÁGINAS DE RESEÑAS
+   ========================================================= */
+
+.review-page {
+    width: 100%;
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 90px 30px 120px;
+}
+
+.review {
+    width: 100%;
+}
+
+.review-header {
+    max-width: 850px;
+    margin: 0 auto 55px;
+    text-align: center;
+}
+
+.review-header .section-label {
+    margin-bottom: 18px;
+}
+
+.review-header h1 {
+    margin: 0 0 22px;
+
+    font-size: clamp(42px, 6vw, 68px);
+    line-height: 1.05;
+    letter-spacing: -2px;
+
+    text-shadow:
+        0 0 30px rgba(176, 38, 255, 0.25);
+}
+
+.review-publication {
     display: inline-block;
 
+    margin-top: 10px;
+
+    padding: 10px 18px;
+
+    color: var(--text-muted);
+
+    font-size: 14px;
+
+    border: 1px solid var(--border);
+    border-radius: 4px;
+
+    background: rgba(21, 21, 33, 0.7);
+}
+
+.review-publication a {
     color: var(--neon-cyan);
-
-    font-size: 13px;
-
     font-weight: 700;
-
-    letter-spacing: 1px;
-
     text-decoration: none;
 }
 
-.review-card-link:hover {
+.review-publication a:hover {
     color: var(--neon-pink);
 }
 
 
 /* =========================================================
-   TARJETAS VACÍAS
+   PORTADA
    ========================================================= */
 
-.review-card-placeholder {
-    min-height: 390px;
-
-    display: flex;
-
-    align-items: center;
-    justify-content: center;
+.review-cover-wrap {
+    margin: 0 auto 55px;
 
     text-align: center;
-
-    background:
-        linear-gradient(
-            135deg,
-            rgba(176, 38, 255, 0.04),
-            rgba(0, 229, 255, 0.02)
-        );
 }
 
-.review-card-placeholder-inner {
-    padding: 30px;
-}
+.review-cover {
+    display: block;
 
-.review-card-placeholder-inner span {
-    color: var(--neon-purple);
+    width: min(100%, 720px);
+    max-height: 520px;
 
-    font-size: 11px;
+    margin: 0 auto;
 
-    font-weight: 700;
+    object-fit: contain;
 
-    letter-spacing: 3px;
-}
+    border: 1px solid var(--border);
+    border-radius: 6px;
 
-.review-card-placeholder-inner h3 {
-    margin: 12px 0 0;
-
-    color: var(--text-muted);
-
-    font-size: 20px;
+    box-shadow:
+        0 20px 60px rgba(0, 0, 0, 0.45),
+        0 0 30px rgba(176, 38, 255, 0.08);
 }
 
 
 /* =========================================================
-   AJUSTE FICHA TÉCNICA
+   FICHA TÉCNICA
    ========================================================= */
 
-.review-data-label {
-    text-align: left !important;
-}
+.review-metadata {
+    max-width: 850px;
 
-.review-data-value {
-    text-align: left !important;
+    margin: 0 auto 45px;
+
+    padding: 28px;
+
+    background: var(--bg-card);
+
+    border: 1px solid var(--border);
+    border-radius: 6px;
+
+    box-shadow:
+        0 15px 40px rgba(0, 0, 0, 0.25);
 }
 
 .review-data-grid {
-    text-align: left;
+    display: grid;
+
+    grid-template-columns:
+        repeat(2, minmax(0, 1fr));
+
+    gap: 0;
+}
+
+.review-data-row {
+    display: grid;
+
+    grid-template-columns:
+        minmax(100px, 0.7fr)
+        minmax(0, 1.3fr);
+
+    gap: 20px;
+
+    padding: 15px 10px;
+
+    border-bottom: 1px solid var(--border);
+}
+
+.review-data-row:nth-last-child(-n + 2) {
+    border-bottom: 0;
+}
+
+.review-data-label {
+    color: var(--text-muted);
+
+    font-size: 13px;
+    font-weight: 700;
+
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.review-data-value {
+    color: var(--text-main);
+
+    font-size: 15px;
 }
 
 
 /* =========================================================
-   IMÁGENES DE LA RESEÑA
+   VALORACIÓN
+   ========================================================= */
+
+.review-rating {
+    width: fit-content;
+
+    margin: 0 auto 40px;
+
+    display: flex;
+    align-items: center;
+
+    gap: 18px;
+
+    padding: 12px 20px;
+
+    border: 1px solid rgba(176, 38, 255, 0.35);
+    border-radius: 4px;
+
+    background: rgba(176, 38, 255, 0.08);
+}
+
+.review-rating span {
+    color: var(--text-muted);
+
+    font-size: 13px;
+    font-weight: 700;
+
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+.review-rating strong {
+    color: var(--neon-purple);
+
+    font-size: 22px;
+
+    text-shadow:
+        0 0 12px rgba(176, 38, 255, 0.45);
+}
+
+
+/* =========================================================
+   BOTÓN WEB DEL JUEGO
+   ========================================================= */
+
+.review-actions {
+    margin: 0 auto 65px;
+
+    text-align: center;
+}
+
+.review-button {
+    display: inline-block;
+
+    padding: 13px 24px;
+
+    background: var(--neon-purple);
+
+    color: white;
+
+    border-radius: 4px;
+
+    font-size: 14px;
+    font-weight: 700;
+
+    text-decoration: none;
+
+    box-shadow:
+        0 0 15px rgba(176, 38, 255, 0.35);
+
+    transition:
+        transform 0.2s ease,
+        background 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.review-button:hover {
+    transform: translateY(-2px);
+
+    background: var(--neon-pink);
+
+    box-shadow:
+        0 0 25px rgba(255, 43, 214, 0.5);
+}
+
+
+/* =========================================================
+   TEXTO DE LA RESEÑA
+   ========================================================= */
+
+.review-content {
+    max-width: 800px;
+
+    margin: 0 auto;
+
+    color: var(--text-main);
+
+    font-size: 18px;
+    line-height: 1.85;
+}
+
+.review-content p {
+    margin: 0 0 28px;
+}
+
+.review-content h2 {
+    position: relative;
+
+    margin: 70px 0 25px;
+    padding-left: 18px;
+
+    color: var(--text-main);
+
+    font-size: 32px;
+    line-height: 1.2;
+
+    letter-spacing: -0.5px;
+}
+
+.review-content h2::before {
+    content: "";
+
+    position: absolute;
+
+    left: 0;
+    top: 4px;
+    bottom: 4px;
+
+    width: 3px;
+
+    background: var(--neon-purple);
+
+    box-shadow:
+        0 0 10px rgba(176, 38, 255, 0.5);
+}
+
+
+/* =========================================================
+   IMÁGENES DENTRO DE LA RESEÑA
    ========================================================= */
 
 .review-image {
-    width: 100%;
-
     margin: 50px 0;
 
     text-align: center;
@@ -195,15 +877,12 @@
     display: block;
 
     width: auto;
-
     max-width: 100%;
-
     max-height: 650px;
 
     margin: 0 auto;
 
     border: 1px solid var(--border);
-
     border-radius: 6px;
 
     box-shadow:
@@ -215,13 +894,67 @@
    MÓVIL
    ========================================================= */
 
-@media (max-width: 900px) {
+@media (max-width: 700px) {
 
-    .reviews-grid {
+    .review-page {
+        padding: 65px 20px 90px;
+    }
+
+    .review-header {
+        margin-bottom: 40px;
+    }
+
+    .review-header h1 {
+        font-size: 42px;
+        letter-spacing: -1px;
+    }
+
+    .review-publication {
+        font-size: 13px;
+    }
+
+    .review-cover-wrap {
+        margin-bottom: 40px;
+    }
+
+    .review-metadata {
+        padding: 18px;
+
+        margin-bottom: 35px;
+    }
+
+    .review-data-grid {
         grid-template-columns: 1fr;
     }
 
-    .review-card-placeholder {
-        min-height: 250px;
+    .review-data-row {
+        grid-template-columns: 1fr;
+        gap: 5px;
+
+        padding: 13px 4px;
     }
+
+    .review-data-row:nth-last-child(-n + 2) {
+        border-bottom: 1px solid var(--border);
+    }
+
+    .review-data-row:last-child {
+        border-bottom: 0;
+    }
+
+    .review-content {
+        font-size: 17px;
+        line-height: 1.75;
+    }
+
+    .review-content h2 {
+        margin-top: 55px;
+
+        font-size: 28px;
+    }
+
+    .review-image {
+        margin: 40px 0;
+    }
+
 }
