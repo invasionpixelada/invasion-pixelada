@@ -1,6 +1,6 @@
 # =========================================================
 # INVASIÓN PIXELADA — GENERADOR DE RESEÑAS
-# VERSIÓN INTERNA: IP-GEN-004
+# VERSIÓN INTERNA: IP-GEN-005
 # =========================================================
 
 from pathlib import Path
@@ -240,7 +240,7 @@ ENCABEZADOS = {
 
 def obtener_imagenes(carpeta):
 
-    imagenes = []
+    imagenes = {}
 
     for numero in range(1, 6):
 
@@ -250,7 +250,7 @@ def obtener_imagenes(carpeta):
         )
 
         if imagen:
-            imagenes.append(imagen)
+            imagenes[numero] = imagen
 
     return imagenes
 
@@ -352,9 +352,7 @@ def crear_contenido(
 
     posiciones = {}
 
-    for indice, bloque in enumerate(
-        bloques
-    ):
+    for indice, bloque in enumerate(bloques):
 
         if bloque["tipo"] == "heading":
 
@@ -368,8 +366,6 @@ def crear_contenido(
 
     # -----------------------------------------------------
     # POSICIONES DE LAS IMÁGENES
-    #
-    # Cada imagen tiene una posición independiente.
     # -----------------------------------------------------
 
     objetivos = {}
@@ -381,8 +377,8 @@ def crear_contenido(
     if "ambientación" in posiciones:
 
         objetivos[1] = max(
-            1,
-            posiciones["ambientación"] - 1
+            0,
+            posiciones["ambientación"] + 1
         )
 
     # -----------------------------------------------------
@@ -409,7 +405,7 @@ def crear_contenido(
 
         objetivos[2] = min(
             inicio + 3,
-            siguiente - 1
+            siguiente
         )
 
     # -----------------------------------------------------
@@ -437,38 +433,73 @@ def crear_contenido(
 
         objetivos[3] = min(
             inicio + 4,
-            siguiente - 1
+            siguiente
         )
 
     # -----------------------------------------------------
     # IMAGEN 4
     #
     # SONIDO
-    # párrafo
-    # párrafo
+    # párrafo 1
+    # párrafo 2
     # IMAGEN 4
     #
-    # La posición se fija directamente a tres bloques
-    # después del encabezado.
+    # Aquí NO utilizamos una posición calculada.
+    # La posición se determina buscando directamente
+    # los dos primeros párrafos de la sección SONIDO.
     # -----------------------------------------------------
 
-    inicio_sonido = None
+    if "sonido" in posiciones:
 
-    for nombre in [
-        "sonido",
-        "impacto emocional"
-    ]:
+        inicio_sonido = posiciones["sonido"]
 
-        if nombre in posiciones:
+        siguiente_encabezado = len(bloques)
 
-            inicio_sonido = posiciones[nombre]
-            break
+        for indice in range(
+            inicio_sonido + 1,
+            len(bloques)
+        ):
 
-    if inicio_sonido is not None:
+            if bloques[indice]["tipo"] == "heading":
 
-        objetivos[4] = (
-            inicio_sonido + 3
-        )
+                siguiente_encabezado = indice
+                break
+
+        parrafos_sonido = []
+
+        for indice in range(
+            inicio_sonido + 1,
+            siguiente_encabezado
+        ):
+
+            if bloques[indice]["tipo"] == "paragraph":
+
+                parrafos_sonido.append(
+                    indice
+                )
+
+        if len(parrafos_sonido) >= 2:
+
+            # Insertar justo después del segundo párrafo.
+            objetivos[4] = (
+                parrafos_sonido[1] + 1
+            )
+
+        elif len(parrafos_sonido) == 1:
+
+            # Si solo existe un párrafo,
+            # se coloca después de ese párrafo.
+            objetivos[4] = (
+                parrafos_sonido[0] + 1
+            )
+
+        else:
+
+            # Si Sonido no tiene párrafos,
+            # se coloca al comienzo de la sección.
+            objetivos[4] = (
+                inicio_sonido + 1
+            )
 
     # -----------------------------------------------------
     # IMAGEN 5
@@ -496,9 +527,6 @@ def crear_contenido(
     # -----------------------------------------------------
     # COMPLETAMOS POSICIONES QUE NO HAYAMOS PODIDO
     # DETERMINAR.
-    #
-    # Importante:
-    # NO sustituimos las posiciones que ya hemos definido.
     # -----------------------------------------------------
 
     posiciones_ocupadas = set(
@@ -507,10 +535,7 @@ def crear_contenido(
 
     total_bloques = len(bloques)
 
-    for numero in range(
-        1,
-        len(imagenes) + 1
-    ):
+    for numero in sorted(imagenes):
 
         if numero in objetivos:
             continue
@@ -522,7 +547,7 @@ def crear_contenido(
         )
 
         posicion = max(
-            1,
+            0,
             min(
                 posicion,
                 total_bloques
@@ -535,7 +560,7 @@ def crear_contenido(
 
             if posicion > total_bloques:
 
-                posicion = 1
+                posicion = 0
 
         objetivos[numero] = posicion
 
@@ -549,24 +574,21 @@ def crear_contenido(
 
     resultado = []
 
-    imagenes_pendientes = {
-        numero: imagen
-        for numero, imagen
-        in enumerate(
-            imagenes,
-            start=1
-        )
-    }
+    imagenes_pendientes = dict(
+        imagenes
+    )
 
     for indice, bloque in enumerate(
-        bloques,
-        start=1
+        bloques
     ):
 
-        # Comprobamos si alguna imagen debe aparecer
-        # antes de este bloque.
+        # -------------------------------------------------
+        # Insertamos las imágenes que correspondan
+        # justo antes del bloque indicado.
+        # -------------------------------------------------
+
         for numero in sorted(
-            imagenes_pendientes
+            list(imagenes_pendientes.keys())
         ):
 
             if objetivos.get(numero) == indice:
@@ -580,7 +602,9 @@ def crear_contenido(
 
                 del imagenes_pendientes[numero]
 
-                break
+        # -------------------------------------------------
+        # Generamos el bloque actual
+        # -------------------------------------------------
 
         if bloque["tipo"] == "heading":
 
@@ -603,8 +627,7 @@ def crear_contenido(
             )
 
     # -----------------------------------------------------
-    # Por seguridad, cualquier imagen pendiente se coloca
-    # al final.
+    # Cualquier imagen pendiente se coloca al final.
     # -----------------------------------------------------
 
     for numero in sorted(
@@ -903,7 +926,7 @@ def crear_pagina(
 <!--
     INVASIÓN PIXELADA
     PÁGINA GENERADA AUTOMÁTICAMENTE
-    GENERADOR: IP-GEN-004
+    GENERADOR: IP-GEN-005
 -->
 <html lang="es">
 
