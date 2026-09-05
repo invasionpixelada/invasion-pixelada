@@ -1,6 +1,6 @@
 # =========================================================
 # INVASIÓN PIXELADA — GENERADOR DE TIENDA
-# VERSIÓN INTERNA: IP-STOREGEN-011
+# VERSIÓN INTERNA: IP-STOREGEN-012
 # =========================================================
 
 from pathlib import Path
@@ -141,7 +141,6 @@ def comprobar_portada(cover_id):
         ).lower()
 
         if "image" not in content_type:
-
             return None
 
         return url
@@ -152,15 +151,58 @@ def comprobar_portada(cover_id):
 
 
 # ---------------------------------------------------------
-# BUSCAR PORTADA EN LAS EDICIONES DE OPEN LIBRARY
+# OBTENER EDICIONES DE UNA OBRA
+# ---------------------------------------------------------
+
+def obtener_ediciones(work_id):
+
+    url = URL_EDICIONES.format(work_id)
+
+    try:
+
+        respuesta = requests.get(
+            url,
+            params={
+                "limit": 100
+            },
+            headers=HEADERS,
+            timeout=TIMEOUT
+        )
+
+        respuesta.raise_for_status()
+
+        datos = respuesta.json()
+
+        return datos.get("entries", [])
+
+    except requests.exceptions.RequestException as error:
+
+        print(
+            f"  - Error obteniendo ediciones: {error}"
+        )
+
+        return []
+
+
+# ---------------------------------------------------------
+# BUSCAR PORTADA EN OPEN LIBRARY
 # ---------------------------------------------------------
 
 def buscar_portada(titulo):
 
     titulo_buscado = normalizar_titulo(titulo)
 
+    # -----------------------------------------------------
+    # IMPORTANTE:
+    # Usamos q= en lugar de title=.
+    #
+    # La búsqueda general de Open Library encuentra obras
+    # que title= puede no devolver correctamente.
+    # Después nosotros comprobamos el título exacto.
+    # -----------------------------------------------------
+
     parametros = {
-        "title": titulo,
+        "q": titulo,
         "limit": 20
     }
 
@@ -169,10 +211,6 @@ def buscar_portada(titulo):
     for intento in range(1, MAX_INTENTOS + 1):
 
         try:
-
-            # -------------------------------------------------
-            # 1. BUSCAR LA OBRA
-            # -------------------------------------------------
 
             respuesta = requests.get(
                 URL_BUSQUEDA,
@@ -191,7 +229,7 @@ def buscar_portada(titulo):
 
                 print(
                     "  - Open Library no ha encontrado "
-                    "la obra"
+                    "resultados"
                 )
 
                 return None
@@ -207,6 +245,10 @@ def buscar_portada(titulo):
 
                 if not titulo_obra:
                     continue
+
+                # -----------------------------------------
+                # COINCIDENCIA EXACTA
+                # -----------------------------------------
 
                 if normalizar_titulo(
                     titulo_obra
@@ -227,7 +269,10 @@ def buscar_portada(titulo):
 
                 obras_validas.append({
                     "titulo": titulo_obra,
-                    "key": work_key
+                    "key": work_key,
+                    "cover_i": obra.get(
+                        "cover_i"
+                    )
                 })
 
             if not obras_validas:
@@ -240,7 +285,7 @@ def buscar_portada(titulo):
                 return None
 
             # -------------------------------------------------
-            # 2. RECORRER LAS OBRAS EXACTAS
+            # RECORRER LAS OBRAS EXACTAS
             # -------------------------------------------------
 
             for obra in obras_validas:
@@ -254,47 +299,14 @@ def buscar_portada(titulo):
                     f"{obra['titulo']}"
                 )
 
-                # -------------------------------------------------
-                # 3. OBTENER LAS EDICIONES DE LA OBRA
-                # -------------------------------------------------
-
-                url_ediciones = URL_EDICIONES.format(
+                ediciones = obtener_ediciones(
                     work_id
                 )
-
-                respuesta_ediciones = requests.get(
-                    url_ediciones,
-                    params={
-                        "limit": 100
-                    },
-                    headers=HEADERS,
-                    timeout=TIMEOUT
-                )
-
-                respuesta_ediciones.raise_for_status()
-
-                datos_ediciones = (
-                    respuesta_ediciones.json()
-                )
-
-                ediciones = datos_ediciones.get(
-                    "entries",
-                    []
-                )
-
-                if not ediciones:
-
-                    print(
-                        "  - La obra no tiene "
-                        "ediciones disponibles"
-                    )
-
-                    continue
 
                 candidatos = []
 
                 # -------------------------------------------------
-                # 4. BUSCAR EDICIONES CON PORTADA
+                # BUSCAR EDICIONES EXACTAS CON PORTADA
                 # -------------------------------------------------
 
                 for edicion in ediciones:
@@ -352,8 +364,8 @@ def buscar_portada(titulo):
 
                     puntuacion = 100
 
-                    # Preferimos español,
-                    # pero nunca es obligatorio.
+                    # Español = prioridad,
+                    # nunca requisito.
                     if "spa" in idiomas_texto:
                         puntuacion += 50
 
@@ -363,26 +375,17 @@ def buscar_portada(titulo):
                         "covers": portadas,
                         "idiomas": idiomas_texto,
                         "isbn13": edicion.get(
-                            "isbn13",
+                            "isbn_13",
                             []
                         ),
                         "isbn10": edicion.get(
-                            "isbn",
+                            "isbn_10",
                             []
                         )
                     })
 
-                if not candidatos:
-
-                    print(
-                        "  - No se ha encontrado "
-                        "una edición exacta con portada"
-                    )
-
-                    continue
-
                 # -------------------------------------------------
-                # 5. ESPAÑOL PRIMERO
+                # ORDENAR CANDIDATOS
                 # -------------------------------------------------
 
                 candidatos.sort(
@@ -391,7 +394,7 @@ def buscar_portada(titulo):
                 )
 
                 # -------------------------------------------------
-                # 6. PROBAR LAS PORTADAS
+                # PROBAR PORTADAS DE LAS EDICIONES
                 # -------------------------------------------------
 
                 for candidato in candidatos:
@@ -441,6 +444,45 @@ def buscar_portada(titulo):
                                     candidato["isbn13"][0]
                                 )
                             )
+
+                        elif candidato["isbn10"]:
+
+                            print(
+                                "  ✓ ISBN-10: "
+                                + str(
+                                    candidato["isbn10"][0]
+                                )
+                            )
+
+                        print(
+                            f"  ✓ Cover ID: {cover_id}"
+                        )
+
+                        return portada
+
+                # -------------------------------------------------
+                # RESPALDO: PORTADA DE LA OBRA
+                #
+                # Solo si no hemos encontrado una edición
+                # válida. El título ya ha sido comprobado.
+                # -------------------------------------------------
+
+                cover_id = obra.get(
+                    "cover_i"
+                )
+
+                if cover_id:
+
+                    portada = comprobar_portada(
+                        cover_id
+                    )
+
+                    if portada:
+
+                        print(
+                            "  ✓ Portada de la obra "
+                            "encontrada"
+                        )
 
                         print(
                             f"  ✓ Cover ID: {cover_id}"
@@ -675,7 +717,7 @@ def main():
     print("")
     print("==============================================")
     print(" INVASIÓN PIXELADA — GENERADOR DE TIENDA")
-    print(" VERSIÓN: IP-STOREGEN-010")
+    print(" VERSIÓN: IP-STOREGEN-012")
     print("==============================================")
     print("")
 
@@ -709,5 +751,5 @@ def main():
     print("")
 
 
-if __main__ == "__main__":
+if __name__ == "__main__":
     main()
