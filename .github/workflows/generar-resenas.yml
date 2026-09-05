@@ -1,3 +1,8 @@
+# =========================================================
+# INVASIÓN PIXELADA — GITHUB ACTIONS
+# VERSIÓN INTERNA: IP-ACTIONS-002
+# =========================================================
+
 name: Generar reseñas
 
 on:
@@ -11,8 +16,10 @@ on:
 
   workflow_dispatch:
 
+
 permissions:
   contents: write
+
 
 jobs:
 
@@ -22,30 +29,55 @@ jobs:
 
     steps:
 
+      # ---------------------------------------------------
+      # DESCARGAR EL REPOSITORIO
+      # ---------------------------------------------------
+
       - name: Descargar repositorio
         uses: actions/checkout@v4
 
-      - name: Preparar Python
+
+      # ---------------------------------------------------
+      # CONFIGURAR PYTHON
+      # ---------------------------------------------------
+
+      - name: Configurar Python
         uses: actions/setup-python@v5
+
         with:
           python-version: "3.x"
+
+
+      # ---------------------------------------------------
+      # INSTALAR DEPENDENCIAS
+      # ---------------------------------------------------
 
       - name: Instalar dependencias
         run: |
           pip install python-docx
 
-      - name: Generar páginas de reseñas
+
+      # ---------------------------------------------------
+      # GENERAR LAS RESEÑAS
+      # ---------------------------------------------------
+
+      - name: Generar reseñas
         run: |
           python generar_resenas.py
 
-      - name: Guardar páginas generadas
+
+      # ---------------------------------------------------
+      # GUARDAR LOS CAMBIOS GENERADOS
+      # ---------------------------------------------------
+
+      - name: Guardar cambios
         run: |
 
           git config user.name "github-actions[bot]"
 
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          git add reseñas index.html
+          git add reseñas index.html resenas.html
 
           git diff --cached --quiet || git commit -m "Generar reseñas automáticamente"
 
