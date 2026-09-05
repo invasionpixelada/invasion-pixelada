@@ -1139,7 +1139,7 @@ a {
 
 /* =========================================================
    INVASIÓN PIXELADA — TIENDA DESTACADOS
-   VERSIÓN INTERNA: IP-CSS-003
+   VERSIÓN INTERNA: IP-CSS-004
    ========================================================= */
 
 .store-grid {
@@ -1156,16 +1156,19 @@ a {
 }
 
 .store-card-image {
-    display: block;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     width: 100%;
-    aspect-ratio: 3 / 4;
+    height: 280px;
     overflow: hidden;
 }
 
 .store-card-image img {
     display: block;
-    width: 100%;
+    width: auto;
     height: 100%;
+    max-width: 100%;
     object-fit: contain;
 }
 
@@ -1180,7 +1183,8 @@ a {
     letter-spacing: 2px;
 }
 
-.store-card-content h3 {
+.store-card-content h3,
+.store-card-content h2 {
     margin: 0 auto 18px;
     font-size: 1rem;
     line-height: 1.4;
@@ -1203,6 +1207,10 @@ a {
     .store-grid {
         grid-template-columns: 1fr;
         max-width: 360px;
+    }
+
+    .store-card-image {
+        height: 280px;
     }
 
 }
