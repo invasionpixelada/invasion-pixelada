@@ -1,6 +1,6 @@
 # =========================================================
 # INVASIÓN PIXELADA — GENERADOR DE TIENDA
-# VERSIÓN INTERNA: IP-STOREGEN-006
+# VERSIÓN INTERNA: IP-STOREGEN-007
 # =========================================================
 
 from pathlib import Path
@@ -51,6 +51,7 @@ IMAGENES_LOCALES = {
 # ---------------------------------------------------------
 
 def normalizar_titulo(texto):
+
     texto = texto.lower().strip()
 
     texto = texto.replace("¿", "")
@@ -68,9 +69,11 @@ def normalizar_titulo(texto):
 # ---------------------------------------------------------
 
 def leer_productos():
+
     document = Document(DOCUMENTO)
 
     productos = []
+
     titulo_actual = None
     enlace_actual = None
 
@@ -82,11 +85,13 @@ def leer_productos():
             continue
 
         if texto.startswith("Título:"):
+
             titulo_actual = (
                 texto.replace("Título:", "", 1).strip()
             )
 
         elif texto.startswith("Enlace:"):
+
             enlace_actual = (
                 texto.replace("Enlace:", "", 1).strip()
             )
@@ -105,14 +110,13 @@ def leer_productos():
 
 
 # ---------------------------------------------------------
-# BUSCAR EN OPEN LIBRARY
+# BUSCAR PORTADA EN OPEN LIBRARY
 # ---------------------------------------------------------
 
 def buscar_portada(titulo):
 
     parametros = {
         "title": titulo,
-        "language": "spa",
         "limit": 20
     }
 
@@ -153,34 +157,23 @@ def buscar_portada(titulo):
                     titulo_encontrado
                 )
 
+                # -----------------------------------------
+                # SOLO ACEPTAMOS TÍTULOS EXACTOS
+                # -----------------------------------------
+
+                if titulo_normalizado != titulo_buscado:
+                    continue
+
                 cover_id = libro.get("cover_i")
 
                 if not cover_id:
                     continue
 
-                # -----------------------------------------
-                # PUNTUACIÓN DE COINCIDENCIA
-                # -----------------------------------------
-
-                puntuacion = 0
-
-                # Título exactamente igual
-                if titulo_normalizado == titulo_buscado:
-                    puntuacion += 100
-
-                # Uno contiene al otro
-                elif (
-                    titulo_buscado in titulo_normalizado
-                    or titulo_normalizado in titulo_buscado
-                ):
-                    puntuacion += 50
-
-                else:
-                    continue
-
-                # Priorizar español
                 idiomas = libro.get("language", [])
 
+                puntuacion = 100
+
+                # Preferencia por español
                 if "spa" in idiomas:
                     puntuacion += 50
 
@@ -192,7 +185,16 @@ def buscar_portada(titulo):
                 })
 
             if not candidatos:
+                print(
+                    "  - No existe una coincidencia "
+                    "exacta con portada"
+                )
+
                 return None
+
+            # -----------------------------------------
+            # ORDENAR: ESPAÑOL PRIMERO
+            # -----------------------------------------
 
             candidatos.sort(
                 key=lambda x: x["puntuacion"],
@@ -202,14 +204,22 @@ def buscar_portada(titulo):
             mejor = candidatos[0]
 
             print(
-                f"  ✓ Coincidencia: "
+                f"  ✓ Coincidencia exacta: "
                 f"{mejor['titulo']}"
             )
 
-            print(
-                f"  ✓ Puntuación: "
-                f"{mejor['puntuacion']}"
-            )
+            if "spa" in mejor["idiomas"]:
+
+                print(
+                    "  ✓ Edición en español priorizada"
+                )
+
+            else:
+
+                print(
+                    "  - No hay edición española "
+                    "con portada disponible"
+                )
 
             print(
                 f"  ✓ Idiomas: "
@@ -267,24 +277,37 @@ def obtener_imagen(titulo):
     portada = buscar_portada(titulo)
 
     if portada:
-        print("  ✓ Portada automática aceptada")
+
+        print(
+            "  ✓ Portada automática aceptada"
+        )
+
         return portada
 
-    print("  - No se ha encontrado una portada fiable")
+    print(
+        "  - No se ha encontrado una "
+        "portada automática fiable"
+    )
 
     imagen_local = buscar_imagen_local(titulo)
 
     if imagen_local:
-        print("  ✓ Imagen local encontrada")
+
+        print(
+            "  ✓ Imagen local encontrada"
+        )
+
         return imagen_local
 
-    print("  ✗ Sin imagen")
+    print(
+        "  ✗ Sin imagen"
+    )
 
     return None
 
 
 # ---------------------------------------------------------
-# GENERAR TARJETA
+# GENERAR TARJETA HTML
 # ---------------------------------------------------------
 
 def generar_tarjeta(producto, imagen):
@@ -352,7 +375,7 @@ def generar_tarjeta(producto, imagen):
 
 
 # ---------------------------------------------------------
-# ACTUALIZAR TIENDA
+# ACTUALIZAR TIENDA.HTML
 # ---------------------------------------------------------
 
 def actualizar_tienda(productos):
@@ -427,7 +450,7 @@ def main():
     print("")
     print("==============================================")
     print(" INVASIÓN PIXELADA — GENERADOR DE TIENDA")
-    print(" VERSIÓN: IP-STOREGEN-006")
+    print(" VERSIÓN: IP-STOREGEN-007")
     print("==============================================")
     print("")
 
@@ -452,9 +475,7 @@ def main():
 
     print("")
 
-    actualizar_tienda(
-        productos
-    )
+    actualizar_tienda(productos)
 
     print("")
     print("----------------------------------------------")
