@@ -80,6 +80,10 @@ a {
 }
 
 .logo {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+
     color: var(--text-main);
 
     text-decoration: none;
@@ -91,6 +95,15 @@ a {
     transition:
         color 0.2s ease,
         text-shadow 0.2s ease;
+}
+
+.logo img {
+    width: 64px;
+    height: 64px;
+
+    object-fit: cover;
+
+    border-radius: 50%;
 }
 
 .logo:hover {
