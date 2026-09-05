@@ -1,9 +1,9 @@
 # =========================================================
-# INVASIÓN PIXELADA — PRUEBA GENERADOR DE TIENDA
-# VERSIÓN INTERNA: IP-ACTIONS-STORE-002
+# INVASIÓN PIXELADA — GENERADOR DE TIENDA
+# VERSIÓN INTERNA: IP-ACTIONS-STORE-003
 # =========================================================
 
-name: Probar generador de tienda
+name: Generar tienda
 
 on:
   workflow_dispatch:
@@ -12,7 +12,7 @@ permissions:
   contents: write
 
 jobs:
-  probar:
+  generar:
     runs-on: ubuntu-latest
 
     steps:
@@ -28,26 +28,17 @@ jobs:
         run: |
           pip install python-docx requests
 
-      - name: Ejecutar prueba
+      - name: Generar tienda
         run: |
           python generar_tienda.py
 
-      - name: Mostrar resultado
-        run: |
-          echo "=============================================="
-          echo "CONTENIDO DE LA CARPETA TIENDA"
-          echo "=============================================="
-          find tienda -maxdepth 3 -type f -print
-
-      - name: Guardar portadas encontradas
+      - name: Guardar cambios
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          if [ -d "tienda/prueba_portadas" ] && [ "$(find tienda/prueba_portadas -type f | wc -l)" -gt 0 ]; then
-            git add tienda/prueba_portadas
-            git diff --cached --quiet || git commit -m "Prueba búsqueda de portadas"
-            git push
-          else
-            echo "No se han encontrado portadas para guardar."
-          fi
+          git add tienda.html
+
+          git diff --cached --quiet || git commit -m "Actualizar tienda automáticamente"
+
+          git push
