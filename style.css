@@ -50,3 +50,26 @@ nav a {
 nav a:hover {
     text-decoration: underline;
 }
+
+.hero {
+    min-height: 400px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 40px;
+    box-sizing: border-box;
+}
+
+.hero h2 {
+    font-size: 42px;
+    margin-bottom: 20px;
+}
+
+.hero p {
+    max-width: 700px;
+    font-size: 20px;
+    line-height: 1.6;
+    margin: 8px 0;
+}
