@@ -17,53 +17,35 @@ def escapar(texto):
 
 
 def buscar_docx(carpeta):
-    """
-    Busca cualquier DOCX dentro de la carpeta de la reseña.
-    """
-
     archivos = list(carpeta.glob("*.docx"))
-
-    if not archivos:
-        return None
-
-    return archivos[0]
+    return archivos[0] if archivos else None
 
 
 def buscar_imagen(carpeta, numero):
-    """
-    Busca imágenes asociadas a:
-    [IMAGEN: 1]
-    [IMAGEN: 01]
-
-    Admite jpg, jpeg, png y webp.
-    """
-
     numero = str(numero).strip()
-
-    candidatos = []
 
     try:
         entero = int(numero)
-
-        candidatos.append(str(entero))
-        candidatos.append(f"{entero:02d}")
-
+        candidatos = [str(entero), f"{entero:02d}"]
     except ValueError:
-        candidatos.append(numero)
+        candidatos = [numero]
 
     for nombre in candidatos:
-
-        for extension in [
-            "jpg",
-            "jpeg",
-            "png",
-            "webp"
-        ]:
-
+        for extension in ["jpg", "jpeg", "png", "webp"]:
             archivo = carpeta / f"{nombre}.{extension}"
 
             if archivo.exists():
                 return archivo.name
+
+    return None
+
+
+def buscar_portada(carpeta):
+    for extension in ["jpg", "jpeg", "png", "webp"]:
+        archivo = carpeta / f"portada.{extension}"
+
+        if archivo.exists():
+            return archivo.name
 
     return None
 
@@ -73,13 +55,11 @@ def buscar_imagen(carpeta, numero):
 # =========================================================
 
 def leer_docx(ruta):
-
     documento = Document(ruta)
 
     elementos = []
 
     for parrafo in documento.paragraphs:
-
         texto = parrafo.text.strip()
 
         if texto:
@@ -112,7 +92,6 @@ CAMPOS = [
 
 
 def extraer_metadatos(elementos):
-
     metadatos = {}
     resto = []
 
@@ -135,24 +114,17 @@ def extraer_metadatos(elementos):
                     metadatos[campo.lower()] = valor
 
                     encontrado = True
-
                     break
 
         if not encontrado:
-
             leyendo_metadata = False
-
             resto.append(texto)
 
     return metadatos, resto
 
 
 def obtener(metadatos, campo, defecto=""):
-
-    return metadatos.get(
-        campo.lower(),
-        defecto
-    )
+    return metadatos.get(campo.lower(), defecto)
 
 
 # =========================================================
@@ -160,20 +132,6 @@ def obtener(metadatos, campo, defecto=""):
 # =========================================================
 
 def extraer_numero_caad(valor):
-
-    """
-    Permite escribir en el Word:
-
-    CAAD: 72
-
-    o:
-
-    CAAD: Esta reseña apareció en el CAAD número 72
-
-    y devuelve solamente:
-
-    72
-    """
 
     if not valor:
         return ""
@@ -187,10 +145,7 @@ def extraer_numero_caad(valor):
     if coincidencia:
         return coincidencia.group(1)
 
-    coincidencia = re.search(
-        r"\b(\d+)\b",
-        valor
-    )
+    coincidencia = re.search(r"\b(\d+)\b", valor)
 
     if coincidencia:
         return coincidencia.group(1)
@@ -218,7 +173,7 @@ ENCABEZADOS = {
 
 
 # =========================================================
-# CONTENIDO DE LA RESEÑA
+# CONTENIDO
 # =========================================================
 
 def crear_contenido(carpeta, elementos):
@@ -227,16 +182,11 @@ def crear_contenido(carpeta, elementos):
 
     for texto in elementos:
 
-        # -------------------------------------------------
         # IMAGEN
-        # -------------------------------------------------
 
         if texto.upper().startswith("[IMAGEN:"):
 
-            numero = re.search(
-                r"\d+",
-                texto
-            )
+            numero = re.search(r"\d+", texto)
 
             if numero:
 
@@ -251,7 +201,7 @@ def crear_contenido(carpeta, elementos):
                         f"""
                         <figure class="review-image">
                             <img
-                                src="{imagen}"
+                                src="{escapar(imagen)}"
                                 alt=""
                                 loading="lazy"
                             >
@@ -261,56 +211,27 @@ def crear_contenido(carpeta, elementos):
 
             continue
 
-        # -------------------------------------------------
         # ENCABEZADO
-        # -------------------------------------------------
 
         if texto.strip().lower() in ENCABEZADOS:
 
             bloques.append(
                 f"""
-                <h2>
-                    {escapar(texto)}
-                </h2>
+                <h2>{escapar(texto)}</h2>
                 """
             )
 
             continue
 
-        # -------------------------------------------------
         # PÁRRAFO
-        # -------------------------------------------------
 
         bloques.append(
             f"""
-            <p>
-                {escapar(texto)}
-            </p>
+            <p>{escapar(texto)}</p>
             """
         )
 
     return "\n".join(bloques)
-
-
-# =========================================================
-# PORTADA
-# =========================================================
-
-def buscar_portada(carpeta):
-
-    for extension in [
-        "jpg",
-        "jpeg",
-        "png",
-        "webp"
-    ]:
-
-        posible = carpeta / f"portada.{extension}"
-
-        if posible.exists():
-            return posible.name
-
-    return None
 
 
 # =========================================================
@@ -328,77 +249,25 @@ def crear_pagina(nombre_carpeta):
 
     elementos = leer_docx(docx)
 
-    metadatos, contenido = extraer_metadatos(
-        elementos
-    )
+    metadatos, contenido = extraer_metadatos(elementos)
 
-    # -----------------------------------------------------
-    # DATOS
-    # -----------------------------------------------------
+    titulo = obtener(metadatos, "título", nombre_carpeta)
+    año = obtener(metadatos, "año")
+    tematica = obtener(metadatos, "temática")
+    autor = obtener(metadatos, "autor")
+    editor = obtener(metadatos, "editor")
+    plataforma = obtener(metadatos, "plataforma")
+    genero = obtener(metadatos, "género")
+    lanzamiento = obtener(metadatos, "lanzamiento")
+    textos = obtener(metadatos, "textos")
 
-    titulo = obtener(
-        metadatos,
-        "título",
-        nombre_carpeta
-    )
-
-    año = obtener(
-        metadatos,
-        "año"
-    )
-
-    tematica = obtener(
-        metadatos,
-        "temática"
-    )
-
-    autor = obtener(
-        metadatos,
-        "autor"
-    )
-
-    editor = obtener(
-        metadatos,
-        "editor"
-    )
-
-    plataforma = obtener(
-        metadatos,
-        "plataforma"
-    )
-
-    genero = obtener(
-        metadatos,
-        "género"
-    )
-
-    lanzamiento = obtener(
-        metadatos,
-        "lanzamiento"
-    )
-
-    textos = obtener(
-        metadatos,
-        "textos"
-    )
-
-    web_juego = obtener(
-        metadatos,
-        "web del juego"
-    )
+    web_juego = obtener(metadatos, "web del juego")
 
     if not web_juego:
-
-        web_juego = obtener(
-            metadatos,
-            "web"
-        )
+        web_juego = obtener(metadatos, "web")
 
     caad = extraer_numero_caad(
-        obtener(
-            metadatos,
-            "caad"
-        )
+        obtener(metadatos, "caad")
     )
 
     enlace_caad = obtener(
@@ -412,38 +281,13 @@ def crear_pagina(nombre_carpeta):
     )
 
     if not valoracion:
-
         valoracion = obtener(
             metadatos,
             "puntuación"
         )
 
     # -----------------------------------------------------
-    # PORTADA
-    # -----------------------------------------------------
-
-    portada = buscar_portada(
-        carpeta
-    )
-
-    portada_html = ""
-
-    if portada:
-
-        portada_html = f"""
-        <figure class="review-cover-wrap">
-
-            <img
-                class="review-cover"
-                src="{portada}"
-                alt="Portada de {escapar(titulo)}"
-            >
-
-        </figure>
-        """
-
-    # -----------------------------------------------------
-    # CAAD
+    # PUBLICACIÓN CAAD
     # -----------------------------------------------------
 
     publicacion_html = ""
@@ -454,9 +298,7 @@ def crear_pagina(nombre_carpeta):
 
             publicacion_html = f"""
             <div class="review-publication">
-
                 Publicada originalmente en
-
                 <a
                     href="{escapar(enlace_caad)}"
                     target="_blank"
@@ -464,7 +306,6 @@ def crear_pagina(nombre_carpeta):
                 >
                     CAAD nº {escapar(caad)}
                 </a>
-
             </div>
             """
 
@@ -472,15 +313,32 @@ def crear_pagina(nombre_carpeta):
 
             publicacion_html = f"""
             <div class="review-publication">
-
-                Publicada originalmente en
-                CAAD nº {escapar(caad)}
-
+                Publicada originalmente en CAAD nº {escapar(caad)}
             </div>
             """
 
     # -----------------------------------------------------
-    # FICHA TÉCNICA
+    # PORTADA
+    # -----------------------------------------------------
+
+    portada = buscar_portada(carpeta)
+
+    portada_html = ""
+
+    if portada:
+
+        portada_html = f"""
+        <div class="review-cover-wrap">
+            <img
+                class="review-cover"
+                src="{escapar(portada)}"
+                alt="Portada de {escapar(titulo)}"
+            >
+        </div>
+        """
+
+    # -----------------------------------------------------
+    # FICHA
     # -----------------------------------------------------
 
     datos = [
@@ -503,7 +361,6 @@ def crear_pagina(nombre_carpeta):
             filas.append(
                 f"""
                 <div class="review-data-row">
-
                     <span class="review-data-label">
                         {escapar(nombre)}
                     </span>
@@ -511,7 +368,6 @@ def crear_pagina(nombre_carpeta):
                     <span class="review-data-value">
                         {escapar(valor)}
                     </span>
-
                 </div>
                 """
             )
@@ -524,9 +380,7 @@ def crear_pagina(nombre_carpeta):
         <div class="review-metadata">
 
             <div class="review-data-grid">
-
                 {"".join(filas)}
-
             </div>
 
         </div>
@@ -542,15 +396,8 @@ def crear_pagina(nombre_carpeta):
 
         valoracion_html = f"""
         <div class="review-rating">
-
-            <span>
-                Valoración
-            </span>
-
-            <strong>
-                {escapar(valoracion)}
-            </strong>
-
+            <span>Valoración</span>
+            <strong>{escapar(valoracion)}</strong>
         </div>
         """
 
@@ -587,7 +434,7 @@ def crear_pagina(nombre_carpeta):
     )
 
     # -----------------------------------------------------
-    # PÁGINA
+    # HTML FINAL
     # -----------------------------------------------------
 
     pagina = f"""<!DOCTYPE html>
@@ -602,9 +449,7 @@ def crear_pagina(nombre_carpeta):
         content="width=device-width, initial-scale=1.0"
     >
 
-    <title>
-        {escapar(titulo)} | Invasión Pixelada
-    </title>
+    <title>{escapar(titulo)} | Invasión Pixelada</title>
 
     <link
         rel="stylesheet"
@@ -629,29 +474,16 @@ def crear_pagina(nombre_carpeta):
                 alt="Invasión Pixelada"
             >
 
-            <span>
-                Invasión Pixelada
-            </span>
+            <span>Invasión Pixelada</span>
 
         </a>
 
         <nav class="main-nav">
 
-            <a href="../../index.html#inicio">
-                Inicio
-            </a>
-
-            <a href="../../index.html#videos">
-                Vídeos
-            </a>
-
-            <a href="../../index.html#resenas">
-                Reseñas
-            </a>
-
-            <a href="../../index.html#tienda">
-                Tienda
-            </a>
+            <a href="../../index.html#inicio">Inicio</a>
+            <a href="../../index.html#videos">Vídeos</a>
+            <a href="../../index.html#resenas">Reseñas</a>
+            <a href="../../index.html#tienda">Tienda</a>
 
         </nav>
 
@@ -664,7 +496,7 @@ def crear_pagina(nombre_carpeta):
 
     <article class="review">
 
-        <div class="review-header">
+        <header class="review-header">
 
             <p class="section-label">
                 RESEÑA
@@ -676,7 +508,7 @@ def crear_pagina(nombre_carpeta):
 
             {publicacion_html}
 
-        </div>
+        </header>
 
         {portada_html}
 
@@ -699,9 +531,7 @@ def crear_pagina(nombre_carpeta):
 
 <footer class="site-footer">
 
-    <p>
-        © 2026 Invasión Pixelada
-    </p>
+    <p>© 2026 Invasión Pixelada</p>
 
     <p>
         Aventuras gráficas · Narrativa · Videojuegos
@@ -725,7 +555,7 @@ def crear_pagina(nombre_carpeta):
 
 
 # =========================================================
-# TARJETA DE LA PÁGINA PRINCIPAL
+# TARJETA DE RESEÑA
 # =========================================================
 
 def crear_tarjeta(nombre_carpeta):
@@ -739,9 +569,7 @@ def crear_tarjeta(nombre_carpeta):
 
     elementos = leer_docx(docx)
 
-    metadatos, contenido = extraer_metadatos(
-        elementos
-    )
+    metadatos, contenido = extraer_metadatos(elementos)
 
     titulo = obtener(
         metadatos,
@@ -754,21 +582,7 @@ def crear_tarjeta(nombre_carpeta):
         "género"
     )
 
-    valoracion = obtener(
-        metadatos,
-        "valoración"
-    )
-
-    if not valoracion:
-
-        valoracion = obtener(
-            metadatos,
-            "puntuación"
-        )
-
-    portada = buscar_portada(
-        carpeta
-    )
+    portada = buscar_portada(carpeta)
 
     descripcion = ""
 
@@ -777,11 +591,10 @@ def crear_tarjeta(nombre_carpeta):
         if texto.upper().startswith("[IMAGEN:"):
             continue
 
-        if texto.lower() in ENCABEZADOS:
+        if texto.strip().lower() in ENCABEZADOS:
             continue
 
         descripcion = texto
-
         break
 
     if len(descripcion) > 220:
@@ -798,7 +611,7 @@ def crear_tarjeta(nombre_carpeta):
 
         portada_html = f"""
         <img
-            src="reseñas/{nombre_carpeta}/{portada}"
+            src="reseñas/{escapar(nombre_carpeta)}/{escapar(portada)}"
             alt="Portada de {escapar(titulo)}"
             loading="lazy"
         >
@@ -814,26 +627,14 @@ def crear_tarjeta(nombre_carpeta):
         </p>
         """
 
-    valoracion_html = ""
-
-    if valoracion:
-
-        valoracion_html = f"""
-        <p class="review-card-rating">
-            {escapar(valoracion)}
-        </p>
-        """
-
     return f"""
     <article class="review-card">
 
         <a
-            href="reseñas/{nombre_carpeta}/"
+            href="reseñas/{escapar(nombre_carpeta)}/"
             class="review-card-image"
         >
-
             {portada_html}
-
         </a>
 
         <div class="review-card-content">
@@ -848,10 +649,8 @@ def crear_tarjeta(nombre_carpeta):
                 {escapar(descripcion)}
             </p>
 
-            {valoracion_html}
-
             <a
-                href="reseñas/{nombre_carpeta}/"
+                href="reseñas/{escapar(nombre_carpeta)}/"
                 class="review-card-link"
             >
                 LEER RESEÑA
@@ -864,16 +663,34 @@ def crear_tarjeta(nombre_carpeta):
 
 
 # =========================================================
-# ACTUALIZAR INDEX PRINCIPAL
+# TARJETA VACÍA
 # =========================================================
 
-MARCADOR_INICIO = (
-    "<!-- RESEÑAS AUTOMÁTICAS: INICIO -->"
-)
+def crear_tarjeta_vacia():
 
-MARCADOR_FIN = (
-    "<!-- RESEÑAS AUTOMÁTICAS: FIN -->"
-)
+    return """
+    <article class="review-card review-card-placeholder">
+
+        <div class="review-card-placeholder-inner">
+
+            <span>PRÓXIMAMENTE</span>
+
+            <h3>
+                Nueva reseña
+            </h3>
+
+        </div>
+
+    </article>
+    """
+
+
+# =========================================================
+# ACTUALIZAR INDEX
+# =========================================================
+
+MARCADOR_INICIO = "<!-- RESEÑAS AUTOMÁTICAS: INICIO -->"
+MARCADOR_FIN = "<!-- RESEÑAS AUTOMÁTICAS: FIN -->"
 
 
 def actualizar_index():
@@ -887,13 +704,27 @@ def actualizar_index():
 
     tarjetas = []
 
-    for carpeta in sorted(
-        ROOT.iterdir(),
-        reverse=True
-    ):
+    carpetas = []
+
+    for carpeta in ROOT.iterdir():
 
         if not carpeta.is_dir():
             continue
+
+        if buscar_docx(carpeta):
+            carpetas.append(carpeta)
+
+    # Las carpetas se ordenan por fecha de modificación.
+    # La más reciente aparece primero.
+    carpetas.sort(
+        key=lambda carpeta: buscar_docx(carpeta).stat().st_mtime,
+        reverse=True
+    )
+
+    # Solo las 3 más recientes aparecen en portada.
+    ultimas = carpetas[:3]
+
+    for carpeta in ultimas:
 
         tarjeta = crear_tarjeta(
             carpeta.name
@@ -902,34 +733,23 @@ def actualizar_index():
         if tarjeta:
             tarjetas.append(tarjeta)
 
-    if tarjetas:
+    # Rellenamos hasta tener exactamente 3 espacios.
+    while len(tarjetas) < 3:
+        tarjetas.append(
+            crear_tarjeta_vacia()
+        )
 
-        contenido = f"""
-        {MARCADOR_INICIO}
+    contenido = f"""
+{MARCADOR_INICIO}
 
-        <div class="reviews-grid">
+<div class="reviews-grid">
 
-            {"".join(tarjetas)}
+    {"".join(tarjetas)}
 
-        </div>
+</div>
 
-        {MARCADOR_FIN}
-        """
-
-    else:
-
-        contenido = f"""
-        {MARCADOR_INICIO}
-
-        <div class="reviews-empty">
-
-            Próximamente encontrarás aquí
-            nuestras reseñas.
-
-        </div>
-
-        {MARCADOR_FIN}
-        """
+{MARCADOR_FIN}
+"""
 
     patron = re.compile(
         re.escape(MARCADOR_INICIO)
@@ -963,8 +783,8 @@ def actualizar_index():
         else:
 
             print(
-                "No se ha encontrado la zona de "
-                "reseñas en index.html."
+                "No se ha encontrado la zona "
+                "de reseñas en index.html."
             )
 
             return
@@ -1001,8 +821,7 @@ def main():
             generadas += 1
 
             print(
-                f"Reseña generada: "
-                f"{carpeta.name}"
+                f"Reseña generada: {carpeta.name}"
             )
 
     actualizar_index()
