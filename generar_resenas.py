@@ -3,10 +3,24 @@ from docx import Document
 import html
 import re
 
+
 ROOT = Path("reseñas")
+INDEX = Path("index.html")
+
+
+# ---------------------------------------------------------
+# UTILIDADES
+# ---------------------------------------------------------
+
+def escapar(texto):
+    return html.escape(texto.strip())
 
 
 def buscar_docx(carpeta):
+    """
+    Busca cualquier archivo DOCX dentro de la carpeta.
+    No depende de que se llame exactamente reseña.docx.
+    """
     archivos = list(carpeta.glob("*.docx"))
 
     if not archivos:
@@ -15,112 +29,416 @@ def buscar_docx(carpeta):
     return archivos[0]
 
 
+def buscar_imagen(carpeta, numero):
+    """
+    Busca una imagen asociada a un marcador como:
+    [IMAGEN: 1]
+    [IMAGEN: 01]
+
+    Acepta jpg, jpeg, png y webp.
+    """
+
+    numero = str(numero).strip()
+
+    numeros = [numero]
+
+    try:
+        entero = int(numero)
+
+        if str(entero) not in numeros:
+            numeros.append(str(entero))
+
+        numeros.append(f"{entero:02d}")
+
+    except ValueError:
+        pass
+
+    extensiones = ["jpg", "jpeg", "png", "webp"]
+
+    for n in numeros:
+        for extension in extensiones:
+            posible = carpeta / f"{n}.{extension}"
+
+            if posible.exists():
+                return posible.name
+
+    return None
+
+
+# ---------------------------------------------------------
+# LECTURA DEL WORD
+# ---------------------------------------------------------
+
 def leer_docx(ruta):
     documento = Document(ruta)
+
     elementos = []
 
     for parrafo in documento.paragraphs:
         texto = parrafo.text.strip()
 
-        if not texto:
-            continue
-
-        elementos.append(texto)
+        if texto:
+            elementos.append(texto)
 
     return elementos
 
 
-def escapar(texto):
-    return html.escape(texto)
+# ---------------------------------------------------------
+# METADATOS
+# ---------------------------------------------------------
+
+CAMPOS = [
+    "Título",
+    "Año",
+    "Temática",
+    "Autor",
+    "Editor",
+    "Plataforma",
+    "Género",
+    "Lanzamiento",
+    "Textos",
+    "Web del juego",
+    "Web",
+    "CAAD",
+    "Enlace CAAD",
+    "Valoración",
+    "Puntuación",
+]
 
 
-def crear_pagina(nombre_carpeta, contenido):
+def extraer_metadatos(elementos):
+    metadatos = {}
+    resto = []
+
+    leyendo_metadata = True
+
+    for texto in elementos:
+
+        encontrado = False
+
+        if leyendo_metadata:
+
+            for campo in CAMPOS:
+
+                prefijo = campo + ":"
+
+                if texto.lower().startswith(prefijo.lower()):
+
+                    valor = texto[len(prefijo):].strip()
+
+                    metadatos[campo.lower()] = valor
+
+                    encontrado = True
+                    break
+
+        if not encontrado:
+            leyendo_metadata = False
+            resto.append(texto)
+
+    return metadatos, resto
+
+
+def obtener(metadatos, campo, defecto=""):
+    return metadatos.get(campo.lower(), defecto)
+
+
+# ---------------------------------------------------------
+# CONTENIDO DE LA RESEÑA
+# ---------------------------------------------------------
+
+ENCABEZADOS = {
+    "ambientación",
+    "gráficos",
+    "jugabilidad",
+    "dificultad",
+    "guion",
+    "guión",
+    "sonido",
+    "impacto emocional",
+    "duración",
+    "finales",
+    "conclusiones",
+}
+
+
+def crear_contenido(carpeta, elementos):
+    bloques = []
+
+    for texto in elementos:
+
+        # ---------------------------------------------
+        # MARCADOR DE IMAGEN
+        # ---------------------------------------------
+
+        if texto.upper().startswith("[IMAGEN:"):
+
+            numero = re.search(r"\d+", texto)
+
+            if numero:
+
+                imagen = buscar_imagen(
+                    carpeta,
+                    numero.group()
+                )
+
+                if imagen:
+
+                    bloques.append(
+                        f"""
+                        <figure class="review-image">
+                            <img src="{imagen}" alt="" loading="lazy">
+                        </figure>
+                        """
+                    )
+
+            continue
+
+        # ---------------------------------------------
+        # ENCABEZADOS
+        # ---------------------------------------------
+
+        if texto.strip().lower() in ENCABEZADOS:
+
+            bloques.append(
+                f"<h2>{escapar(texto)}</h2>"
+            )
+
+            continue
+
+        # ---------------------------------------------
+        # TEXTO NORMAL
+        # ---------------------------------------------
+
+        bloques.append(
+            f"<p>{escapar(texto)}</p>"
+        )
+
+    return "\n".join(bloques)
+
+
+# ---------------------------------------------------------
+# PÁGINA INDIVIDUAL
+# ---------------------------------------------------------
+
+def crear_pagina(nombre_carpeta):
+
     carpeta = ROOT / nombre_carpeta
 
     docx = buscar_docx(carpeta)
 
     if not docx:
-        return
-
-    portada = carpeta / "portada.jpg"
+        return False
 
     elementos = leer_docx(docx)
 
-    titulo = nombre_carpeta
+    metadatos, contenido = extraer_metadatos(elementos)
 
-    if elementos:
-        titulo = elementos[0]
+    titulo = obtener(
+        metadatos,
+        "título",
+        nombre_carpeta
+    )
 
-    bloques = []
+    año = obtener(metadatos, "año")
+    tematica = obtener(metadatos, "temática")
+    autor = obtener(metadatos, "autor")
+    editor = obtener(metadatos, "editor")
+    plataforma = obtener(metadatos, "plataforma")
+    genero = obtener(metadatos, "género")
+    lanzamiento = obtener(metadatos, "lanzamiento")
+    textos = obtener(metadatos, "textos")
 
-    for texto in elementos[1:]:
+    web_juego = obtener(metadatos, "web del juego")
 
-        if texto.startswith("[IMAGEN:"):
-            numero = re.search(r"\d+", texto)
+    if not web_juego:
+        web_juego = obtener(metadatos, "web")
 
-            if numero:
-                n = numero.group()
+    caad = obtener(metadatos, "caad")
+    enlace_caad = obtener(metadatos, "enlace caad")
 
-                imagen = None
+    valoracion = obtener(metadatos, "valoración")
 
-                for extension in ["jpg", "jpeg", "png", "webp"]:
-                    posible = carpeta / f"{n}.{extension}"
+    if not valoracion:
+        valoracion = obtener(metadatos, "puntuación")
 
-                    if posible.exists():
-                        imagen = posible.name
-                        break
-
-                if imagen:
-                    bloques.append(
-                        f'<img class="review-image" src="{imagen}" alt="">'
-                    )
-
-            continue
-
-        if texto in [
-            "Ambientación",
-            "Gráficos",
-            "Jugabilidad",
-            "Dificultad",
-            "Guion",
-            "Sonido",
-            "Impacto emocional",
-            "Duración",
-            "Finales",
-            "Conclusiones",
-        ]:
-            bloques.append(
-                f"<h2>{escapar(texto)}</h2>"
-            )
-
-        else:
-            bloques.append(
-                f"<p>{escapar(texto)}</p>"
-            )
+    # ---------------------------------------------
+    # PORTADA
+    # ---------------------------------------------
 
     portada_html = ""
 
-    if portada.exists():
+    portada = None
+
+    for extension in ["jpg", "jpeg", "png", "webp"]:
+
+        posible = carpeta / f"portada.{extension}"
+
+        if posible.exists():
+            portada = posible.name
+            break
+
+    if portada:
+
         portada_html = f"""
         <img
             class="review-cover"
-            src="{portada.name}"
+            src="{portada}"
             alt="Portada de {escapar(titulo)}"
         >
         """
 
-    contenido_html = "\n".join(bloques)
+    # ---------------------------------------------
+    # INFORMACIÓN DEL CAAD
+    # ---------------------------------------------
+
+    publicacion_html = ""
+
+    if caad:
+
+        if enlace_caad:
+
+            publicacion_html = f"""
+            <div class="review-publication">
+                Publicada originalmente en
+                <a
+                    href="{escapar(enlace_caad)}"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                >
+                    CAAD nº {escapar(caad)}
+                </a>
+            </div>
+            """
+
+        else:
+
+            publicacion_html = f"""
+            <div class="review-publication">
+                Publicada originalmente en CAAD nº {escapar(caad)}
+            </div>
+            """
+
+    # ---------------------------------------------
+    # TABLA DE DATOS
+    # ---------------------------------------------
+
+    datos = [
+        ("Año", año),
+        ("Temática", tematica),
+        ("Autor", autor),
+        ("Editor", editor),
+        ("Plataforma", plataforma),
+        ("Género", genero),
+        ("Lanzamiento", lanzamiento),
+        ("Textos", textos),
+    ]
+
+    filas = []
+
+    for nombre, valor in datos:
+
+        if valor:
+
+            filas.append(
+                f"""
+                <tr>
+                    <th>{escapar(nombre)}</th>
+                    <td>{escapar(valor)}</td>
+                </tr>
+                """
+            )
+
+    metadata_html = ""
+
+    if filas:
+
+        metadata_html = f"""
+        <div class="review-metadata">
+
+            <table>
+
+                <tbody>
+
+                    {"".join(filas)}
+
+                </tbody>
+
+            </table>
+
+        </div>
+        """
+
+    # ---------------------------------------------
+    # VALORACIÓN OPCIONAL
+    # ---------------------------------------------
+
+    valoracion_html = ""
+
+    if valoracion:
+
+        valoracion_html = f"""
+        <div class="review-rating">
+            <span>Valoración</span>
+            <strong>{escapar(valoracion)}</strong>
+        </div>
+        """
+
+    # ---------------------------------------------
+    # WEB DEL JUEGO
+    # ---------------------------------------------
+
+    web_html = ""
+
+    if web_juego:
+
+        web_html = f"""
+        <p class="review-game-link">
+
+            <a
+                href="{escapar(web_juego)}"
+                target="_blank"
+                rel="noopener noreferrer"
+            >
+                Visitar la web del juego
+            </a>
+
+        </p>
+        """
+
+    # ---------------------------------------------
+    # CONTENIDO
+    # ---------------------------------------------
+
+    contenido_html = crear_contenido(
+        carpeta,
+        contenido
+    )
+
+    # ---------------------------------------------
+    # PÁGINA COMPLETA
+    # ---------------------------------------------
 
     pagina = f"""<!DOCTYPE html>
 <html lang="es">
 
 <head>
+
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>{escapar(titulo)} | Invasión Pixelada</title>
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
-    <link rel="stylesheet" href="../../style.css">
+    <title>
+        {escapar(titulo)} | Invasión Pixelada
+    </title>
+
+    <link
+        rel="stylesheet"
+        href="../../style.css"
+    >
+
 </head>
 
 <body>
@@ -129,7 +447,10 @@ def crear_pagina(nombre_carpeta, contenido):
 
     <div class="header-content">
 
-        <a href="../../index.html" class="logo">
+        <a
+            href="../../index.html"
+            class="logo"
+        >
 
             <img
                 src="../../imagenes/nuevo_logo_invasion_pixelada.png"
@@ -142,10 +463,21 @@ def crear_pagina(nombre_carpeta, contenido):
 
         <nav class="main-nav">
 
-            <a href="../../index.html#inicio">Inicio</a>
-            <a href="../../index.html#videos">Vídeos</a>
-            <a href="../../index.html#resenas">Reseñas</a>
-            <a href="../../index.html#tienda">Tienda</a>
+            <a href="../../index.html#inicio">
+                Inicio
+            </a>
+
+            <a href="../../index.html#videos">
+                Vídeos
+            </a>
+
+            <a href="../../index.html#resenas">
+                Reseñas
+            </a>
+
+            <a href="../../index.html#tienda">
+                Tienda
+            </a>
 
         </nav>
 
@@ -158,15 +490,23 @@ def crear_pagina(nombre_carpeta, contenido):
 
     <article class="review">
 
-        <p class="section-label">RESEÑA</p>
+        <p class="section-label">
+            RESEÑA
+        </p>
 
-        <h1>{escapar(titulo)}</h1>
+        <h1>
+            {escapar(titulo)}
+        </h1>
 
-        <div class="review-publication">
-            Publicada originalmente en el CAAD
-        </div>
+        {publicacion_html}
 
         {portada_html}
+
+        {metadata_html}
+
+        {valoracion_html}
+
+        {web_html}
 
         <div class="review-content">
 
@@ -181,7 +521,9 @@ def crear_pagina(nombre_carpeta, contenido):
 
 <footer class="site-footer">
 
-    <p>© 2026 Invasión Pixelada</p>
+    <p>
+        © 2026 Invasión Pixelada
+    </p>
 
     <p>
         Aventuras gráficas · Narrativa · Videojuegos
@@ -194,25 +536,307 @@ def crear_pagina(nombre_carpeta, contenido):
 </html>
 """
 
-    (carpeta / "index.html").write_text(
+    archivo_salida = carpeta / "index.html"
+
+    archivo_salida.write_text(
         pagina,
         encoding="utf-8"
     )
 
+    return True
+
+
+# ---------------------------------------------------------
+# TARJETA PARA LA PÁGINA PRINCIPAL
+# ---------------------------------------------------------
+
+def crear_tarjeta(nombre_carpeta):
+
+    carpeta = ROOT / nombre_carpeta
+
+    docx = buscar_docx(carpeta)
+
+    if not docx:
+        return ""
+
+    elementos = leer_docx(docx)
+
+    metadatos, contenido = extraer_metadatos(elementos)
+
+    titulo = obtener(
+        metadatos,
+        "título",
+        nombre_carpeta
+    )
+
+    genero = obtener(
+        metadatos,
+        "género"
+    )
+
+    valoracion = obtener(
+        metadatos,
+        "valoración"
+    )
+
+    if not valoracion:
+        valoracion = obtener(
+            metadatos,
+            "puntuación"
+        )
+
+    # Buscar portada
+
+    portada = ""
+
+    for extension in ["jpg", "jpeg", "png", "webp"]:
+
+        posible = carpeta / f"portada.{extension}"
+
+        if posible.exists():
+
+            portada = posible.name
+            break
+
+    # Buscar un texto introductorio.
+    # Tomamos el primer párrafo que no sea encabezado.
+
+    descripcion = ""
+
+    for texto in contenido:
+
+        if texto.upper().startswith("[IMAGEN:"):
+            continue
+
+        if texto.lower() in ENCABEZADOS:
+            continue
+
+        descripcion = texto
+        break
+
+    if len(descripcion) > 220:
+
+        descripcion = (
+            descripcion[:217].rsplit(" ", 1)[0]
+            + "..."
+        )
+
+    portada_html = ""
+
+    if portada:
+
+        portada_html = f"""
+        <img
+            src="reseñas/{nombre_carpeta}/{portada}"
+            alt="Portada de {escapar(titulo)}"
+            loading="lazy"
+        >
+        """
+
+    genero_html = ""
+
+    if genero:
+
+        genero_html = f"""
+        <p class="review-card-genre">
+            {escapar(genero)}
+        </p>
+        """
+
+    valoracion_html = ""
+
+    if valoracion:
+
+        valoracion_html = f"""
+        <p class="review-card-rating">
+            {escapar(valoracion)}
+        </p>
+        """
+
+    return f"""
+    <article class="review-card">
+
+        <a
+            href="reseñas/{nombre_carpeta}/"
+            class="review-card-image"
+        >
+
+            {portada_html}
+
+        </a>
+
+        <div class="review-card-content">
+
+            {genero_html}
+
+            <h3>
+                {escapar(titulo)}
+            </h3>
+
+            <p>
+                {escapar(descripcion)}
+            </p>
+
+            {valoracion_html}
+
+            <a
+                href="reseñas/{nombre_carpeta}/"
+                class="review-card-link"
+            >
+                LEER RESEÑA
+            </a>
+
+        </div>
+
+    </article>
+    """
+
+
+# ---------------------------------------------------------
+# ACTUALIZAR LA SECCIÓN RESEÑAS DE INDEX.HTML
+# ---------------------------------------------------------
+
+MARCADOR_INICIO = "<!-- RESEÑAS AUTOMÁTICAS: INICIO -->"
+MARCADOR_FIN = "<!-- RESEÑAS AUTOMÁTICAS: FIN -->"
+
+
+def actualizar_index():
+
+    if not INDEX.exists():
+        return
+
+    html_index = INDEX.read_text(
+        encoding="utf-8"
+    )
+
+    tarjetas = []
+
+    for carpeta in sorted(ROOT.iterdir()):
+
+        if not carpeta.is_dir():
+            continue
+
+        if crear_tarjeta(carpeta.name):
+            tarjeta = crear_tarjeta(carpeta.name)
+
+            if tarjeta:
+                tarjetas.append(tarjeta)
+
+    if tarjetas:
+
+        contenido = f"""
+        {MARCADOR_INICIO}
+
+        <div class="reviews-grid">
+
+            {"".join(tarjetas)}
+
+        </div>
+
+        {MARCADOR_FIN}
+        """
+
+    else:
+
+        contenido = f"""
+        {MARCADOR_INICIO}
+
+        <div class="reviews-empty">
+            Próximamente encontrarás aquí nuestras reseñas.
+        </div>
+
+        {MARCADOR_FIN}
+        """
+
+    # -----------------------------------------------------
+    # SI YA EXISTEN LOS MARCADORES, LOS REEMPLAZAMOS
+    # -----------------------------------------------------
+
+    patron = re.compile(
+        re.escape(MARCADOR_INICIO)
+        + r".*?"
+        + re.escape(MARCADOR_FIN),
+        re.DOTALL
+    )
+
+    if patron.search(html_index):
+
+        html_index = patron.sub(
+            contenido.strip(),
+            html_index,
+            count=1
+        )
+
+    else:
+
+        # -------------------------------------------------
+        # PRIMERA VEZ:
+        # BUSCAMOS EL TEXTO DE "PRÓXIMAMENTE"
+        # -------------------------------------------------
+
+        texto_vacio = (
+            "Próximamente encontrarás aquí nuestras reseñas."
+        )
+
+        if texto_vacio in html_index:
+
+            reemplazo = contenido.strip()
+
+            html_index = html_index.replace(
+                texto_vacio,
+                reemplazo,
+                1
+            )
+
+        else:
+
+            # Si no encuentra el texto anterior,
+            # no modifica el index para evitar romperlo.
+
+            print(
+                "No se ha encontrado la zona de Reseñas "
+                "en index.html."
+            )
+
+            return
+
+    INDEX.write_text(
+        html_index,
+        encoding="utf-8"
+    )
+
+
+# ---------------------------------------------------------
+# PROGRAMA PRINCIPAL
+# ---------------------------------------------------------
 
 def main():
 
     if not ROOT.exists():
+        print("No existe la carpeta reseñas.")
         return
+
+    generadas = 0
 
     for carpeta in ROOT.iterdir():
 
-        if carpeta.is_dir():
+        if not carpeta.is_dir():
+            continue
 
-            crear_pagina(
-                carpeta.name,
-                None
+        if crear_pagina(carpeta.name):
+
+            generadas += 1
+
+            print(
+                f"Reseña generada: {carpeta.name}"
             )
+
+    actualizar_index()
+
+    print(
+        f"Proceso terminado. "
+        f"Reseñas generadas: {generadas}"
+    )
 
 
 if __name__ == "__main__":
