@@ -578,3 +578,20 @@ a {
         grid-template-columns: 1fr;
     }
 }
+
+.logo {
+    display: flex !important;
+    align-items: center !important;
+    flex-direction: row !important;
+}
+
+.logo img {
+    width: 64px !important;
+    height: 64px !important;
+    max-width: 64px !important;
+    max-height: 64px !important;
+    min-width: 64px !important;
+    min-height: 64px !important;
+    object-fit: contain !important;
+    display: block !important;
+}
