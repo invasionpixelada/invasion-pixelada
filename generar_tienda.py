@@ -1,6 +1,6 @@
 # =========================================================
 # INVASIÓN PIXELADA — GENERADOR DE TIENDA
-# VERSIÓN INTERNA: IP-STOREGEN-007
+# VERSIÓN INTERNA: IP-STOREGEN-008
 # =========================================================
 
 from pathlib import Path
@@ -171,9 +171,18 @@ def buscar_portada(titulo):
 
                 idiomas = libro.get("language", [])
 
+                if not isinstance(idiomas, list):
+                    idiomas = []
+
+                # -----------------------------------------
+                # PUNTUACIÓN
+                #
+                # El español se PRIORIZA cuando Open
+                # Library lo indica, pero nunca se exige.
+                # -----------------------------------------
+
                 puntuacion = 100
 
-                # Preferencia por español
                 if "spa" in idiomas:
                     puntuacion += 50
 
@@ -185,6 +194,7 @@ def buscar_portada(titulo):
                 })
 
             if not candidatos:
+
                 print(
                     "  - No existe una coincidencia "
                     "exacta con portada"
@@ -193,7 +203,11 @@ def buscar_portada(titulo):
                 return None
 
             # -----------------------------------------
-            # ORDENAR: ESPAÑOL PRIMERO
+            # ORDENAR
+            #
+            # Primero las ediciones marcadas como español.
+            # Si Open Library no informa del idioma,
+            # siguen siendo candidatas válidas.
             # -----------------------------------------
 
             candidatos.sort(
@@ -214,17 +228,26 @@ def buscar_portada(titulo):
                     "  ✓ Edición en español priorizada"
                 )
 
+            elif mejor["idiomas"]:
+
+                print(
+                    "  - Idioma disponible, "
+                    "sin español entre los datos"
+                )
+
             else:
 
                 print(
-                    "  - No hay edición española "
-                    "con portada disponible"
+                    "  - Open Library no indica "
+                    "el idioma de esta edición"
                 )
 
-            print(
-                f"  ✓ Idiomas: "
-                f"{', '.join(mejor['idiomas'])}"
-            )
+            if mejor["idiomas"]:
+
+                print(
+                    f"  ✓ Idiomas: "
+                    f"{', '.join(mejor['idiomas'])}"
+                )
 
             return (
                 "https://covers.openlibrary.org/"
@@ -450,7 +473,7 @@ def main():
     print("")
     print("==============================================")
     print(" INVASIÓN PIXELADA — GENERADOR DE TIENDA")
-    print(" VERSIÓN: IP-STOREGEN-007")
+    print(" VERSIÓN: IP-STOREGEN-008")
     print("==============================================")
     print("")
 
