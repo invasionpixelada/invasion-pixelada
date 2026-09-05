@@ -1,6 +1,6 @@
 # =========================================================
 # INVASIÓN PIXELADA — GENERADOR DE TIENDA
-# VERSIÓN INTERNA: IP-STOREGEN-004
+# VERSIÓN INTERNA: IP-STOREGEN-005
 # =========================================================
 
 from pathlib import Path
@@ -14,6 +14,7 @@ from docx import Document
 # ---------------------------------------------------------
 
 DOCUMENTO = Path("tienda/Libros.docx")
+TIENDA_HTML = Path("tienda.html")
 
 URL_BUSQUEDA = "https://openlibrary.org/search.json"
 
@@ -26,6 +27,9 @@ HEADERS = {
 
 MAX_INTENTOS = 3
 TIMEOUT = 15
+
+MARCADOR_INICIO = "<!-- LIBROS AUTOMÁTICOS: INICIO -->"
+MARCADOR_FIN = "<!-- LIBROS AUTOMÁTICOS: FIN -->"
 
 IMAGENES_LOCALES = {
     "Ocaso: Elige tu propia aventura": "imagenes/ocaso.jpg",
@@ -84,6 +88,7 @@ def buscar_portada(titulo):
     ultimo_error = None
 
     for intento in range(1, MAX_INTENTOS + 1):
+
         try:
             respuesta = requests.get(
                 URL_BUSQUEDA,
@@ -105,13 +110,14 @@ def buscar_portada(titulo):
 
                 if cover_id:
                     return (
-                        f"https://covers.openlibrary.org/"
+                        "https://covers.openlibrary.org/"
                         f"b/id/{cover_id}-L.jpg"
                     )
 
             return None
 
         except requests.exceptions.RequestException as error:
+
             ultimo_error = error
 
             print(
@@ -132,17 +138,155 @@ def buscar_portada(titulo):
 # ---------------------------------------------------------
 
 def buscar_imagen_local(titulo):
+
     ruta = IMAGENES_LOCALES.get(titulo)
 
     if not ruta:
         return None
 
-    archivo = Path(ruta)
-
-    if archivo.exists():
+    if Path(ruta).exists():
         return ruta
 
     return None
+
+
+# ---------------------------------------------------------
+# OBTENER IMAGEN DEL PRODUCTO
+# ---------------------------------------------------------
+
+def obtener_imagen(titulo):
+
+    portada = buscar_portada(titulo)
+
+    if portada:
+        print("  ✓ Portada encontrada automáticamente")
+        return portada
+
+    print("  - No encontrada automáticamente")
+
+    imagen_local = buscar_imagen_local(titulo)
+
+    if imagen_local:
+        print("  ✓ Imagen local encontrada")
+        return imagen_local
+
+    print("  ✗ No se ha encontrado ninguna imagen")
+
+    return None
+
+
+# ---------------------------------------------------------
+# GENERAR TARJETA HTML
+# ---------------------------------------------------------
+
+def generar_tarjeta(producto, imagen):
+
+    titulo = producto["titulo"]
+    enlace = producto["enlace"]
+
+    if imagen:
+        imagen_html = f"""
+                        <img
+                            src="{imagen}"
+                            alt="{titulo}"
+                            loading="lazy"
+                        >
+"""
+    else:
+        imagen_html = """
+                        <div class="store-card-placeholder-inner">
+                            <span>
+                                IMAGEN NO DISPONIBLE
+                            </span>
+                        </div>
+"""
+
+    return f"""
+                    <article class="store-card">
+
+                        <a
+                            href="{enlace}"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="store-card-image"
+                        >
+
+{imagen_html}
+
+                        </a>
+
+                        <div class="store-card-content">
+
+                            <p class="store-card-label">
+                                RECOMENDADO
+                            </p>
+
+                            <h3>
+                                {titulo}
+                            </h3>
+
+                            <a
+                                href="{enlace}"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                class="store-card-link"
+                            >
+                                VER EN AMAZON
+                            </a>
+
+                        </div>
+
+                    </article>
+"""
+
+
+# ---------------------------------------------------------
+# ACTUALIZAR TIENDA.HTML
+# ---------------------------------------------------------
+
+def actualizar_tienda(productos):
+
+    contenido = TIENDA_HTML.read_text(encoding="utf-8")
+
+    inicio = contenido.find(MARCADOR_INICIO)
+    fin = contenido.find(MARCADOR_FIN)
+
+    if inicio == -1 or fin == -1:
+        raise RuntimeError(
+            "No se han encontrado los marcadores "
+            "de libros automáticos en tienda.html"
+        )
+
+    tarjetas = []
+
+    for producto in productos:
+
+        print(f"Generando tarjeta: {producto['titulo']}")
+
+        imagen = obtener_imagen(producto["titulo"])
+
+        tarjetas.append(
+            generar_tarjeta(producto, imagen)
+        )
+
+    nuevo_bloque = (
+        MARCADOR_INICIO
+        + "\n"
+        + "\n".join(tarjetas)
+        + "\n                    "
+        + MARCADOR_FIN
+    )
+
+    contenido_nuevo = (
+        contenido[:inicio]
+        + nuevo_bloque
+        + contenido[fin + len(MARCADOR_FIN):]
+    )
+
+    TIENDA_HTML.write_text(
+        contenido_nuevo,
+        encoding="utf-8"
+    )
 
 
 # ---------------------------------------------------------
@@ -150,56 +294,38 @@ def buscar_imagen_local(titulo):
 # ---------------------------------------------------------
 
 def main():
+
     print("")
     print("==============================================")
-    print(" INVASIÓN PIXELADA — PRUEBA DE PORTADAS")
-    print(" VERSIÓN: IP-STOREGEN-004")
+    print(" INVASIÓN PIXELADA — GENERADOR DE TIENDA")
+    print(" VERSIÓN: IP-STOREGEN-005")
     print("==============================================")
     print("")
 
     if not DOCUMENTO.exists():
-        print(f"ERROR: No se encuentra {DOCUMENTO}")
-        return
+        raise FileNotFoundError(
+            f"No se encuentra {DOCUMENTO}"
+        )
+
+    if not TIENDA_HTML.exists():
+        raise FileNotFoundError(
+            f"No se encuentra {TIENDA_HTML}"
+        )
 
     productos = leer_productos()
 
-    print(f"Productos encontrados en el documento: {len(productos)}")
+    print(
+        f"Productos encontrados en el documento: "
+        f"{len(productos)}"
+    )
+
     print("")
 
-    encontrados = 0
+    actualizar_tienda(productos)
 
-    for producto in productos:
-        titulo = producto["titulo"]
-
-        print(f"Producto: {titulo}")
-
-        portada = buscar_portada(titulo)
-
-        if portada:
-            print("  ✓ Portada encontrada automáticamente")
-            print(f"  ✓ URL: {portada}")
-            encontrados += 1
-            print("")
-            continue
-
-        print("  - No encontrada automáticamente")
-
-        imagen_local = buscar_imagen_local(titulo)
-
-        if imagen_local:
-            print("  ✓ Imagen local encontrada")
-            print(f"  ✓ Archivo: {imagen_local}")
-            encontrados += 1
-        else:
-            print("  ✗ No se ha encontrado ninguna imagen")
-
-        print("")
-
+    print("")
     print("----------------------------------------------")
-    print(
-        f"Resultado: {encontrados}/{len(productos)} "
-        "productos con imagen"
-    )
+    print("✓ tienda.html actualizada correctamente")
     print("----------------------------------------------")
     print("")
 
