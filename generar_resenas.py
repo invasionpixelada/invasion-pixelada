@@ -1,6 +1,6 @@
 # =========================================================
 # INVASIÓN PIXELADA — GENERADOR DE RESEÑAS
-# VERSIÓN INTERNA: IP-GEN-005
+# VERSIÓN INTERNA: IP-GEN-006
 # =========================================================
 
 from pathlib import Path
@@ -11,6 +11,7 @@ import re
 
 ROOT = Path("reseñas")
 INDEX = Path("index.html")
+REVIEWS_PAGE = Path("resenas.html")
 
 
 # =========================================================
@@ -287,10 +288,6 @@ def crear_contenido(
         carpeta
     )
 
-    # -----------------------------------------------------
-    # Convertimos el documento en bloques
-    # -----------------------------------------------------
-
     bloques = []
 
     for texto in elementos:
@@ -313,10 +310,6 @@ def crear_contenido(
                 "tipo": "paragraph",
                 "texto": texto
             })
-
-    # -----------------------------------------------------
-    # Si no existen imágenes
-    # -----------------------------------------------------
 
     if not imagenes:
 
@@ -346,10 +339,6 @@ def crear_contenido(
 
         return "\n".join(resultado)
 
-    # -----------------------------------------------------
-    # Localizamos los encabezados
-    # -----------------------------------------------------
-
     posiciones = {}
 
     for indice, bloque in enumerate(bloques):
@@ -363,10 +352,6 @@ def crear_contenido(
             )
 
             posiciones[nombre] = indice
-
-    # -----------------------------------------------------
-    # POSICIONES DE LAS IMÁGENES
-    # -----------------------------------------------------
 
     objetivos = {}
 
@@ -443,10 +428,6 @@ def crear_contenido(
     # párrafo 1
     # párrafo 2
     # IMAGEN 4
-    #
-    # Aquí NO utilizamos una posición calculada.
-    # La posición se determina buscando directamente
-    # los dos primeros párrafos de la sección SONIDO.
     # -----------------------------------------------------
 
     if "sonido" in posiciones:
@@ -480,23 +461,18 @@ def crear_contenido(
 
         if len(parrafos_sonido) >= 2:
 
-            # Insertar justo después del segundo párrafo.
             objetivos[4] = (
                 parrafos_sonido[1] + 1
             )
 
         elif len(parrafos_sonido) == 1:
 
-            # Si solo existe un párrafo,
-            # se coloca después de ese párrafo.
             objetivos[4] = (
                 parrafos_sonido[0] + 1
             )
 
         else:
 
-            # Si Sonido no tiene párrafos,
-            # se coloca al comienzo de la sección.
             objetivos[4] = (
                 inicio_sonido + 1
             )
@@ -525,8 +501,7 @@ def crear_contenido(
         )
 
     # -----------------------------------------------------
-    # COMPLETAMOS POSICIONES QUE NO HAYAMOS PODIDO
-    # DETERMINAR.
+    # COMPLETAMOS POSICIONES
     # -----------------------------------------------------
 
     posiciones_ocupadas = set(
@@ -582,11 +557,6 @@ def crear_contenido(
         bloques
     ):
 
-        # -------------------------------------------------
-        # Insertamos las imágenes que correspondan
-        # justo antes del bloque indicado.
-        # -------------------------------------------------
-
         for numero in sorted(
             list(imagenes_pendientes.keys())
         ):
@@ -601,10 +571,6 @@ def crear_contenido(
                 )
 
                 del imagenes_pendientes[numero]
-
-        # -------------------------------------------------
-        # Generamos el bloque actual
-        # -------------------------------------------------
 
         if bloque["tipo"] == "heading":
 
@@ -625,10 +591,6 @@ def crear_contenido(
                 </p>
                 """
             )
-
-    # -----------------------------------------------------
-    # Cualquier imagen pendiente se coloca al final.
-    # -----------------------------------------------------
 
     for numero in sorted(
         imagenes_pendientes
@@ -926,7 +888,7 @@ def crear_pagina(
 <!--
     INVASIÓN PIXELADA
     PÁGINA GENERADA AUTOMÁTICAMENTE
-    GENERADOR: IP-GEN-005
+    GENERADOR: IP-GEN-006
 -->
 <html lang="es">
 
@@ -1068,7 +1030,8 @@ def crear_pagina(
 # =========================================================
 
 def crear_tarjeta(
-    nombre_carpeta
+    nombre_carpeta,
+    ruta_base="reseñas"
 ):
 
     carpeta = ROOT / nombre_carpeta
@@ -1130,7 +1093,7 @@ def crear_tarjeta(
 
         portada_html = f"""
         <img
-            src="reseñas/{escapar(nombre_carpeta)}/{escapar(portada)}"
+            src="{escapar(ruta_base)}/{escapar(nombre_carpeta)}/{escapar(portada)}"
             alt="Portada de {escapar(titulo)}"
             loading="lazy"
         >
@@ -1150,7 +1113,7 @@ def crear_tarjeta(
     <article class="review-card">
 
         <a
-            href="reseñas/{escapar(nombre_carpeta)}/"
+            href="{escapar(ruta_base)}/{escapar(nombre_carpeta)}/"
             class="review-card-image"
         >
 
@@ -1171,7 +1134,7 @@ def crear_tarjeta(
             </p>
 
             <a
-                href="reseñas/{escapar(nombre_carpeta)}/"
+                href="{escapar(ruta_base)}/{escapar(nombre_carpeta)}/"
                 class="review-card-link"
             >
                 LEER RESEÑA
@@ -1221,16 +1184,12 @@ MARCADOR_FIN = (
 )
 
 
-def actualizar_index():
-
-    if not INDEX.exists():
-        return
-
-    html_index = INDEX.read_text(
-        encoding="utf-8"
-    )
+def obtener_carpetas_reseñas():
 
     carpetas = []
+
+    if not ROOT.exists():
+        return carpetas
 
     for carpeta in ROOT.iterdir():
 
@@ -1248,6 +1207,20 @@ def actualizar_index():
             buscar_docx(carpeta).stat().st_mtime,
         reverse=True
     )
+
+    return carpetas
+
+
+def actualizar_index():
+
+    if not INDEX.exists():
+        return
+
+    html_index = INDEX.read_text(
+        encoding="utf-8"
+    )
+
+    carpetas = obtener_carpetas_reseñas()
 
     tarjetas = []
 
@@ -1328,6 +1301,97 @@ def actualizar_index():
 
 
 # =========================================================
+# ACTUALIZAR PÁGINA DE TODAS LAS RESEÑAS
+# =========================================================
+
+TODAS_RESEÑAS_INICIO = (
+    "<!-- TODAS LAS RESEÑAS: INICIO -->"
+)
+
+TODAS_RESEÑAS_FIN = (
+    "<!-- TODAS LAS RESEÑAS: FIN -->"
+)
+
+
+def actualizar_resenas_html():
+
+    if not REVIEWS_PAGE.exists():
+
+        print(
+            "resenas.html todavía no existe. "
+            "Se actualizará cuando sea creada."
+        )
+
+        return
+
+    html_resenas = REVIEWS_PAGE.read_text(
+        encoding="utf-8"
+    )
+
+    carpetas = obtener_carpetas_reseñas()
+
+    tarjetas = []
+
+    # Todas las reseñas, de más reciente a más antigua
+    for carpeta in carpetas:
+
+        tarjeta = crear_tarjeta(
+            carpeta.name,
+            ruta_base="reseñas"
+        )
+
+        if tarjeta:
+            tarjetas.append(
+                tarjeta
+            )
+
+    contenido = f"""
+{TODAS_RESEÑAS_INICIO}
+
+<div class="reviews-grid">
+
+    {"".join(tarjetas)}
+
+</div>
+
+{TODAS_RESEÑAS_FIN}
+"""
+
+    patron = re.compile(
+        re.escape(TODAS_RESEÑAS_INICIO)
+        + r".*?"
+        + re.escape(TODAS_RESEÑAS_FIN),
+        re.DOTALL
+    )
+
+    if patron.search(html_resenas):
+
+        html_resenas = patron.sub(
+            contenido.strip(),
+            html_resenas,
+            count=1
+        )
+
+    else:
+
+        print(
+            "No se han encontrado los marcadores "
+            "de todas las reseñas en resenas.html."
+        )
+
+        return
+
+    REVIEWS_PAGE.write_text(
+        html_resenas,
+        encoding="utf-8"
+    )
+
+    print(
+        "Página de todas las reseñas actualizada."
+    )
+
+
+# =========================================================
 # PROGRAMA PRINCIPAL
 # =========================================================
 
@@ -1360,6 +1424,8 @@ def main():
             )
 
     actualizar_index()
+
+    actualizar_resenas_html()
 
     print(
         "Proceso terminado. "
