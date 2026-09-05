@@ -1,6 +1,6 @@
 # =========================================================
 # INVASIÓN PIXELADA — GENERADOR DE RESEÑAS
-# VERSIÓN INTERNA: IP-GEN-007
+# VERSIÓN INTERNA: IP-GEN-008
 # =========================================================
 
 from pathlib import Path
@@ -28,19 +28,6 @@ def buscar_docx(carpeta):
 
 
 def buscar_imagen(carpeta, numero):
-    """
-    Busca imágenes con estos nombres:
-
-    1.jpg
-    01.jpg
-    1.jpeg
-    01.jpeg
-    1.png
-    01.png
-    1.webp
-    01.webp
-    """
-
     numero = str(numero).strip()
 
     try:
@@ -52,7 +39,6 @@ def buscar_imagen(carpeta, numero):
         ]
 
     except ValueError:
-
         candidatos = [numero]
 
     for nombre in candidatos:
@@ -341,7 +327,9 @@ def crear_contenido(
 
     posiciones = {}
 
-    for indice, bloque in enumerate(bloques):
+    for indice, bloque in enumerate(
+        bloques
+    ):
 
         if bloque["tipo"] == "heading":
 
@@ -422,11 +410,6 @@ def crear_contenido(
         )
 
     # -----------------------------------------------------
-    # IMAGEN 4
-    #
-    # SONIDO
-    # párrafo 1
-    # párrafo 2
     # IMAGEN 4
     # -----------------------------------------------------
 
@@ -881,6 +864,30 @@ def crear_pagina(
     )
 
     # -----------------------------------------------------
+    # BOTONES DE NAVEGACIÓN
+    # -----------------------------------------------------
+
+    navegacion_html = """
+    <div class="review-navigation">
+
+        <a
+            href="../../index.html"
+            class="button secondary-button"
+        >
+            ← VOLVER AL INICIO
+        </a>
+
+        <a
+            href="../../resenas.html"
+            class="button secondary-button"
+        >
+            ← VOLVER A RESEÑAS
+        </a>
+
+    </div>
+    """
+
+    # -----------------------------------------------------
     # HTML DE LA PÁGINA
     # -----------------------------------------------------
 
@@ -888,7 +895,7 @@ def crear_pagina(
 <!--
     INVASIÓN PIXELADA
     PÁGINA GENERADA AUTOMÁTICAMENTE
-    GENERADOR: IP-GEN-007
+    GENERADOR: IP-GEN-008
 -->
 <html lang="es">
 
@@ -991,6 +998,8 @@ def crear_pagina(
 
         </div>
 
+        {navegacion_html}
+
     </article>
 
 </main>
@@ -1062,11 +1071,6 @@ def crear_tarjeta(
 
     # -----------------------------------------------------
     # TEXTO COMPLETO PARA EL BUSCADOR
-    #
-    # Incluye:
-    # - título
-    # - género
-    # - todo el contenido de la reseña
     # -----------------------------------------------------
 
     texto_busqueda = " ".join(
