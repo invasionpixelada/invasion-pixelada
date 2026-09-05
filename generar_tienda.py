@@ -1,6 +1,6 @@
 # =========================================================
 # INVASIÓN PIXELADA — GENERADOR DE TIENDA
-# VERSIÓN INTERNA: IP-STOREGEN-009
+# VERSIÓN INTERNA: IP-STOREGEN-010
 # =========================================================
 
 from pathlib import Path
@@ -18,6 +18,7 @@ DOCUMENTO = Path("tienda/Libros.docx")
 TIENDA_HTML = Path("tienda.html")
 
 URL_BUSQUEDA = "https://openlibrary.org/search.json"
+URL_EDICIONES = "https://openlibrary.org/works/{}/editions.json"
 
 HEADERS = {
     "User-Agent": (
@@ -110,26 +111,57 @@ def leer_productos():
 
 
 # ---------------------------------------------------------
-# BUSCAR PORTADA EN OPEN LIBRARY
+# COMPROBAR PORTADA
+# ---------------------------------------------------------
+
+def comprobar_portada(cover_id):
+
+    if not cover_id:
+        return None
+
+    url = (
+        "https://covers.openlibrary.org/"
+        f"b/id/{cover_id}-L.jpg"
+    )
+
+    try:
+
+        respuesta = requests.get(
+            url,
+            headers=HEADERS,
+            timeout=TIMEOUT,
+            stream=True
+        )
+
+        respuesta.raise_for_status()
+
+        content_type = respuesta.headers.get(
+            "Content-Type",
+            ""
+        ).lower()
+
+        if "image" not in content_type:
+
+            return None
+
+        return url
+
+    except requests.exceptions.RequestException:
+
+        return None
+
+
+# ---------------------------------------------------------
+# BUSCAR PORTADA EN LAS EDICIONES DE OPEN LIBRARY
 # ---------------------------------------------------------
 
 def buscar_portada(titulo):
 
+    titulo_buscado = normalizar_titulo(titulo)
+
     parametros = {
         "title": titulo,
-        "limit": 20,
-        "fields": (
-            "key,"
-            "title,"
-            "cover_i,"
-            "editions,"
-            "editions.key,"
-            "editions.title,"
-            "editions.cover_i,"
-            "editions.language,"
-            "editions.isbn,"
-            "editions.isbn13"
-        )
+        "limit": 20
     }
 
     ultimo_error = None
@@ -137,6 +169,10 @@ def buscar_portada(titulo):
     for intento in range(1, MAX_INTENTOS + 1):
 
         try:
+
+            # -------------------------------------------------
+            # 1. BUSCAR LA OBRA
+            # -------------------------------------------------
 
             respuesta = requests.get(
                 URL_BUSQUEDA,
@@ -149,28 +185,119 @@ def buscar_portada(titulo):
 
             datos = respuesta.json()
 
-            libros = datos.get("docs", [])
+            obras = datos.get("docs", [])
 
-            if not libros:
+            if not obras:
+
+                print(
+                    "  - Open Library no ha encontrado "
+                    "la obra"
+                )
+
                 return None
 
-            titulo_buscado = normalizar_titulo(titulo)
+            obras_validas = []
 
-            candidatos = []
+            for obra in obras:
+
+                titulo_obra = obra.get(
+                    "title",
+                    ""
+                )
+
+                if not titulo_obra:
+                    continue
+
+                if normalizar_titulo(
+                    titulo_obra
+                ) != titulo_buscado:
+
+                    continue
+
+                work_key = obra.get(
+                    "key",
+                    ""
+                )
+
+                if not work_key.startswith(
+                    "/works/"
+                ):
+
+                    continue
+
+                obras_validas.append({
+                    "titulo": titulo_obra,
+                    "key": work_key
+                })
+
+            if not obras_validas:
+
+                print(
+                    "  - No existe una obra con "
+                    "título exactamente coincidente"
+                )
+
+                return None
 
             # -------------------------------------------------
-            # BUSCAR EN LAS EDICIONES
+            # 2. RECORRER LAS OBRAS EXACTAS
             # -------------------------------------------------
 
-            for libro in libros:
+            for obra in obras_validas:
 
-                ediciones = libro.get("editions", {})
-                documentos_ediciones = ediciones.get(
-                    "docs",
+                work_id = obra["key"].split(
+                    "/works/"
+                )[-1]
+
+                print(
+                    f"  ✓ Obra encontrada: "
+                    f"{obra['titulo']}"
+                )
+
+                # -------------------------------------------------
+                # 3. OBTENER LAS EDICIONES DE LA OBRA
+                # -------------------------------------------------
+
+                url_ediciones = URL_EDICIONES.format(
+                    work_id
+                )
+
+                respuesta_ediciones = requests.get(
+                    url_ediciones,
+                    params={
+                        "limit": 100
+                    },
+                    headers=HEADERS,
+                    timeout=TIMEOUT
+                )
+
+                respuesta_ediciones.raise_for_status()
+
+                datos_ediciones = (
+                    respuesta_ediciones.json()
+                )
+
+                ediciones = datos_ediciones.get(
+                    "entries",
                     []
                 )
 
-                for edicion in documentos_ediciones:
+                if not ediciones:
+
+                    print(
+                        "  - La obra no tiene "
+                        "ediciones disponibles"
+                    )
+
+                    continue
+
+                candidatos = []
+
+                # -------------------------------------------------
+                # 4. BUSCAR EDICIONES CON PORTADA
+                # -------------------------------------------------
+
+                for edicion in ediciones:
 
                     titulo_edicion = edicion.get(
                         "title",
@@ -180,26 +307,22 @@ def buscar_portada(titulo):
                     if not titulo_edicion:
                         continue
 
-                    titulo_normalizado = normalizar_titulo(
+                    if normalizar_titulo(
                         titulo_edicion
-                    )
+                    ) != titulo_buscado:
 
-                    # -----------------------------------------
-                    # SOLO TÍTULOS EXACTOS
-                    # -----------------------------------------
-
-                    if titulo_normalizado != titulo_buscado:
                         continue
 
-                    cover_id = edicion.get(
-                        "cover_i"
+                    portadas = edicion.get(
+                        "covers",
+                        []
                     )
 
-                    if not cover_id:
+                    if not portadas:
                         continue
 
                     idiomas = edicion.get(
-                        "language",
+                        "languages",
                         []
                     )
 
@@ -209,127 +332,128 @@ def buscar_portada(titulo):
                     ):
                         idiomas = []
 
+                    idiomas_texto = []
+
+                    for idioma in idiomas:
+
+                        if isinstance(
+                            idioma,
+                            dict
+                        ):
+
+                            clave = idioma.get(
+                                "key",
+                                ""
+                            )
+
+                            idiomas_texto.append(
+                                clave.split("/")[-1]
+                            )
+
                     puntuacion = 100
 
-                    # -----------------------------------------
-                    # PREFERIMOS ESPAÑOL
-                    # PERO NO ES OBLIGATORIO
-                    # -----------------------------------------
-
-                    if "spa" in idiomas:
+                    # Preferimos español,
+                    # pero nunca es obligatorio.
+                    if "spa" in idiomas_texto:
                         puntuacion += 50
 
                     candidatos.append({
                         "puntuacion": puntuacion,
                         "titulo": titulo_edicion,
-                        "cover_id": cover_id,
-                        "idiomas": idiomas,
-                        "key": edicion.get(
-                            "key",
-                            ""
+                        "covers": portadas,
+                        "idiomas": idiomas_texto,
+                        "isbn13": edicion.get(
+                            "isbn13",
+                            []
+                        ),
+                        "isbn10": edicion.get(
+                            "isbn",
+                            []
                         )
                     })
 
-            # -------------------------------------------------
-            # SI NO HAY EDICIONES CON PORTADA
-            # -------------------------------------------------
+                if not candidatos:
 
-            if not candidatos:
+                    print(
+                        "  - No se ha encontrado "
+                        "una edición exacta con portada"
+                    )
 
-                print(
-                    "  - No se ha encontrado una "
-                    "edición exacta con portada"
+                    continue
+
+                # -------------------------------------------------
+                # 5. ESPAÑOL PRIMERO
+                # -------------------------------------------------
+
+                candidatos.sort(
+                    key=lambda x: x["puntuacion"],
+                    reverse=True
                 )
 
-                # ---------------------------------------------
-                # RESPALDO: PORTADA DE LA OBRA
-                # ---------------------------------------------
+                # -------------------------------------------------
+                # 6. PROBAR LAS PORTADAS
+                # -------------------------------------------------
 
-                for libro in libros:
+                for candidato in candidatos:
 
-                    titulo_encontrado = libro.get(
-                        "title",
-                        ""
-                    )
+                    for cover_id in candidato["covers"]:
 
-                    if normalizar_titulo(
-                        titulo_encontrado
-                    ) != titulo_buscado:
+                        portada = comprobar_portada(
+                            cover_id
+                        )
 
-                        continue
-
-                    cover_id = libro.get(
-                        "cover_i"
-                    )
-
-                    if cover_id:
+                        if not portada:
+                            continue
 
                         print(
-                            "  ✓ Portada encontrada "
-                            "a nivel de obra"
+                            f"  ✓ Edición exacta: "
+                            f"{candidato['titulo']}"
                         )
 
-                        return (
-                            "https://covers.openlibrary.org/"
-                            f"b/id/{cover_id}-L.jpg"
+                        if "spa" in candidato["idiomas"]:
+
+                            print(
+                                "  ✓ Edición española "
+                                "priorizada"
+                            )
+
+                        elif candidato["idiomas"]:
+
+                            print(
+                                "  - Idioma disponible: "
+                                + ", ".join(
+                                    candidato["idiomas"]
+                                )
+                            )
+
+                        else:
+
+                            print(
+                                "  - Edición sin "
+                                "información de idioma"
+                            )
+
+                        if candidato["isbn13"]:
+
+                            print(
+                                "  ✓ ISBN-13: "
+                                + str(
+                                    candidato["isbn13"][0]
+                                )
+                            )
+
+                        print(
+                            f"  ✓ Cover ID: {cover_id}"
                         )
 
-                return None
-
-            # -------------------------------------------------
-            # ORDENAR CANDIDATOS
-            # -------------------------------------------------
-
-            candidatos.sort(
-                key=lambda x: x["puntuacion"],
-                reverse=True
-            )
-
-            mejor = candidatos[0]
+                        return portada
 
             print(
-                f"  ✓ Edición exacta encontrada: "
-                f"{mejor['titulo']}"
+                "  - No se ha encontrado "
+                "ninguna portada válida"
             )
 
-            if "spa" in mejor["idiomas"]:
-
-                print(
-                    "  ✓ Edición en español priorizada"
-                )
-
-            elif mejor["idiomas"]:
-
-                print(
-                    "  - Edición encontrada; "
-                    "Open Library no la marca como español"
-                )
-
-            else:
-
-                print(
-                    "  - Edición encontrada; "
-                    "sin información de idioma"
-                )
-
-            if mejor["idiomas"]:
-
-                print(
-                    "  ✓ Idiomas: "
-                    + ", ".join(
-                        mejor["idiomas"]
-                    )
-                )
-
-            print(
-                f"  ✓ Cover ID: "
-                f"{mejor['cover_id']}"
-            )
-
-            return (
-                "https://covers.openlibrary.org/"
-                f"b/id/{mejor['cover_id']}-L.jpg"
-            )
+            return None
 
         except requests.exceptions.RequestException as error:
 
@@ -341,6 +465,7 @@ def buscar_portada(titulo):
             )
 
             if intento < MAX_INTENTOS:
+
                 time.sleep(3)
 
     print(
@@ -550,7 +675,7 @@ def main():
     print("")
     print("==============================================")
     print(" INVASIÓN PIXELADA — GENERADOR DE TIENDA")
-    print(" VERSIÓN: IP-STOREGEN-009")
+    print(" VERSIÓN: IP-STOREGEN-010")
     print("==============================================")
     print("")
 
