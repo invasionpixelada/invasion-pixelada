@@ -1,12 +1,13 @@
 # =========================================================
 # INVASIÓN PIXELADA — GENERADOR DE TIENDA
-# VERSIÓN INTERNA: IP-STOREGEN-015
+# VERSIÓN INTERNA: IP-STOREGEN-016
 # =========================================================
 
 from pathlib import Path
 import re
 import time
 import requests
+from difflib import SequenceMatcher
 from docx import Document
 
 
@@ -29,6 +30,8 @@ HEADERS = {
 
 MAX_INTENTOS = 3
 TIMEOUT = 15
+
+SIMILITUD_MINIMA = 0.90
 
 MARCADOR_INICIO = "<!-- LIBROS AUTOMÁTICOS: INICIO -->"
 MARCADOR_FIN = "<!-- LIBROS AUTOMÁTICOS: FIN -->"
@@ -55,14 +58,71 @@ def normalizar_titulo(texto):
 
     texto = texto.lower().strip()
 
+    # Eliminar signos de interrogación y exclamación.
     texto = texto.replace("¿", "")
     texto = texto.replace("?", "")
     texto = texto.replace("¡", "")
     texto = texto.replace("!", "")
 
+    # Unificar puntuación habitual.
+    texto = texto.replace(":", " ")
+    texto = texto.replace("-", " ")
+    texto = texto.replace("–", " ")
+    texto = texto.replace("—", " ")
+
+    # Eliminar espacios repetidos.
     texto = re.sub(r"\s+", " ", texto)
 
-    return texto
+    return texto.strip()
+
+
+# ---------------------------------------------------------
+# NORMALIZAR PARA COMPARACIÓN
+# ---------------------------------------------------------
+
+def normalizar_para_comparacion(texto):
+
+    texto = normalizar_titulo(texto)
+
+    palabras = texto.split()
+
+    # Los artículos iniciales pueden variar entre la obra
+    # y la edición: "Física..." / "La física..."
+    while palabras and palabras[0] in {
+        "el",
+        "la",
+        "los",
+        "las",
+        "un",
+        "una"
+    }:
+        palabras.pop(0)
+
+    return " ".join(palabras)
+
+
+# ---------------------------------------------------------
+# CALCULAR SIMILITUD
+# ---------------------------------------------------------
+
+def calcular_similitud(titulo_1, titulo_2):
+
+    texto_1 = normalizar_para_comparacion(
+        titulo_1
+    )
+
+    texto_2 = normalizar_para_comparacion(
+        titulo_2
+    )
+
+    if texto_1 == texto_2:
+        return 1.0
+
+    return SequenceMatcher(
+        None,
+        texto_1,
+        texto_2
+    ).ratio()
 
 
 # ---------------------------------------------------------
@@ -239,7 +299,9 @@ def obtener_ediciones(work_id):
 
 def buscar_portada(titulo):
 
-    titulo_buscado = normalizar_titulo(titulo)
+    titulo_buscado = normalizar_para_comparacion(
+        titulo
+    )
 
     parametros = {
         "q": titulo,
@@ -311,26 +373,27 @@ def buscar_portada(titulo):
                 if not titulo_obra:
                     continue
 
-                titulo_normalizado = normalizar_titulo(
+                similitud = calcular_similitud(
+                    titulo,
                     titulo_obra
                 )
 
-                puntuacion = 0
+                if similitud < SIMILITUD_MINIMA:
+                    continue
 
-                if titulo_normalizado == titulo_buscado:
-                    puntuacion += 100
+                puntuacion = similitud * 100
 
-                elif titulo_buscado in titulo_normalizado:
-                    puntuacion += 50
-
-                puntuacion += max(
-                    0,
-                    20 - len(obras_candidatas)
-                )
+                if normalizar_para_comparacion(
+                    titulo
+                ) == normalizar_para_comparacion(
+                    titulo_obra
+                ):
+                    puntuacion += 20
 
                 obras_candidatas.append({
                     "key": work_key,
                     "titulo": titulo_obra,
+                    "similitud": similitud,
                     "puntuacion": puntuacion
                 })
 
@@ -338,7 +401,8 @@ def buscar_portada(titulo):
 
                 print(
                     "  - No se han encontrado "
-                    "obras candidatas"
+                    "obras con una similitud "
+                    "mínima del 90%"
                 )
 
                 return None
@@ -363,6 +427,11 @@ def buscar_portada(titulo):
                     f"{obra['titulo']}"
                 )
 
+                print(
+                    f"    - Similitud: "
+                    f"{obra['similitud'] * 100:.1f}%"
+                )
+
                 ediciones = obtener_ediciones(
                     work_id
                 )
@@ -373,7 +442,7 @@ def buscar_portada(titulo):
                 candidatos = []
 
                 # -------------------------------------------------
-                # 4. BUSCAR EL TÍTULO EXACTO EN LAS EDICIONES
+                # 4. BUSCAR EDICIONES SIMILARES
                 # -------------------------------------------------
 
                 for edicion in ediciones:
@@ -386,10 +455,12 @@ def buscar_portada(titulo):
                     if not titulo_edicion:
                         continue
 
-                    if normalizar_titulo(
+                    similitud_edicion = calcular_similitud(
+                        titulo,
                         titulo_edicion
-                    ) != titulo_buscado:
+                    )
 
+                    if similitud_edicion < SIMILITUD_MINIMA:
                         continue
 
                     portadas = edicion.get(
@@ -429,13 +500,16 @@ def buscar_portada(titulo):
                                 clave.split("/")[-1]
                             )
 
-                    puntuacion = 100
+                    puntuacion = (
+                        similitud_edicion * 100
+                    )
 
                     if "spa" in idiomas_texto:
                         puntuacion += 50
 
                     candidatos.append({
                         "puntuacion": puntuacion,
+                        "similitud": similitud_edicion,
                         "titulo": titulo_edicion,
                         "covers": portadas,
                         "idiomas": idiomas_texto,
@@ -453,13 +527,14 @@ def buscar_portada(titulo):
 
                     print(
                         "  - Esta obra no tiene "
-                        "una edición exacta con portada"
+                        "una edición suficientemente "
+                        "similar con portada"
                     )
 
                     continue
 
                 # -------------------------------------------------
-                # 5. ORDENAR: ESPAÑOL PRIMERO
+                # 5. ORDENAR: ESPAÑOL + SIMILITUD
                 # -------------------------------------------------
 
                 candidatos.sort(
@@ -483,8 +558,13 @@ def buscar_portada(titulo):
                             continue
 
                         print(
-                            f"  ✓ Edición exacta: "
+                            f"  ✓ Edición aceptada: "
                             f"{candidato['titulo']}"
+                        )
+
+                        print(
+                            f"  ✓ Similitud del título: "
+                            f"{candidato['similitud'] * 100:.1f}%"
                         )
 
                         if "spa" in candidato["idiomas"]:
@@ -782,7 +862,7 @@ def main():
     print("")
     print("==============================================")
     print(" INVASIÓN PIXELADA — GENERADOR DE TIENDA")
-    print(" VERSIÓN: IP-STOREGEN-015")
+    print(" VERSIÓN: IP-STOREGEN-016")
     print("==============================================")
     print("")
 
