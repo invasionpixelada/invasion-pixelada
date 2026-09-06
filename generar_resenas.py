@@ -1,6 +1,6 @@
 # =========================================================
 # INVASIÓN PIXELADA — GENERADOR DE RESEÑAS
-# VERSIÓN INTERNA: IP-GEN-008
+# VERSIÓN INTERNA: IP-GEN-009
 # =========================================================
 
 from pathlib import Path
@@ -12,6 +12,12 @@ import re
 ROOT = Path("reseñas")
 INDEX = Path("index.html")
 REVIEWS_PAGE = Path("resenas.html")
+
+SITE_URL = (
+    "https://invasionpixelada.github.io/invasion-pixelada"
+)
+
+SITE_NAME = "Invasión Pixelada"
 
 
 # =========================================================
@@ -73,6 +79,46 @@ def buscar_portada(carpeta):
             return archivo.name
 
     return None
+
+
+def crear_slug(nombre):
+
+    texto = str(nombre).strip().lower()
+
+    reemplazos = {
+        "á": "a",
+        "é": "e",
+        "í": "i",
+        "ó": "o",
+        "ú": "u",
+        "ü": "u",
+        "ñ": "n"
+    }
+
+    for origen, destino in reemplazos.items():
+        texto = texto.replace(origen, destino)
+
+    texto = re.sub(
+        r"[^a-z0-9]+",
+        "-",
+        texto
+    )
+
+    texto = texto.strip("-")
+
+    return texto
+
+
+def crear_url_reseña(nombre_carpeta):
+
+    # Las reseñas se publican mediante la carpeta real.
+    # Se mantiene esta estructura para no romper las URLs
+    # actuales del sitio.
+
+    return (
+        f"{SITE_URL}/reseñas/"
+        f"{nombre_carpeta}/"
+    )
 
 
 # =========================================================
@@ -219,6 +265,300 @@ ENCABEZADOS = {
     "finales",
     "conclusiones",
 }
+
+
+# =========================================================
+# SEO
+# =========================================================
+
+def crear_meta_description(
+    titulo,
+    genero,
+    contenido
+):
+
+    textos = []
+
+    for texto in contenido:
+
+        texto_limpio = texto.strip()
+
+        if not texto_limpio:
+            continue
+
+        if texto_limpio.upper().startswith(
+            "[IMAGEN:"
+        ):
+            continue
+
+        if texto_limpio.lower() in ENCABEZADOS:
+            continue
+
+        textos.append(texto_limpio)
+
+    descripcion_base = ""
+
+    if textos:
+
+        descripcion_base = textos[0]
+
+    if genero:
+
+        descripcion = (
+            f"Reseña de {titulo}, "
+            f"{genero.lower()}. "
+            f"{descripcion_base}"
+        )
+
+    else:
+
+        descripcion = (
+            f"Reseña de {titulo} en "
+            f"Invasión Pixelada. "
+            f"{descripcion_base}"
+        )
+
+    descripcion = re.sub(
+        r"\s+",
+        " ",
+        descripcion
+    ).strip()
+
+    if len(descripcion) > 155:
+
+        descripcion = (
+            descripcion[:152]
+            .rsplit(" ", 1)[0]
+            + "..."
+        )
+
+    return descripcion
+
+
+def crear_keywords(
+    titulo,
+    genero,
+    tematica,
+    plataforma
+):
+
+    palabras = [
+        titulo,
+        "Invasión Pixelada",
+        "reseña"
+    ]
+
+    if genero:
+        palabras.append(genero)
+
+    if tematica:
+        palabras.append(tematica)
+
+    if plataforma:
+        palabras.append(plataforma)
+
+    palabras_limpias = []
+
+    for palabra in palabras:
+
+        palabra = str(palabra).strip()
+
+        if palabra and palabra not in palabras_limpias:
+
+            palabras_limpias.append(
+                palabra
+            )
+
+    return ", ".join(
+        palabras_limpias
+    )
+
+
+def crear_json_ld(
+    titulo,
+    genero,
+    tematica,
+    año,
+    autor,
+    editor,
+    plataforma,
+    lanzamiento,
+    valoracion,
+    portada,
+    url_reseña
+):
+
+    datos = {
+        "@context": "https://schema.org",
+        "@graph": [
+            {
+                "@type": "Review",
+                "@id": f"{url_reseña}#review",
+                "url": url_reseña,
+                "name": f"Reseña de {titulo}",
+                "headline": (
+                    f"{titulo} | "
+                    f"Reseña de aventura gráfica"
+                ),
+                "reviewBody": (
+                    f"Reseña de {titulo} "
+                    f"publicada por Invasión Pixelada."
+                ),
+                "author": {
+                    "@type": "Organization",
+                    "name": SITE_NAME,
+                    "url": f"{SITE_URL}/"
+                },
+                "publisher": {
+                    "@type": "Organization",
+                    "name": SITE_NAME,
+                    "url": f"{SITE_URL}/"
+                },
+                "itemReviewed": {
+                    "@type": "VideoGame",
+                    "name": titulo
+                }
+            },
+
+            {
+                "@type": "WebPage",
+                "@id": f"{url_reseña}#webpage",
+                "url": url_reseña,
+                "name": f"{titulo} | Invasión Pixelada",
+                "isPartOf": {
+                    "@id": f"{SITE_URL}/#website"
+                }
+            },
+
+            {
+                "@type": "WebSite",
+                "@id": f"{SITE_URL}/#website",
+                "url": f"{SITE_URL}/",
+                "name": SITE_NAME,
+                "description": (
+                    "Aventuras gráficas, point & click, "
+                    "visual novels, walking simulators y "
+                    "videojuegos donde la narrativa "
+                    "es protagonista."
+                },
+                "publisher": {
+                    "@type": "Organization",
+                    "name": SITE_NAME,
+                    "url": f"{SITE_URL}/"
+                }
+            },
+
+            {
+                "@type": "Organization",
+                "@id": f"{SITE_URL}/#organization",
+                "name": SITE_NAME,
+                "url": f"{SITE_URL}/",
+                "logo": {
+                    "@type": "ImageObject",
+                    "url": (
+                        f"{SITE_URL}/"
+                        "imagenes/"
+                        "nuevo_logo_invasion_pixelada.png"
+                    )
+                },
+                "sameAs": [
+                    "https://www.youtube.com/@invasionpixelada"
+                ]
+            }
+        ]
+    }
+
+    videojuego = datos["@graph"][0]["itemReviewed"]
+
+    if genero:
+        videojuego["genre"] = genero
+
+    if tematica:
+        videojuego["keywords"] = tematica
+
+    if año:
+
+        try:
+            videojuego["datePublished"] = str(año)
+        except Exception:
+            pass
+
+    if autor:
+
+        videojuego["creator"] = {
+            "@type": "Person",
+            "name": autor
+        }
+
+    if editor:
+
+        videojuego["publisher"] = {
+            "@type": "Organization",
+            "name": editor
+        }
+
+    if plataforma:
+
+        videojuego["gamePlatform"] = plataforma
+
+    if lanzamiento:
+
+        videojuego["releaseDate"] = lanzamiento
+
+    if valoracion:
+
+        valoracion_limpia = str(
+            valoracion
+        ).replace(",", ".").strip()
+
+        coincidencia = re.search(
+            r"(\d+(?:\.\d+)?)",
+            valoracion_limpia
+        )
+
+        if coincidencia:
+
+            try:
+
+                puntuacion = float(
+                    coincidencia.group(1)
+                )
+
+                datos["@graph"][0][
+                    "reviewRating"
+                ] = {
+                    "@type": "Rating",
+                    "ratingValue": puntuacion,
+                    "bestRating": 10,
+                    "worstRating": 0
+                }
+
+            except ValueError:
+                pass
+
+    if portada:
+
+        imagen_url = (
+            f"{url_reseña}"
+            f"{escapar(portada)}"
+        )
+
+        datos["@graph"][1]["image"] = imagen_url
+
+        videojuego["image"] = imagen_url
+
+    return (
+        '<script type="application/ld+json">\n'
+        + html.escape(
+            __import__("json").dumps(
+                datos,
+                ensure_ascii=False,
+                indent=4
+            ),
+            quote=False
+        )
+        + "\n</script>"
+    )
 
 
 # =========================================================
@@ -695,6 +1035,54 @@ def crear_pagina(
         )
 
     # -----------------------------------------------------
+    # SEO
+    # -----------------------------------------------------
+
+    url_reseña = crear_url_reseña(
+        nombre_carpeta
+    )
+
+    meta_description = crear_meta_description(
+        titulo,
+        genero,
+        contenido
+    )
+
+    keywords = crear_keywords(
+        titulo,
+        genero,
+        tematica,
+        plataforma
+    )
+
+    portada = buscar_portada(
+        carpeta
+    )
+
+    portada_url = ""
+
+    if portada:
+
+        portada_url = (
+            f"{url_reseña}"
+            f"{escapar(portada)}"
+        )
+
+    json_ld = crear_json_ld(
+        titulo,
+        genero,
+        tematica,
+        año,
+        autor,
+        editor,
+        plataforma,
+        lanzamiento,
+        valoracion,
+        portada,
+        url_reseña
+    )
+
+    # -----------------------------------------------------
     # PUBLICACIÓN CAAD
     # -----------------------------------------------------
 
@@ -734,10 +1122,6 @@ def crear_pagina(
     # -----------------------------------------------------
     # PORTADA
     # -----------------------------------------------------
-
-    portada = buscar_portada(
-        carpeta
-    )
 
     portada_html = ""
 
@@ -895,7 +1279,7 @@ def crear_pagina(
 <!--
     INVASIÓN PIXELADA
     PÁGINA GENERADA AUTOMÁTICAMENTE
-    GENERADOR: IP-GEN-008
+    GENERADOR: IP-GEN-009
 -->
 <html lang="es">
 
@@ -909,13 +1293,78 @@ def crear_pagina(
     >
 
     <title>
-        {escapar(titulo)} | Invasión Pixelada
+        {escapar(titulo)} | Reseña de aventura gráfica | Invasión Pixelada
     </title>
 
-    <link
-        rel="stylesheet"
-        href="../../style.css"
+    <meta
+        name="description"
+        content="{escapar(meta_description)}"
     >
+
+    <meta
+        name="keywords"
+        content="{escapar(keywords)}"
+    >
+
+    <link
+        rel="canonical"
+        href="{escapar(url_reseña)}"
+    >
+
+    <meta
+        name="theme-color"
+        content="#08080d"
+    >
+
+    <link
+        rel="icon"
+        type="image/png"
+        href="../../imagenes/nuevo_logo_invasion_pixelada.png"
+    >
+
+    <!-- OPEN GRAPH -->
+
+    <meta
+        property="og:type"
+        content="article"
+    >
+
+    <meta
+        property="og:locale"
+        content="es_ES"
+    >
+
+    <meta
+        property="og:title"
+        content="{escapar(titulo)} | Invasión Pixelada"
+    >
+
+    <meta
+        property="og:description"
+        content="{escapar(meta_description)}"
+    >
+
+    <meta
+        property="og:url"
+        content="{escapar(url_reseña)}"
+    >
+
+    <meta
+        property="og:site_name"
+        content="Invasión Pixelada"
+    >
+
+    <meta
+        property="og:image"
+        content="{escapar(portada_url if portada_url else SITE_URL + '/imagenes/nuevo_logo_invasion_pixelada.png')}"
+    >
+
+    <meta
+        property="og:image:alt"
+        content="Portada de {escapar(titulo)}"
+    >
+
+    {json_ld}
 
 </head>
 
