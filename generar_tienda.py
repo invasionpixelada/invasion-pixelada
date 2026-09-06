@@ -1,6 +1,6 @@
 # =========================================================
 # INVASIÓN PIXELADA — GENERADOR DE TIENDA
-# VERSIÓN INTERNA: IP-STOREGEN-014
+# VERSIÓN INTERNA: IP-STOREGEN-015
 # =========================================================
 
 from pathlib import Path
@@ -108,6 +108,55 @@ def leer_productos():
             enlace_actual = None
 
     return productos
+
+
+# ---------------------------------------------------------
+# LEER PORTADAS EXISTENTES DE TIENDA.HTML
+# ---------------------------------------------------------
+
+def leer_portadas_existentes():
+
+    portadas = {}
+
+    if not TIENDA_HTML.exists():
+        return portadas
+
+    contenido = TIENDA_HTML.read_text(
+        encoding="utf-8"
+    )
+
+    inicio = contenido.find(
+        MARCADOR_INICIO
+    )
+
+    fin = contenido.find(
+        MARCADOR_FIN
+    )
+
+    if inicio == -1 or fin == -1:
+        return portadas
+
+    bloque = contenido[
+        inicio:
+        fin + len(MARCADOR_FIN)
+    ]
+
+    patrones = re.findall(
+        r'<article class="store-card">.*?'
+        r'<img\s+'
+        r'src="([^"]+)"\s+'
+        r'alt="([^"]+)"',
+        bloque,
+        re.DOTALL
+    )
+
+    for imagen, titulo in patrones:
+
+        portadas[
+            normalizar_titulo(titulo)
+        ] = imagen
+
+    return portadas
 
 
 # ---------------------------------------------------------
@@ -238,15 +287,6 @@ def buscar_portada(titulo):
 
             # -------------------------------------------------
             # 2. LOCALIZAR OBRAS CANDIDATAS
-            #
-            # Aquí NO exigimos coincidencia exacta.
-            #
-            # Ejemplo:
-            #
-            # Neuromante → obra Neuromancer
-            #
-            # Después comprobaremos el título exacto
-            # en las ediciones.
             # -------------------------------------------------
 
             obras_candidatas = []
@@ -277,15 +317,12 @@ def buscar_portada(titulo):
 
                 puntuacion = 0
 
-                # Coincidencia exacta de título de obra.
                 if titulo_normalizado == titulo_buscado:
                     puntuacion += 100
 
-                # El título buscado aparece dentro del título.
                 elif titulo_buscado in titulo_normalizado:
                     puntuacion += 50
 
-                # La obra aparece entre los primeros resultados.
                 puntuacion += max(
                     0,
                     20 - len(obras_candidatas)
@@ -331,7 +368,6 @@ def buscar_portada(titulo):
                 )
 
                 if not ediciones:
-
                     continue
 
                 candidatos = []
@@ -395,7 +431,6 @@ def buscar_portada(titulo):
 
                     puntuacion = 100
 
-                    # Español = prioridad.
                     if "spa" in idiomas_texto:
                         puntuacion += 50
 
@@ -548,7 +583,7 @@ def buscar_imagen_local(titulo):
 # OBTENER IMAGEN
 # ---------------------------------------------------------
 
-def obtener_imagen(titulo):
+def obtener_imagen(titulo, portadas_existentes):
 
     portada = buscar_portada(titulo)
 
@@ -559,6 +594,23 @@ def obtener_imagen(titulo):
         )
 
         return portada
+
+    # -----------------------------------------------------
+    # CONSERVAR PORTADA ANTERIOR
+    # -----------------------------------------------------
+
+    portada_anterior = portadas_existentes.get(
+        normalizar_titulo(titulo)
+    )
+
+    if portada_anterior:
+
+        print(
+            "  ✓ Se conserva la portada "
+            "anterior de la tienda"
+        )
+
+        return portada_anterior
 
     print(
         "  - No se ha encontrado una "
@@ -654,7 +706,10 @@ def generar_tarjeta(producto, imagen):
 # ACTUALIZAR TIENDA.HTML
 # ---------------------------------------------------------
 
-def actualizar_tienda(productos):
+def actualizar_tienda(
+    productos,
+    portadas_existentes
+):
 
     contenido = TIENDA_HTML.read_text(
         encoding="utf-8"
@@ -685,7 +740,8 @@ def actualizar_tienda(productos):
         )
 
         imagen = obtener_imagen(
-            producto["titulo"]
+            producto["titulo"],
+            portadas_existentes
         )
 
         tarjetas.append(
@@ -726,7 +782,7 @@ def main():
     print("")
     print("==============================================")
     print(" INVASIÓN PIXELADA — GENERADOR DE TIENDA")
-    print(" VERSIÓN: IP-STOREGEN-014")
+    print(" VERSIÓN: IP-STOREGEN-015")
     print("==============================================")
     print("")
 
@@ -760,7 +816,22 @@ def main():
 
     productos.reverse()
 
-    actualizar_tienda(productos)
+    # -------------------------------------------------
+    # PORTADAS YA EXISTENTES
+    #
+    # Si Open Library falla temporalmente,
+    # conservamos la portada que ya tenía
+    # cada producto.
+    # -------------------------------------------------
+
+    portadas_existentes = (
+        leer_portadas_existentes()
+    )
+
+    actualizar_tienda(
+        productos,
+        portadas_existentes
+    )
 
     print("")
     print("----------------------------------------------")
