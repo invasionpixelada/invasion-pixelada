@@ -1150,6 +1150,10 @@ a {
     margin: 40px auto 0;
 }
 
+.store-category {
+    margin-bottom: 80px;
+}
+
 .store-card {
     overflow: hidden;
     border-radius: 12px;
