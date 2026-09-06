@@ -1,6 +1,6 @@
 # =========================================================
 # INVASIÓN PIXELADA — GENERADOR DE TIENDA
-# VERSIÓN INTERNA: IP-ACTIONS-STORE-005
+# VERSIÓN INTERNA: IP-ACTIONS-STORE-006
 # =========================================================
 
 name: Generar tienda
@@ -44,6 +44,12 @@ jobs:
           THEGAMESDB_API_KEY: ${{ secrets.THEGAMESDB_API_KEY }}
         run: |
           python generar_videojuegos.py
+
+      - name: Generar películas
+        env:
+          TMDB_API_TOKEN: ${{ secrets.TMDB_API_TOKEN }}
+        run: |
+          python generar_peliculas.py
 
       - name: Guardar cambios
         run: |
