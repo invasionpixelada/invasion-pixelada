@@ -1,17 +1,20 @@
 # =========================================================
 # INVASIÓN PIXELADA — GENERADOR DE RESEÑAS
-# VERSIÓN INTERNA: IP-GEN-009
+# VERSIÓN INTERNA: IP-GEN-010
 # =========================================================
 
 from pathlib import Path
 from docx import Document
 import html
 import re
+import json
+from urllib.parse import quote
 
 
 ROOT = Path("reseñas")
 INDEX = Path("index.html")
 REVIEWS_PAGE = Path("resenas.html")
+SITEMAP = Path("sitemap.xml")
 
 SITE_URL = (
     "https://invasionpixelada.github.io/invasion-pixelada"
@@ -111,13 +114,39 @@ def crear_slug(nombre):
 
 def crear_url_reseña(nombre_carpeta):
 
-    # Las reseñas se publican mediante la carpeta real.
-    # Se mantiene esta estructura para no romper las URLs
-    # actuales del sitio.
+    # Se mantiene la estructura real de carpetas
+    # para no modificar las URLs actuales.
+
+    nombre_url = quote(
+        str(nombre_carpeta).strip(),
+        safe=""
+    )
 
     return (
         f"{SITE_URL}/reseñas/"
-        f"{nombre_carpeta}/"
+        f"{nombre_url}/"
+    )
+
+
+def crear_url_archivo_reseña(
+    nombre_carpeta,
+    nombre_archivo
+):
+
+    carpeta_url = quote(
+        str(nombre_carpeta).strip(),
+        safe=""
+    )
+
+    archivo_url = quote(
+        str(nombre_archivo).strip(),
+        safe=""
+    )
+
+    return (
+        f"{SITE_URL}/reseñas/"
+        f"{carpeta_url}/"
+        f"{archivo_url}"
     )
 
 
@@ -299,7 +328,6 @@ def crear_meta_description(
     descripcion_base = ""
 
     if textos:
-
         descripcion_base = textos[0]
 
     if genero:
@@ -440,7 +468,7 @@ def crear_json_ld(
                     "visual novels, walking simulators y "
                     "videojuegos donde la narrativa "
                     "es protagonista."
-                },
+                ),
                 "publisher": {
                     "@type": "Organization",
                     "name": SITE_NAME,
@@ -498,11 +526,9 @@ def crear_json_ld(
         }
 
     if plataforma:
-
         videojuego["gamePlatform"] = plataforma
 
     if lanzamiento:
-
         videojuego["releaseDate"] = lanzamiento
 
     if valoracion:
@@ -538,9 +564,9 @@ def crear_json_ld(
 
     if portada:
 
-        imagen_url = (
-            f"{url_reseña}"
-            f"{escapar(portada)}"
+        imagen_url = crear_url_archivo_reseña(
+            url_reseña.split("/reseñas/")[-1].rstrip("/"),
+            portada
         )
 
         datos["@graph"][1]["image"] = imagen_url
@@ -550,7 +576,7 @@ def crear_json_ld(
     return (
         '<script type="application/ld+json">\n'
         + html.escape(
-            __import__("json").dumps(
+            json.dumps(
                 datos,
                 ensure_ascii=False,
                 indent=4
@@ -857,7 +883,6 @@ def crear_contenido(
             posicion += 1
 
             if posicion > total_bloques:
-
                 posicion = 0
 
         objetivos[numero] = posicion
@@ -1063,9 +1088,9 @@ def crear_pagina(
 
     if portada:
 
-        portada_url = (
-            f"{url_reseña}"
-            f"{escapar(portada)}"
+        portada_url = crear_url_archivo_reseña(
+            nombre_carpeta,
+            portada
         )
 
     json_ld = crear_json_ld(
@@ -1279,7 +1304,7 @@ def crear_pagina(
 <!--
     INVASIÓN PIXELADA
     PÁGINA GENERADA AUTOMÁTICAMENTE
-    GENERADOR: IP-GEN-009
+    GENERADOR: IP-GEN-010
 -->
 <html lang="es">
 
@@ -1676,6 +1701,66 @@ def obtener_carpetas_reseñas():
 
 
 # =========================================================
+# ACTUALIZAR SITEMAP
+# =========================================================
+
+def actualizar_sitemap():
+
+    urls = [
+        f"{SITE_URL}/",
+        f"{SITE_URL}/resenas.html",
+        f"{SITE_URL}/tienda.html",
+    ]
+
+    carpetas = obtener_carpetas_reseñas()
+
+    for carpeta in carpetas:
+
+        urls.append(
+            crear_url_reseña(
+                carpeta.name
+            )
+        )
+
+    contenido = [
+        '<?xml version="1.0" encoding="UTF-8"?>',
+        '<!--',
+        '    INVASIÓN PIXELADA',
+        '    SITEMAP GENERADO AUTOMÁTICAMENTE',
+        '    GENERADOR: IP-GEN-010',
+        '-->',
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+    ]
+
+    for url in urls:
+
+        contenido.append(
+            "    <url>"
+        )
+
+        contenido.append(
+            f"        <loc>{html.escape(url)}</loc>"
+        )
+
+        contenido.append(
+            "    </url>"
+        )
+
+    contenido.append(
+        "</urlset>"
+    )
+
+    SITEMAP.write_text(
+        "\n".join(contenido),
+        encoding="utf-8"
+    )
+
+    print(
+        f"Sitemap actualizado. URLs: {len(urls)}"
+    )
+
+
+# =========================================================
 # ACTUALIZAR INDEX PRINCIPAL
 # =========================================================
 
@@ -1903,6 +1988,8 @@ def main():
     actualizar_index()
 
     actualizar_resenas_html()
+
+    actualizar_sitemap()
 
     print(
         "Proceso terminado. "
