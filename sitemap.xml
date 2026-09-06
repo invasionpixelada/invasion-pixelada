@@ -1,21 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
     INVASIÓN PIXELADA
-    SITEMAP
-    VERSIÓN INTERNA: IP-SITEMAP-001
+    SITEMAP GENERADO AUTOMÁTICAMENTE
+    GENERADOR: IP-GEN-010
 -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-
     <url>
         <loc>https://invasionpixelada.github.io/invasion-pixelada/</loc>
     </url>
-
     <url>
         <loc>https://invasionpixelada.github.io/invasion-pixelada/resenas.html</loc>
     </url>
-
     <url>
         <loc>https://invasionpixelada.github.io/invasion-pixelada/tienda.html</loc>
     </url>
-
+    <url>
+        <loc>https://invasionpixelada.github.io/invasion-pixelada/reseñas/Lunas%20Room/</loc>
+    </url>
 </urlset>
