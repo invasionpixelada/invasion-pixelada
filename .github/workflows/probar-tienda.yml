@@ -1,6 +1,6 @@
 # =========================================================
 # INVASIÓN PIXELADA — GENERADOR DE TIENDA
-# VERSIÓN INTERNA: IP-ACTIONS-STORE-004
+# VERSIÓN INTERNA: IP-ACTIONS-STORE-005
 # =========================================================
 
 name: Generar tienda
@@ -22,6 +22,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+
       - name: Descargar repositorio
         uses: actions/checkout@v4
 
@@ -34,9 +35,15 @@ jobs:
         run: |
           pip install python-docx requests
 
-      - name: Generar tienda
+      - name: Generar libros
         run: |
           python generar_tienda.py
+
+      - name: Generar videojuegos
+        env:
+          THEGAMESDB_API_KEY: ${{ secrets.THEGAMESDB_API_KEY }}
+        run: |
+          python generar_videojuegos.py
 
       - name: Guardar cambios
         run: |
