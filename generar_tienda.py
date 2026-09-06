@@ -1,6 +1,6 @@
 # =========================================================
 # INVASIÓN PIXELADA — GENERADOR DE TIENDA
-# VERSIÓN INTERNA: IP-STOREGEN-013
+# VERSIÓN INTERNA: IP-STOREGEN-014
 # =========================================================
 
 from pathlib import Path
@@ -726,7 +726,7 @@ def main():
     print("")
     print("==============================================")
     print(" INVASIÓN PIXELADA — GENERADOR DE TIENDA")
-    print(" VERSIÓN: IP-STOREGEN-013")
+    print(" VERSIÓN: IP-STOREGEN-014")
     print("==============================================")
     print("")
 
@@ -750,6 +750,15 @@ def main():
     )
 
     print("")
+
+    # -------------------------------------------------
+    # ORDEN DE PRODUCTOS
+    #
+    # El último producto añadido al DOCX
+    # aparece primero en la tienda.
+    # -------------------------------------------------
+
+    productos.reverse()
 
     actualizar_tienda(productos)
 
