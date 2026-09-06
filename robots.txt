@@ -1,0 +1,9 @@
+# =========================================================
+# INVASIÓN PIXELADA — ROBOTS.TXT
+# VERSIÓN INTERNA: IP-ROBOTS-001
+# =========================================================
+
+User-agent: *
+Allow: /
+
+Sitemap: https://invasionpixelada.github.io/invasion-pixelada/sitemap.xml
