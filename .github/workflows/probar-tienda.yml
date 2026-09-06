@@ -1,11 +1,17 @@
 # =========================================================
 # INVASIÓN PIXELADA — GENERADOR DE TIENDA
-# VERSIÓN INTERNA: IP-ACTIONS-STORE-003
+# VERSIÓN INTERNA: IP-ACTIONS-STORE-004
 # =========================================================
 
 name: Generar tienda
 
 on:
+  push:
+    paths:
+      - "tienda/Libros.docx"
+      - "tienda/Videojuegos.docx"
+      - "tienda/Peliculas.docx"
+
   workflow_dispatch:
 
 permissions:
