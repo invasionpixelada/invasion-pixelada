@@ -1,6 +1,6 @@
 # =========================================================
 # INVASIÓN PIXELADA — GITHUB ACTIONS
-# VERSIÓN INTERNA: IP-ACTIONS-002
+# VERSIÓN INTERNA: IP-ACTIONS-003
 # =========================================================
 
 name: Generar reseñas
@@ -13,6 +13,9 @@ on:
       - "reseñas/**/*.jpeg"
       - "reseñas/**/*.png"
       - "reseñas/**/*.webp"
+      - "generar_resenas.py"
+      - "index.html"
+      - "resenas.html"
 
   workflow_dispatch:
 
