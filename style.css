@@ -1154,6 +1154,10 @@ a {
     margin-bottom: 80px;
 }
 
+.store-category:last-of-type {
+    margin-bottom: 0;
+}
+
 .store-card {
     overflow: hidden;
     border-radius: 12px;
