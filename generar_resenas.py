@@ -1,6 +1,6 @@
 # =========================================================
 # INVASIÓN PIXELADA — GENERADOR DE RESEÑAS
-# VERSIÓN INTERNA: IP-GEN-010
+# VERSIÓN INTERNA: IP-GEN-011
 # =========================================================
 
 from pathlib import Path
@@ -174,6 +174,13 @@ def leer_docx(ruta):
 # METADATOS
 # =========================================================
 
+# Todos estos campos son OPCIONALES.
+#
+# Una reseña puede tener algunos, todos o ninguno.
+#
+# El generador deja de leer metadatos en cuanto encuentra
+# el primer párrafo que no corresponde a uno de estos campos.
+#
 CAMPOS = [
     "Título",
     "Año",
@@ -183,11 +190,14 @@ CAMPOS = [
     "Plataforma",
     "Género",
     "Lanzamiento",
+    "Voces",
     "Textos",
     "Web del juego",
     "Web",
     "CAAD",
     "Enlace CAAD",
+    "WikiCAAD",
+    "Enlace WikiCAAD",
     "Valoración",
     "Puntuación",
 ]
@@ -412,7 +422,7 @@ def crear_json_ld(
     plataforma,
     lanzamiento,
     valoracion,
-    portada,
+    portada_url,
     url_reseña
 ):
 
@@ -562,26 +572,28 @@ def crear_json_ld(
             except ValueError:
                 pass
 
-    if portada:
+    # -----------------------------------------------------
+    # IMAGEN DE PORTADA
+    #
+    # Importante:
+    # usamos directamente portada_url, que ya está
+    # correctamente codificada una sola vez.
+    #
+    # Así evitamos generar %2520.
+    # -----------------------------------------------------
 
-        imagen_url = crear_url_archivo_reseña(
-            url_reseña.split("/reseñas/")[-1].rstrip("/"),
-            portada
-        )
+    if portada_url:
 
-        datos["@graph"][1]["image"] = imagen_url
+        datos["@graph"][1]["image"] = portada_url
 
-        videojuego["image"] = imagen_url
+        videojuego["image"] = portada_url
 
     return (
         '<script type="application/ld+json">\n'
-        + html.escape(
-            json.dumps(
-                datos,
-                ensure_ascii=False,
-                indent=4
-            ),
-            quote=False
+        + json.dumps(
+            datos,
+            ensure_ascii=False,
+            indent=4
         )
         + "\n</script>"
     )
@@ -1018,6 +1030,11 @@ def crear_pagina(
         "lanzamiento"
     )
 
+    voces = obtener(
+        metadatos,
+        "voces"
+    )
+
     textos = obtener(
         metadatos,
         "textos"
@@ -1046,6 +1063,18 @@ def crear_pagina(
         metadatos,
         "enlace caad"
     )
+
+    wiki_caad = obtener(
+        metadatos,
+        "wikicaad"
+    )
+
+    if not wiki_caad:
+
+        wiki_caad = obtener(
+            metadatos,
+            "enlace wikicaad"
+        )
 
     valoracion = obtener(
         metadatos,
@@ -1103,7 +1132,7 @@ def crear_pagina(
         plataforma,
         lanzamiento,
         valoracion,
-        portada,
+        portada_url,
         url_reseña
     )
 
@@ -1176,6 +1205,7 @@ def crear_pagina(
         ("Plataforma", plataforma),
         ("Género", genero),
         ("Lanzamiento", lanzamiento),
+        ("Voces", voces),
         ("Textos", textos),
     ]
 
@@ -1304,7 +1334,7 @@ def crear_pagina(
 <!--
     INVASIÓN PIXELADA
     PÁGINA GENERADA AUTOMÁTICAMENTE
-    GENERADOR: IP-GEN-010
+    GENERADOR: IP-GEN-011
 -->
 <html lang="es">
 
@@ -1345,6 +1375,13 @@ def crear_pagina(
         rel="icon"
         type="image/png"
         href="../../imagenes/nuevo_logo_invasion_pixelada.png"
+    >
+
+    <!-- HOJA DE ESTILOS -->
+
+    <link
+        rel="stylesheet"
+        href="../../style.css"
     >
 
     <!-- OPEN GRAPH -->
@@ -1561,6 +1598,14 @@ def crear_tarjeta(
 
     descripcion = ""
 
+    # -----------------------------------------------------
+    # EL PRIMER PÁRRAFO REAL DE LA RESEÑA
+    #
+    # Como extraer_metadatos() ya ha separado todos los
+    # campos de ficha, aquí el primer elemento de contenido
+    # es el primer párrafo real de la reseña.
+    # -----------------------------------------------------
+
     for texto in contenido:
 
         if texto.upper().startswith(
@@ -1727,7 +1772,7 @@ def actualizar_sitemap():
         '<!--',
         '    INVASIÓN PIXELADA',
         '    SITEMAP GENERADO AUTOMÁTICAMENTE',
-        '    GENERADOR: IP-GEN-010',
+        '    GENERADOR: IP-GEN-011',
         '-->',
         '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
     ]
