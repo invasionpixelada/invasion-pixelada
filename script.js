@@ -185,7 +185,7 @@ async function cargarVideos() {
     Número máximo de noticias que mostraremos.
 */
 
-const NUMERO_NOTICIAS = 6;
+const NUMERO_NOTICIAS = 3;
 
 
 /*
