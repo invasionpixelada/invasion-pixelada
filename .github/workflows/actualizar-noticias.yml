@@ -2,7 +2,7 @@ name: Actualizar noticias
 
 on:
   schedule:
-    - cron: "0 */6 * * *"
+    - cron: "0 * * * *"
 
   workflow_dispatch:
 
@@ -10,422 +10,175 @@ permissions:
   contents: write
 
 jobs:
-
   actualizar-noticias:
 
     runs-on: ubuntu-latest
 
     steps:
 
-      # =====================================================
-      # DESCARGAR REPOSITORIO
-      # =====================================================
-
       - name: Descargar repositorio
         uses: actions/checkout@v4
-
-
-      # =====================================================
-      # CONFIGURAR PYTHON
-      # =====================================================
 
       - name: Configurar Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.x"
 
-
-      # =====================================================
-      # INSTALAR DEPENDENCIAS
-      # =====================================================
-
       - name: Instalar dependencias
         run: |
-          python -m pip install --upgrade pip
-          pip install requests beautifulsoup4
+          pip install requests feedparser beautifulsoup4
 
-
-      # =====================================================
-      # LEER RSS Y CREAR noticias.json
-      # =====================================================
-
-      - name: Actualizar noticias
+      - name: Descargar RSS de uVeJuegos y generar noticias.json
         run: |
 
           python <<'PY'
 
           import json
-          import re
           import requests
-
+          import feedparser
           from bs4 import BeautifulSoup
-          from xml.etree import ElementTree as ET
 
 
-          # =================================================
-          # CONFIGURACIÓN
-          # =================================================
-
-          RSS_URL = "https://uvejuegos.com/rss"
-
-          ARCHIVO_SALIDA = "noticias.json"
-
-          MAX_NOTICIAS_RSS = 20
+          print("====================================")
+          print("ACTUALIZANDO NOTICIAS")
+          print("====================================")
 
 
-          # =================================================
-          # PALABRAS RELACIONADAS CON LA WEB
-          # =================================================
+          # =========================================================
+          # RSS DE UVEJUEGOS
+          # =========================================================
 
-          PALABRAS = {
+          RSS_URL = "https://uvejuegos.com/contenidosRSS.jsp"
 
-              "aventura gráfica": 10,
-              "aventura grafica": 10,
-
-              "point & click": 10,
-              "point and click": 10,
-              "point-and-click": 10,
-
-              "visual novel": 9,
-              "visual novels": 9,
-              "novela visual": 9,
-
-              "walking simulator": 8,
-              "walking simulators": 8,
-
-              "narrativo": 6,
-              "narrativa": 6,
-              "videojuego narrativo": 8,
-
-              "aventura cooperativa": 5,
-
-              "misterio": 5,
-              "detective": 5,
-              "investigación": 5,
-              "investigacion": 5,
-
-              "terror": 5,
-              "horror": 5,
-
-              "lovecraft": 6,
-              "lovecraftiano": 6,
-
-              "ciencia ficción": 5,
-              "ciencia ficcion": 5,
-
-              "thriller": 4,
-
-              "puzles": 5,
-              "puzzles": 5,
-
-              "historia": 3,
-              "historia del juego": 4,
-
-              "personajes": 2,
-              "guion": 5,
-              "guión": 5,
-
-              "rol narrativo": 4,
-
-              "story driven": 5,
-              "storytelling": 5
-          }
-
-
-          # =================================================
-          # DESCARGAR RSS
-          # =================================================
-
+          print("")
           print("Descargando RSS de uVeJuegos...")
+          print(RSS_URL)
+
 
           respuesta = requests.get(
               RSS_URL,
-              timeout=30,
               headers={
-                  "User-Agent": "Mozilla/5.0 InvasionPixeladaBot/1.0"
-              }
+                  "User-Agent": "Mozilla/5.0"
+              },
+              timeout=30
           )
 
           respuesta.raise_for_status()
 
-          root = ET.fromstring(respuesta.content)
+
+          print("RSS descargado correctamente.")
+          print("Código HTTP:", respuesta.status_code)
 
 
-          # =================================================
-          # LOCALIZAR ITEMS
-          # =================================================
+          # =========================================================
+          # PROCESAR RSS
+          # =========================================================
 
-          items = root.findall(".//item")
-
-          print(
-              f"Noticias encontradas en RSS: {len(items)}"
+          feed = feedparser.parse(
+              respuesta.content
           )
+
+
+          print("")
+          print("Elementos encontrados en el RSS:")
+          print(len(feed.entries))
 
 
           noticias = []
 
 
-          # =================================================
-          # FUNCIONES
-          # =================================================
+          for entrada in feed.entries:
 
-          def limpiar_texto(texto):
+              titulo = entrada.get(
+                  "title",
+                  ""
+              ).strip()
 
-              if not texto:
-                  return ""
 
-              soup = BeautifulSoup(
-                  texto,
-                  "html.parser"
+              enlace = entrada.get(
+                  "link",
+                  ""
+              ).strip()
+
+
+              descripcion = entrada.get(
+                  "description",
+                  ""
+              ).strip()
+
+
+              categoria = ""
+
+
+              if "tags" in entrada:
+
+                  categorias = []
+
+                  for tag in entrada.tags:
+
+                      termino = tag.get(
+                          "term",
+                          ""
+                      )
+
+                      if termino:
+                          categorias.append(
+                              termino
+                          )
+
+                  categoria = ", ".join(
+                      categorias
+                  )
+
+
+              fecha = entrada.get(
+                  "published",
+                  entrada.get(
+                      "pubDate",
+                      ""
+                  )
               )
 
-              return soup.get_text(
+
+              # Limpiar HTML de la descripción
+
+              descripcion_limpia = BeautifulSoup(
+                  descripcion,
+                  "html.parser"
+              ).get_text(
                   " ",
                   strip=True
               )
 
 
-          def obtener_imagen(url):
-
-              if not url:
-                  return ""
-
-
-              try:
-
-                  pagina = requests.get(
-                      url,
-                      timeout=20,
-                      headers={
-                          "User-Agent":
-                          "Mozilla/5.0 "
-                          "InvasionPixeladaBot/1.0"
-                      }
-                  )
-
-
-                  if pagina.status_code != 200:
-                      return ""
-
-
-                  soup = BeautifulSoup(
-                      pagina.text,
-                      "html.parser"
-                  )
-
-
-                  # -----------------------------------------
-                  # OG IMAGE
-                  # -----------------------------------------
-
-                  meta = soup.find(
-                      "meta",
-                      property="og:image"
-                  )
-
-
-                  if meta and meta.get("content"):
-
-                      return meta["content"].strip()
-
-
-                  # -----------------------------------------
-                  # TWITTER IMAGE
-                  # -----------------------------------------
-
-                  meta = soup.find(
-                      "meta",
-                      attrs={
-                          "name": "twitter:image"
-                      }
-                  )
-
-
-                  if meta and meta.get("content"):
-
-                      return meta["content"].strip()
-
-
-                  return ""
-
-
-              except Exception as error:
-
-                  print(
-                      "No se pudo obtener imagen:",
-                      error
-                  )
-
-                  return ""
-
-
-          def calcular_puntuacion(
-              titulo,
-              descripcion,
-              categoria
-          ):
-
-              texto = (
-                  titulo +
-                  " " +
-                  descripcion
-              ).lower()
-
-
-              puntuacion = 0
-
-
-              for palabra, puntos in PALABRAS.items():
-
-                  if palabra in texto:
-
-                      puntuacion += puntos
-
-
-              # -----------------------------------------
-              # Categorías
-              # -----------------------------------------
-
-              categoria_lower = categoria.lower()
-
-
-              if categoria_lower == "ps5":
-                  puntuacion += 0
-
-
-              if categoria_lower == "switch2":
-                  puntuacion += 0
-
-
-              return puntuacion
-
-
-          # =================================================
-          # PROCESAR NOTICIAS
-          # =================================================
-
-          for item in items[:MAX_NOTICIAS_RSS]:
-
-              titulo = (
-                  item.findtext("title") or ""
-              ).strip()
-
-
-              enlace = (
-                  item.findtext("link") or ""
-              ).strip()
-
-
-              descripcion = limpiar_texto(
-                  item.findtext("description") or ""
-              )
-
-
-              categoria = (
-                  item.findtext("category") or ""
-              ).strip()
-
-
-              pub_date = (
-                  item.findtext("pubDate") or ""
-              ).strip()
-
-
-              if not titulo or not enlace:
-                  continue
-
-
-              puntuacion = calcular_puntuacion(
-                  titulo,
-                  descripcion,
-                  categoria
-              )
-
-
-              print("")
-              print("------------------------------------")
-              print("TÍTULO:", titulo)
-              print("PUNTUACIÓN:", puntuacion)
-
-
-              # -----------------------------------------
-              # Guardamos solamente noticias relacionadas
-              # -----------------------------------------
-
-              if puntuacion <= 0:
-
-                  print("DESCARTADA")
-
-                  continue
-
-
-              print("RELEVANTE")
-
-
-              # -----------------------------------------
-              # Obtener imagen
-              # -----------------------------------------
-
-              imagen = obtener_imagen(enlace)
-
-
-              if imagen:
-
-                  print(
-                      "IMAGEN:",
-                      imagen
-                  )
-
-              else:
-
-                  print(
-                      "IMAGEN: no encontrada"
-                  )
-
-
-              noticias.append({
+              noticia = {
 
                   "title": titulo,
 
                   "link": enlace,
 
-                  "description": descripcion,
+                  "description":
+                      descripcion_limpia,
 
-                  "category": categoria,
+                  "category":
+                      categoria,
 
-                  "pubDate": pub_date,
-
-                  "image": imagen,
-
-                  "score": puntuacion
-
-              })
+                  "pubDate":
+                      fecha
+              }
 
 
-          # =================================================
-          # ORDENAR
-          # =================================================
-
-          noticias.sort(
-              key=lambda noticia:
-                  noticia.get("pubDate", ""),
-              reverse=True
-          )
+              noticias.append(
+                  noticia
+              )
 
 
-          # =================================================
-          # LIMITAR RESULTADOS
-          # =================================================
-
-          noticias = noticias[:6]
-
-
-          # =================================================
+          # =========================================================
           # GUARDAR JSON
-          # =================================================
+          # =========================================================
 
           with open(
-              ARCHIVO_SALIDA,
+              "noticias.json",
               "w",
               encoding="utf-8"
           ) as archivo:
@@ -438,13 +191,9 @@ jobs:
               )
 
 
-          # =================================================
-          # INFORMACIÓN FINAL
-          # =================================================
-
           print("")
           print("====================================")
-          print("RESULTADO FINAL")
+          print("RESULTADO")
           print("====================================")
 
           print(
@@ -452,36 +201,35 @@ jobs:
               len(noticias)
           )
 
-          for noticia in noticias:
-
-              print(
-                  "-",
-                  noticia["title"]
-              )
-
           print(
-              "Archivo:",
-              ARCHIVO_SALIDA
+              "Archivo generado: noticias.json"
           )
+
+          print("====================================")
 
           PY
 
 
-      # =====================================================
-      # GUARDAR CAMBIOS EN GITHUB
-      # =====================================================
+      - name: Comprobar noticias.json
+        run: |
 
-      - name: Guardar noticias en GitHub
+          echo "Contenido de noticias.json:"
+          echo "--------------------------------"
+
+          cat noticias.json
+
+          echo "--------------------------------"
+
+
+      - name: Guardar cambios
         run: |
 
           git config user.name "github-actions[bot]"
 
-          git config user.email \
-            "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
           git add noticias.json
 
-          git diff --cached --quiet || \
-            git commit -m "Actualizar noticias"
+          git diff --cached --quiet || git commit -m "Actualizar noticias"
 
           git push
