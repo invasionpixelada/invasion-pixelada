@@ -1,6 +1,6 @@
 /*
     INVASIÓN PIXELADA
-    VERSIÓN INTERNA: IP-JS-002
+    VERSIÓN INTERNA: IP-JS-003
 */
 
 
@@ -53,10 +53,17 @@ async function cargarVideos() {
             const snippet = video.snippet;
             const videoId = snippet.resourceId.videoId;
 
-            const enlace = tarjetas[index].querySelector(".video-link");
-            const imagen = tarjetas[index].querySelector(".video-placeholder");
-            const titulo = tarjetas[index].querySelector("h3");
-            const informacion = tarjetas[index].querySelector("p");
+            const enlace =
+                tarjetas[index].querySelector(".video-link");
+
+            const imagen =
+                tarjetas[index].querySelector(".video-placeholder");
+
+            const titulo =
+                tarjetas[index].querySelector("h3");
+
+            const informacion =
+                tarjetas[index].querySelector("p");
 
 
             // Enlace al vídeo
@@ -79,7 +86,8 @@ async function cargarVideos() {
 
 
             // Fecha
-            const fecha = new Date(snippet.publishedAt);
+            const fecha =
+                new Date(snippet.publishedAt);
 
             informacion.textContent =
                 fecha.toLocaleDateString("es-ES", {
@@ -98,6 +106,356 @@ async function cargarVideos() {
         );
 
     }
+}
+
+
+/* =========================================================
+   NOTICIAS
+   ========================================================= */
+
+const NUMERO_NOTICIAS =
+    6;
+
+
+/*
+    Palabras y conceptos relacionados con el contenido
+    de Invasión Pixelada.
+
+    Se utilizarán para seleccionar las noticias del RSS
+    que tengan relación con:
+
+    - Aventuras gráficas
+    - Point & Click
+    - Videojuegos narrativos
+    - Visual novels
+    - Walking simulators
+    - Misterio
+    - Terror narrativo
+    - Ciencia ficción narrativa
+    - Juegos centrados en la historia
+*/
+
+const PALABRAS_NOTICIAS = [
+
+    "aventura gráfica",
+    "aventura grafica",
+    "point & click",
+    "point and click",
+    "point-and-click",
+    "visual novel",
+    "visual novels",
+    "novela visual",
+    "walking simulator",
+    "walking simulators",
+    "narrativo",
+    "narrativa",
+    "narración",
+    "historia",
+    "misterio",
+    "terror",
+    "horror",
+    "lovecraft",
+    "lovecraftiano",
+    "ciencia ficción",
+    "ciencia ficcion",
+    "thriller",
+    "detective",
+    "investigación",
+    "investigacion",
+    "puzles",
+    "puzzles"
+];
+
+
+/*
+    Comprueba si una noticia tiene relación con
+    el contenido de Invasión Pixelada.
+*/
+
+function noticiaEsRelevante(noticia) {
+
+    const texto = `
+        ${noticia.title || ""}
+        ${noticia.description || ""}
+        ${noticia.category || ""}
+    `.toLowerCase();
+
+
+    return PALABRAS_NOTICIAS.some(
+        palabra => texto.includes(palabra)
+    );
+
+}
+
+
+/*
+    Formatea la fecha de la noticia.
+*/
+
+function formatearFechaNoticia(fechaOriginal) {
+
+    const fecha =
+        new Date(fechaOriginal);
+
+
+    if (Number.isNaN(fecha.getTime())) {
+        return "";
+    }
+
+
+    return fecha.toLocaleDateString(
+        "es-ES",
+        {
+            day: "numeric",
+            month: "long",
+            year: "numeric"
+        }
+    );
+
+}
+
+
+/*
+    Carga las noticias desde noticias.json.
+
+    Este archivo será generado automáticamente
+    a partir del RSS de uVeJuegos mediante
+    GitHub Actions.
+*/
+
+async function cargarNoticias() {
+
+    const contenedor =
+        document.querySelector("#news-grid");
+
+
+    if (!contenedor) {
+        return;
+    }
+
+
+    try {
+
+        const respuesta =
+            await fetch(
+                "noticias.json?nocache=" +
+                Date.now()
+            );
+
+
+        if (!respuesta.ok) {
+
+            throw new Error(
+                "No se ha podido cargar noticias.json."
+            );
+
+        }
+
+
+        const datos =
+            await respuesta.json();
+
+
+        if (!Array.isArray(datos)) {
+
+            throw new Error(
+                "El archivo de noticias no tiene un formato válido."
+            );
+
+        }
+
+
+        /*
+            Filtramos las noticias relacionadas
+            con la temática de la web.
+        */
+
+        const noticiasRelevantes =
+            datos
+                .filter(noticiaEsRelevante)
+                .slice(0, NUMERO_NOTICIAS);
+
+
+        /*
+            Si no encontramos noticias relevantes,
+            mostramos un mensaje.
+        */
+
+        if (
+            noticiasRelevantes.length === 0
+        ) {
+
+            contenedor.innerHTML = `
+                <p class="news-empty">
+                    No hay noticias relacionadas
+                    con nuestra temática en este momento.
+                </p>
+            `;
+
+            return;
+        }
+
+
+        /*
+            Limpiamos el contenido inicial.
+        */
+
+        contenedor.innerHTML = "";
+
+
+        /*
+            Creamos las tarjetas.
+        */
+
+        noticiasRelevantes.forEach(
+            noticia => {
+
+                const articulo =
+                    document.createElement("article");
+
+                articulo.className =
+                    "news-card";
+
+
+                /*
+                    Fecha
+                */
+
+                const fecha =
+                    formatearFechaNoticia(
+                        noticia.pubDate
+                    );
+
+
+                /*
+                    Etiqueta de fuente
+                */
+
+                const fuente =
+                    document.createElement("p");
+
+                fuente.className =
+                    "news-card-source";
+
+                fuente.textContent =
+                    "uVeJuegos";
+
+
+                /*
+                    Título
+                */
+
+                const titulo =
+                    document.createElement("h3");
+
+                titulo.textContent =
+                    noticia.title || "Noticia";
+
+
+                /*
+                    Descripción
+                */
+
+                const descripcion =
+                    document.createElement("p");
+
+                descripcion.className =
+                    "news-card-description";
+
+                descripcion.textContent =
+                    noticia.description || "";
+
+
+                /*
+                    Fecha
+                */
+
+                const fechaElemento =
+                    document.createElement("p");
+
+                fechaElemento.className =
+                    "news-card-date";
+
+                fechaElemento.textContent =
+                    fecha;
+
+
+                /*
+                    Enlace a la noticia original
+                */
+
+                const enlace =
+                    document.createElement("a");
+
+                enlace.className =
+                    "news-card-link";
+
+                enlace.href =
+                    noticia.link;
+
+                enlace.target =
+                    "_blank";
+
+                enlace.rel =
+                    "noopener noreferrer";
+
+                enlace.textContent =
+                    "LEER NOTICIA";
+
+
+                /*
+                    Construimos la tarjeta.
+                */
+
+                articulo.appendChild(
+                    fuente
+                );
+
+                articulo.appendChild(
+                    titulo
+                );
+
+                articulo.appendChild(
+                    descripcion
+                );
+
+                if (fecha) {
+
+                    articulo.appendChild(
+                        fechaElemento
+                    );
+
+                }
+
+                articulo.appendChild(
+                    enlace
+                );
+
+
+                contenedor.appendChild(
+                    articulo
+                );
+
+            }
+        );
+
+
+    } catch (error) {
+
+        console.error(
+            "Error al cargar las noticias:",
+            error
+        );
+
+
+        contenedor.innerHTML = `
+            <p class="news-empty">
+                No se han podido cargar las noticias en este momento.
+            </p>
+        `;
+
+    }
+
 }
 
 
@@ -260,7 +618,8 @@ function crearPaginacionTienda() {
                 }
 
 
-                boton.textContent = numero;
+                boton.textContent =
+                    numero;
 
 
                 boton.addEventListener(
@@ -343,6 +702,8 @@ cargarVideos();
 document.addEventListener(
     "DOMContentLoaded",
     () => {
+
+        cargarNoticias();
 
         crearPaginacionTienda();
 
