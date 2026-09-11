@@ -9,95 +9,143 @@
    ========================================================= */
 
 const API_KEY = "AIzaSyAE_wqprOnVFSdGDb2-qMWqtkutgwfoHXQ";
+
 const CHANNEL_HANDLE = "@invasionpixelada";
 
 
 async function cargarVideos() {
 
-    const tarjetas = document.querySelectorAll(".video-card");
+    const tarjetas =
+        document.querySelectorAll(".video-card");
+
 
     try {
 
-        // 1. Obtener información del canal
-        const channelResponse = await fetch(
-            `https://www.googleapis.com/youtube/v3/channels?part=contentDetails&forHandle=${encodeURIComponent(CHANNEL_HANDLE)}&key=${API_KEY}`
-        );
+        const channelResponse =
+            await fetch(
+                `https://www.googleapis.com/youtube/v3/channels?part=contentDetails&forHandle=${encodeURIComponent(CHANNEL_HANDLE)}&key=${API_KEY}`
+            );
 
-        const channelData = await channelResponse.json();
 
-        if (!channelData.items || channelData.items.length === 0) {
-            throw new Error("No se ha encontrado el canal.");
+        const channelData =
+            await channelResponse.json();
+
+
+        if (
+            !channelData.items ||
+            channelData.items.length === 0
+        ) {
+
+            throw new Error(
+                "No se ha encontrado el canal."
+            );
+
         }
+
 
         const uploadsPlaylistId =
-            channelData.items[0].contentDetails.relatedPlaylists.uploads;
+            channelData
+                .items[0]
+                .contentDetails
+                .relatedPlaylists
+                .uploads;
 
 
-        // 2. Obtener los 6 vídeos más recientes
-        const videosResponse = await fetch(
-            `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${uploadsPlaylistId}&maxResults=6&key=${API_KEY}`
-        );
+        const videosResponse =
+            await fetch(
+                `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${uploadsPlaylistId}&maxResults=6&key=${API_KEY}`
+            );
 
-        const videosData = await videosResponse.json();
+
+        const videosData =
+            await videosResponse.json();
+
 
         if (!videosData.items) {
-            throw new Error("No se han encontrado vídeos.");
+
+            throw new Error(
+                "No se han encontrado vídeos."
+            );
+
         }
 
 
-        // 3. Rellenar las tarjetas
-        videosData.items.forEach((video, index) => {
+        videosData.items.forEach(
+            (video, index) => {
 
-            if (!tarjetas[index]) return;
-
-            const snippet = video.snippet;
-            const videoId = snippet.resourceId.videoId;
-
-            const enlace =
-                tarjetas[index].querySelector(".video-link");
-
-            const imagen =
-                tarjetas[index].querySelector(".video-placeholder");
-
-            const titulo =
-                tarjetas[index].querySelector("h3");
-
-            const informacion =
-                tarjetas[index].querySelector("p");
+                if (!tarjetas[index]) {
+                    return;
+                }
 
 
-            // Enlace al vídeo
-            enlace.href =
-                `https://www.youtube.com/watch?v=${videoId}`;
+                const snippet =
+                    video.snippet;
 
 
-            // Miniatura
-            imagen.innerHTML = `
-                <img
-                    src="${snippet.thumbnails.high.url}"
-                    alt="${snippet.title}"
-                    loading="lazy"
-                >
-            `;
+                const videoId =
+                    snippet.resourceId.videoId;
 
 
-            // Título
-            titulo.textContent =
-                snippet.title;
+                const enlace =
+                    tarjetas[index]
+                        .querySelector(
+                            ".video-link"
+                        );
 
 
-            // Fecha
-            const fecha =
-                new Date(snippet.publishedAt);
+                const imagen =
+                    tarjetas[index]
+                        .querySelector(
+                            ".video-placeholder"
+                        );
 
-            informacion.textContent =
-                fecha.toLocaleDateString("es-ES", {
-                    day: "numeric",
-                    month: "long",
-                    year: "numeric"
-                });
 
-        });
+                const titulo =
+                    tarjetas[index]
+                        .querySelector("h3");
+
+
+                const informacion =
+                    tarjetas[index]
+                        .querySelector("p");
+
+
+                enlace.href =
+                    `https://www.youtube.com/watch?v=${videoId}`;
+
+
+                imagen.innerHTML = `
+                    <img
+                        src="${snippet.thumbnails.high.url}"
+                        alt="${snippet.title}"
+                        loading="lazy"
+                    >
+                `;
+
+
+                titulo.textContent =
+                    snippet.title;
+
+
+                const fecha =
+                    new Date(
+                        snippet.publishedAt
+                    );
+
+
+                informacion.textContent =
+                    fecha.toLocaleDateString(
+                        "es-ES",
+                        {
+                            day: "numeric",
+                            month: "long",
+                            year: "numeric"
+                        }
+                    );
+
+            }
+        );
+
 
     } catch (error) {
 
@@ -107,309 +155,126 @@ async function cargarVideos() {
         );
 
     }
+
 }
+
 
 
 /* =========================================================
    NOTICIAS
    ========================================================= */
 
+
 const NUMERO_NOTICIAS = 6;
 
 
+
 /*
-    Palabras y conceptos relacionados con el contenido
-    de Invasión Pixelada.
-
-    El filtro NO exige que aparezca una frase exacta como
-    "aventura gráfica".
-
-    Se busca cualquier relación razonable con:
-
-    - Aventuras gráficas
-    - Point & Click
-    - Videojuegos narrativos
-    - Visual novels
-    - Walking simulators
-    - Misterio
-    - Terror
-    - Horror
-    - Lovecraft
-    - Ciencia ficción
-    - Thriller
-    - Detectives
-    - Investigación
-    - Puzles
-    - Historia
-    - Narrativa
-    - Juegos de autor
-    - Indies narrativos
+    Palabras relacionadas con
+    Invasión Pixelada.
 */
-
 
 const PALABRAS_NOTICIAS = [
 
-    // Aventuras gráficas
     "aventura gráfica",
     "aventura grafica",
-    "aventura",
-    "aventuras gráficas",
-    "aventuras graficas",
 
-    // Point & Click
     "point & click",
     "point and click",
     "point-and-click",
-    "point and click adventure",
 
-    // Narrativa
-    "narrativo",
-    "narrativa",
-    "narración",
-    "narracion",
-    "historia",
-    "historias",
-    "story",
-    "story-driven",
-
-    // Visual novels
     "visual novel",
     "visual novels",
     "novela visual",
-    "novelas visuales",
 
-    // Walking simulators
     "walking simulator",
     "walking simulators",
 
-    // Misterio
-    "misterio",
-    "misterios",
-    "misterioso",
-    "misteriosa",
+    "narrativo",
+    "narrativa",
+    "narración",
 
-    // Terror
+    "historia",
+
+    "misterio",
+
     "terror",
     "horror",
-    "horrible",
-    "horror psicológico",
-    "horror psicologico",
 
-    // Lovecraft
     "lovecraft",
     "lovecraftiano",
-    "lovecraftiana",
-    "mitos de cthulhu",
-    "cthulhu",
 
-    // Ciencia ficción
     "ciencia ficción",
     "ciencia ficcion",
-    "sci-fi",
-    "ciencia-ficción",
-    "ciencia-ficcion",
 
-    // Thriller
     "thriller",
-    "suspense",
 
-    // Investigación
     "detective",
-    "detectives",
+
     "investigación",
     "investigacion",
-    "investigar",
-    "caso",
-    "casos",
 
-    // Puzles
-    "puzle",
     "puzles",
-    "puzzle",
-    "puzzles",
-    "rompecabezas",
-    "enigmas",
-    "enigma",
-
-    // Personajes / investigación narrativa
-    "protagonista",
-    "protagonistas",
-
-    // Géneros que pueden tener relación
-    "metroidvania",
-    "rol narrativo",
-    "rpg narrativo",
-    "juego narrativo",
-
-    // Temáticas
-    "realidad",
-    "universo",
-    "dimensiones",
-    "memoria",
-    "recuerdos",
-    "misterio",
-    "oculto",
-    "oculta",
-
-    // Desarrollo independiente
-    "indie",
-    "independiente",
-
-    // Terror y ciencia ficción
-    "monstruo",
-    "monstruos",
-    "criatura",
-    "criaturas",
-    "alien",
-    "extraterrestre",
-    "distopía",
-    "distopia",
-    "cyberpunk",
-    "apocalipsis",
-    "sobrenatural"
+    "puzzles"
 
 ];
 
 
-/*
-    Comprueba si una noticia tiene relación con
-    el contenido de Invasión Pixelada.
-*/
 
-function noticiaEsRelevante(noticia) {
+/* =========================================================
+   COMPROBAR RELEVANCIA
+   ========================================================= */
+
+
+function noticiaEsRelevante(
+    noticia
+) {
 
     const texto = `
+
         ${noticia.title || ""}
+
         ${noticia.description || ""}
+
         ${noticia.category || ""}
+
     `.toLowerCase();
 
 
     return PALABRAS_NOTICIAS.some(
         palabra =>
             texto.includes(
-                palabra.toLowerCase()
+                palabra
             )
     );
 
 }
 
 
-/*
-    Calcula una puntuación para ordenar las noticias.
 
-    Las palabras encontradas en el TÍTULO tienen más peso
-    que las encontradas únicamente en la descripción.
-
-    Esto permite que una noticia claramente relacionada
-    aparezca antes que otra donde solamente se menciona
-    una palabra relacionada de pasada.
-*/
-
-function puntuarNoticia(noticia) {
-
-    const titulo =
-        `${noticia.title || ""}`.toLowerCase();
-
-    const descripcion =
-        `${noticia.description || ""}`.toLowerCase();
-
-    const categoria =
-        `${noticia.category || ""}`.toLowerCase();
+/* =========================================================
+   FECHA
+   ========================================================= */
 
 
-    let puntuacion = 0;
-
-
-    PALABRAS_NOTICIAS.forEach(
-        palabra => {
-
-            const termino =
-                palabra.toLowerCase();
-
-
-            if (titulo.includes(termino)) {
-                puntuacion += 5;
-            }
-
-
-            if (descripcion.includes(termino)) {
-                puntuacion += 2;
-            }
-
-
-            if (categoria.includes(termino)) {
-                puntuacion += 1;
-            }
-
-        }
-    );
-
-
-    /*
-        Algunas palabras son especialmente importantes
-        para nuestra temática.
-    */
-
-    const palabrasMuyRelevantes = [
-
-        "aventura gráfica",
-        "aventura grafica",
-        "point & click",
-        "point and click",
-        "visual novel",
-        "walking simulator",
-        "narrativo",
-        "narrativa",
-        "misterio",
-        "terror",
-        "horror",
-        "lovecraft",
-        "puzle",
-        "puzles",
-        "puzzle",
-        "puzzles"
-
-    ];
-
-
-    palabrasMuyRelevantes.forEach(
-        palabra => {
-
-            const termino =
-                palabra.toLowerCase();
-
-
-            if (titulo.includes(termino)) {
-                puntuacion += 10;
-            }
-
-
-            if (descripcion.includes(termino)) {
-                puntuacion += 4;
-            }
-
-        }
-    );
-
-
-    return puntuacion;
-
-}
-
-
-/*
-    Formatea la fecha de la noticia.
-*/
-
-function formatearFechaNoticia(fechaOriginal) {
+function formatearFechaNoticia(
+    fechaOriginal
+) {
 
     const fecha =
-        new Date(fechaOriginal);
+        new Date(
+            fechaOriginal
+        );
 
 
-    if (Number.isNaN(fecha.getTime())) {
+    if (
+        Number.isNaN(
+            fecha.getTime()
+        )
+    ) {
+
         return "";
+
     }
 
 
@@ -425,35 +290,37 @@ function formatearFechaNoticia(fechaOriginal) {
 }
 
 
-/*
-    Carga las noticias desde noticias.json.
 
-    Este archivo será generado automáticamente
-    a partir del RSS de uVeJuegos mediante
-    GitHub Actions.
-*/
+/* =========================================================
+   NOTICIAS
+   ========================================================= */
+
 
 async function cargarNoticias() {
 
-    console.log("CARGANDO NOTICIAS - VERSION NUEVA");
+
     /*
         IMPORTANTE:
 
-        El HTML utiliza:
+        En el HTML el contenedor se llama
+        #news-container.
 
-            id="news-container"
-
-        Por eso aquí buscamos exactamente ese ID.
+        Antes el JavaScript buscaba
+        #news-grid y por eso había un
+        problema.
     */
 
+
     const contenedor =
-        document.querySelector("#news-container");
+        document.querySelector(
+            "#news-container"
+        );
 
 
     if (!contenedor) {
 
         console.error(
-            "No se encuentra #news-container en el HTML."
+            "No existe #news-container"
         );
 
         return;
@@ -461,13 +328,9 @@ async function cargarNoticias() {
     }
 
 
+
     try {
 
-        /*
-            Añadimos un pequeño control de caché
-            para que el navegador no utilice
-            una versión antigua de noticias.json.
-        */
 
         const respuesta =
             await fetch(
@@ -479,8 +342,7 @@ async function cargarNoticias() {
         if (!respuesta.ok) {
 
             throw new Error(
-                "No se ha podido cargar noticias.json. Código HTTP: " +
-                respuesta.status
+                "No se ha podido cargar noticias.json."
             );
 
         }
@@ -490,7 +352,9 @@ async function cargarNoticias() {
             await respuesta.json();
 
 
-        if (!Array.isArray(datos)) {
+        if (
+            !Array.isArray(datos)
+        ) {
 
             throw new Error(
                 "El archivo noticias.json no tiene un formato válido."
@@ -499,91 +363,25 @@ async function cargarNoticias() {
         }
 
 
-        console.log(
-            "Noticias recibidas:",
-            datos.length
-        );
-
 
         /*
-            Filtramos las noticias relacionadas
-            con la temática de la web.
+            Filtrar noticias relevantes
         */
 
-        let noticiasRelevantes =
+        const noticiasRelevantes =
             datos
                 .filter(
-                    noticia =>
-                        noticiaEsRelevante(noticia)
+                    noticiaEsRelevante
                 )
-                .map(
-                    noticia => ({
-                        ...noticia,
-                        puntuacion:
-                            puntuarNoticia(noticia)
-                    })
+                .slice(
+                    0,
+                    NUMERO_NOTICIAS
                 );
 
 
-        /*
-            Ordenamos primero por puntuación
-            y después por fecha.
-        */
-
-        noticiasRelevantes.sort(
-            (a, b) => {
-
-                if (
-                    b.puntuacion !==
-                    a.puntuacion
-                ) {
-
-                    return (
-                        b.puntuacion -
-                        a.puntuacion
-                    );
-
-                }
-
-
-                const fechaA =
-                    new Date(
-                        a.pubDate
-                    ).getTime();
-
-
-                const fechaB =
-                    new Date(
-                        b.pubDate
-                    ).getTime();
-
-
-                return fechaB - fechaA;
-
-            }
-        );
-
 
         /*
-            Nos quedamos con las primeras noticias.
-        */
-
-        noticiasRelevantes =
-            noticiasRelevantes.slice(
-                0,
-                NUMERO_NOTICIAS
-            );
-
-
-        console.log(
-            "Noticias relevantes:",
-            noticiasRelevantes.length
-        );
-
-
-        /*
-            Si no encontramos noticias relevantes,
-            mostramos un mensaje.
+            Si no hay noticias
         */
 
         if (
@@ -591,10 +389,15 @@ async function cargarNoticias() {
         ) {
 
             contenedor.innerHTML = `
+
                 <p class="news-empty">
+
                     No hay noticias relacionadas
-                    con nuestra temática en este momento.
+                    con nuestra temática
+                    en este momento.
+
                 </p>
+
             `;
 
             return;
@@ -602,20 +405,22 @@ async function cargarNoticias() {
         }
 
 
+
         /*
-            Limpiamos el mensaje
-            "Cargando noticias..."
+            Limpiar "Cargando noticias..."
         */
 
         contenedor.innerHTML = "";
 
 
+
         /*
-            Creamos las tarjetas.
+            Crear tarjetas
         */
 
         noticiasRelevantes.forEach(
             noticia => {
+
 
                 const articulo =
                     document.createElement(
@@ -627,19 +432,67 @@ async function cargarNoticias() {
                     "news-card";
 
 
-                /*
-                    Fecha
-                */
 
-                const fecha =
-                    formatearFechaNoticia(
-                        noticia.pubDate
+                /* -------------------------------------
+                   IMAGEN
+                ------------------------------------- */
+
+
+                if (
+                    noticia.image
+                ) {
+
+                    const imagen =
+                        document.createElement(
+                            "img"
+                        );
+
+
+                    imagen.className =
+                        "news-card-image";
+
+
+                    imagen.src =
+                        noticia.image;
+
+
+                    imagen.alt =
+                        noticia.title ||
+                        "Noticia";
+
+
+                    imagen.loading =
+                        "lazy";
+
+
+                    articulo.appendChild(
+                        imagen
+                    );
+
+                }
+
+
+
+                /* -------------------------------------
+                   CONTENIDO
+                ------------------------------------- */
+
+
+                const contenido =
+                    document.createElement(
+                        "div"
                     );
 
 
-                /*
-                    Etiqueta de fuente
-                */
+                contenido.className =
+                    "news-card-content";
+
+
+
+                /* -------------------------------------
+                   FUENTE
+                ------------------------------------- */
+
 
                 const fuente =
                     document.createElement(
@@ -655,9 +508,47 @@ async function cargarNoticias() {
                     "uVeJuegos";
 
 
-                /*
-                    Título
-                */
+                contenido.appendChild(
+                    fuente
+                );
+
+
+
+                /* -------------------------------------
+                   CATEGORÍA
+                ------------------------------------- */
+
+
+                if (
+                    noticia.category
+                ) {
+
+                    const categoria =
+                        document.createElement(
+                            "p"
+                        );
+
+
+                    categoria.className =
+                        "news-card-category";
+
+
+                    categoria.textContent =
+                        noticia.category;
+
+
+                    contenido.appendChild(
+                        categoria
+                    );
+
+                }
+
+
+
+                /* -------------------------------------
+                   TÍTULO
+                ------------------------------------- */
+
 
                 const titulo =
                     document.createElement(
@@ -670,9 +561,16 @@ async function cargarNoticias() {
                     "Noticia";
 
 
-                /*
-                    Descripción
-                */
+                contenido.appendChild(
+                    titulo
+                );
+
+
+
+                /* -------------------------------------
+                   DESCRIPCIÓN
+                ------------------------------------- */
+
 
                 const descripcion =
                     document.createElement(
@@ -689,27 +587,51 @@ async function cargarNoticias() {
                     "";
 
 
-                /*
-                    Fecha
-                */
+                contenido.appendChild(
+                    descripcion
+                );
 
-                const fechaElemento =
-                    document.createElement(
-                        "p"
+
+
+                /* -------------------------------------
+                   FECHA
+                ------------------------------------- */
+
+
+                const fecha =
+                    formatearFechaNoticia(
+                        noticia.pubDate
                     );
 
 
-                fechaElemento.className =
-                    "news-card-date";
+                if (fecha) {
+
+                    const fechaElemento =
+                        document.createElement(
+                            "p"
+                        );
 
 
-                fechaElemento.textContent =
-                    fecha;
+                    fechaElemento.className =
+                        "news-card-date";
 
 
-                /*
-                    Enlace
-                */
+                    fechaElemento.textContent =
+                        fecha;
+
+
+                    contenido.appendChild(
+                        fechaElemento
+                    );
+
+                }
+
+
+
+                /* -------------------------------------
+                   ENLACE
+                ------------------------------------- */
+
 
                 const enlace =
                     document.createElement(
@@ -722,8 +644,7 @@ async function cargarNoticias() {
 
 
                 enlace.href =
-                    noticia.link ||
-                    "#";
+                    noticia.link;
 
 
                 enlace.target =
@@ -738,36 +659,19 @@ async function cargarNoticias() {
                     "LEER NOTICIA";
 
 
-                /*
-                    Construimos la tarjeta.
-                */
-
-                articulo.appendChild(
-                    fuente
-                );
-
-
-                articulo.appendChild(
-                    titulo
-                );
-
-
-                articulo.appendChild(
-                    descripcion
-                );
-
-
-                if (fecha) {
-
-                    articulo.appendChild(
-                        fechaElemento
-                    );
-
-                }
-
-
-                articulo.appendChild(
+                contenido.appendChild(
                     enlace
+                );
+
+
+
+                /* -------------------------------------
+                   AÑADIR CONTENIDO
+                ------------------------------------- */
+
+
+                articulo.appendChild(
+                    contenido
                 );
 
 
@@ -781,6 +685,7 @@ async function cargarNoticias() {
 
     } catch (error) {
 
+
         console.error(
             "Error al cargar las noticias:",
             error
@@ -788,9 +693,14 @@ async function cargarNoticias() {
 
 
         contenedor.innerHTML = `
+
             <p class="news-empty">
-                No se han podido cargar las noticias en este momento.
+
+                No se han podido cargar
+                las noticias en este momento.
+
             </p>
+
         `;
 
     }
@@ -798,14 +708,18 @@ async function cargarNoticias() {
 }
 
 
+
 /* =========================================================
    PAGINACIÓN DE LA TIENDA
    ========================================================= */
 
+
 const PRODUCTOS_POR_PAGINA = 9;
 
 
+
 function crearPaginacionTienda() {
+
 
     const categorias =
         document.querySelectorAll(
@@ -815,6 +729,7 @@ function crearPaginacionTienda() {
 
     categorias.forEach(
         (categoria) => {
+
 
             const grid =
                 categoria.querySelector(
@@ -832,7 +747,9 @@ function crearPaginacionTienda() {
                 !grid ||
                 !paginacion
             ) {
+
                 return;
+
             }
 
 
@@ -846,11 +763,6 @@ function crearPaginacionTienda() {
                         )
                 );
 
-
-            /*
-                Si no hay más de 9 productos,
-                no necesitamos paginación.
-            */
 
             if (
                 productos.length <=
@@ -879,6 +791,7 @@ function crearPaginacionTienda() {
             }
 
 
+
             const totalPaginas =
                 Math.ceil(
                     productos.length /
@@ -889,19 +802,18 @@ function crearPaginacionTienda() {
             let paginaActual = 1;
 
 
+
             function mostrarPagina(
                 numeroPagina
             ) {
+
 
                 paginaActual =
                     numeroPagina;
 
 
                 const inicio =
-                    (
-                        paginaActual -
-                        1
-                    ) *
+                    (paginaActual - 1) *
                     PRODUCTOS_POR_PAGINA;
 
 
@@ -915,6 +827,7 @@ function crearPaginacionTienda() {
                         producto,
                         index
                     ) => {
+
 
                         if (
                             index >= inicio &&
@@ -938,11 +851,6 @@ function crearPaginacionTienda() {
                 construirControles();
 
 
-                /*
-                    Volver al comienzo de la categoría
-                    al cambiar de página.
-                */
-
                 categoria.scrollIntoView({
                     behavior: "smooth",
                     block: "start"
@@ -951,15 +859,13 @@ function crearPaginacionTienda() {
             }
 
 
+
             function construirControles() {
+
 
                 paginacion.innerHTML =
                     "";
 
-
-                /*
-                    Botón ANTERIOR
-                */
 
                 const anterior =
                     document.createElement(
@@ -988,13 +894,11 @@ function crearPaginacionTienda() {
                     () => {
 
                         if (
-                            paginaActual >
-                            1
+                            paginaActual > 1
                         ) {
 
                             mostrarPagina(
-                                paginaActual -
-                                1
+                                paginaActual - 1
                             );
 
                         }
@@ -1008,15 +912,13 @@ function crearPaginacionTienda() {
                 );
 
 
-                /*
-                    Números de página
-                */
 
                 for (
                     let numero = 1;
                     numero <= totalPaginas;
                     numero++
                 ) {
+
 
                     const boton =
                         document.createElement(
@@ -1074,9 +976,6 @@ function crearPaginacionTienda() {
                 }
 
 
-                /*
-                    Botón SIGUIENTE
-                */
 
                 const siguiente =
                     document.createElement(
@@ -1111,8 +1010,7 @@ function crearPaginacionTienda() {
                         ) {
 
                             mostrarPagina(
-                                paginaActual +
-                                1
+                                paginaActual + 1
                             );
 
                         }
@@ -1128,10 +1026,6 @@ function crearPaginacionTienda() {
             }
 
 
-            /*
-                Mostrar inicialmente
-                la primera página.
-            */
 
             mostrarPagina(1);
 
@@ -1141,25 +1035,17 @@ function crearPaginacionTienda() {
 }
 
 
+
 /* =========================================================
    INICIALIZACIÓN
    ========================================================= */
 
-/*
-    YouTube
-*/
-
-cargarVideos();
-
-
-/*
-    Esperamos a que el HTML esté cargado
-    antes de buscar noticias y tienda.
-*/
 
 document.addEventListener(
     "DOMContentLoaded",
     () => {
+
+        cargarVideos();
 
         cargarNoticias();
 
