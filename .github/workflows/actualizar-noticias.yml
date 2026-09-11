@@ -43,205 +43,26 @@ jobs:
 
           echo "RSS descargado."
 
+          echo ""
           echo "Tamaño del archivo:"
           wc -c noticias-rss.xml
 
-          echo ""
-          echo "Primeras líneas:"
-          head -20 noticias-rss.xml
-
 
       # =====================================================
-      # 3. PROCESAR RSS
+      # 3. ANALIZAR EL RSS
       # =====================================================
 
-      - name: Generar noticias.json
+      - name: Analizar contenido del RSS
         run: |
 
           python3 <<'PY'
 
           import xml.etree.ElementTree as ET
-          import json
           import html
           import re
-          import unicodedata
 
 
           RSS_FILE = "noticias-rss.xml"
-          JSON_FILE = "noticias.json"
-
-
-          # =====================================================
-          # CONFIGURACIÓN
-          # =====================================================
-
-          NUMERO_MAXIMO_NOTICIAS = 30
-
-
-          # Palabras muy relacionadas con nuestra temática.
-          # Si aparece una de ellas, la noticia obtiene
-          # una puntuación alta.
-
-          PALABRAS_FUERTES = [
-
-              "aventura gráfica",
-              "aventura grafica",
-              "aventuras gráficas",
-              "aventuras graficas",
-
-              "point & click",
-              "point and click",
-              "point-and-click",
-
-              "visual novel",
-              "visual novels",
-              "novela visual",
-              "novelas visuales",
-
-              "walking simulator",
-              "walking simulators",
-
-              "aventura narrativa",
-              "aventuras narrativas",
-
-              "juego narrativo",
-              "juegos narrativos",
-
-              "narrativa interactiva",
-
-              "story driven",
-              "story-driven"
-
-          ]
-
-
-          # Palabras relacionadas con los géneros
-          # que nos interesan.
-
-          PALABRAS_GENERO = [
-
-              "misterio",
-              "mystery",
-
-              "detective",
-              "detectives",
-
-              "investigación",
-              "investigacion",
-
-              "terror",
-              "horror",
-
-              "lovecraft",
-              "lovecraftiano",
-
-              "thriller",
-
-              "ciencia ficción",
-              "ciencia ficcion",
-              "sci-fi",
-
-              "supervivencia",
-              "survival",
-
-              "puzles",
-              "puzzles",
-
-              "enigma",
-              "enigmas",
-
-              "crimen",
-              "crímenes",
-              "crimenes",
-
-              "investigar",
-              "investigación",
-
-              "exploración",
-              "exploracion"
-
-          ]
-
-
-          # Palabras que suelen aparecer en juegos
-          # narrativos o centrados en la historia.
-
-          PALABRAS_NARRATIVAS = [
-
-              "historia",
-              "historias",
-
-              "personajes",
-              "personaje",
-
-              "guion",
-              "guión",
-
-              "narrativa",
-              "narrativo",
-              "narrativa",
-
-              "protagonista",
-              "protagonistas",
-
-              "decisiones",
-              "decisión",
-              "decision",
-
-              "finales",
-              "final",
-
-              "diálogos",
-              "dialogos",
-              "diálogo",
-              "dialogo",
-
-              "historia interactiva",
-
-              "experiencia narrativa"
-
-          ]
-
-
-          # Palabras que pueden indicar que el contenido
-          # está muy alejado de nuestra temática.
-
-          PALABRAS_EXCLUIDAS = [
-
-              "fifa",
-              "ea sports",
-
-              "call of duty",
-
-              "fortnite",
-
-              "pokemon go",
-
-              "pokémon go",
-
-              "comic-con",
-              "comic con",
-
-              "merchandising",
-
-              "hardware",
-
-              "mando",
-
-              "monitor",
-
-              "televisor",
-
-              "televisión",
-
-              "tarjeta gráfica",
-              "tarjeta grafica",
-
-              "procesador",
-
-              "memoria ram"
-
-          ]
 
 
           # =====================================================
@@ -270,168 +91,6 @@ jobs:
               return texto.strip()
 
 
-          def normalizar(texto):
-
-              texto = limpiar_texto(texto)
-
-              texto = texto.lower()
-
-              # Eliminamos tildes para poder comparar
-              # "gráfica" y "grafica".
-
-              texto = unicodedata.normalize(
-                  "NFD",
-                  texto
-              )
-
-              texto = "".join(
-                  caracter
-                  for caracter in texto
-                  if unicodedata.category(caracter) != "Mn"
-              )
-
-              return texto
-
-
-          def obtener_datos(item):
-
-              titulo = limpiar_texto(
-                  item.findtext(
-                      "title",
-                      ""
-                  )
-              )
-
-              descripcion = limpiar_texto(
-                  item.findtext(
-                      "description",
-                      ""
-                  )
-              )
-
-              categoria = limpiar_texto(
-                  item.findtext(
-                      "category",
-                      ""
-                  )
-              )
-
-              enlace = (
-                  item.findtext(
-                      "link",
-                      ""
-                  )
-                  .strip()
-              )
-
-              fecha = (
-                  item.findtext(
-                      "pubDate",
-                      ""
-                  )
-                  .strip()
-              )
-
-              return (
-                  titulo,
-                  descripcion,
-                  categoria,
-                  enlace,
-                  fecha
-              )
-
-
-          # =====================================================
-          # SISTEMA DE PUNTUACIÓN
-          # =====================================================
-
-          def puntuacion_noticia(
-              titulo,
-              descripcion,
-              categoria
-          ):
-
-              texto_completo = normalizar(
-                  f"{titulo} {descripcion} {categoria}"
-              )
-
-              titulo_normalizado = normalizar(
-                  titulo
-              )
-
-
-              # ---------------------------------------------
-              # DESCARTES
-              # ---------------------------------------------
-
-              for palabra in PALABRAS_EXCLUIDAS:
-
-                  if normalizar(palabra) in texto_completo:
-
-                      return -100
-
-
-              puntuacion = 0
-
-
-              # ---------------------------------------------
-              # PALABRAS FUERTES
-              # ---------------------------------------------
-
-              for palabra in PALABRAS_FUERTES:
-
-                  if normalizar(palabra) in texto_completo:
-
-                      puntuacion += 8
-
-
-              # ---------------------------------------------
-              # PALABRAS DE GÉNERO
-              # ---------------------------------------------
-
-              for palabra in PALABRAS_GENERO:
-
-                  if normalizar(palabra) in texto_completo:
-
-                      puntuacion += 3
-
-
-              # ---------------------------------------------
-              # PALABRAS NARRATIVAS
-              # ---------------------------------------------
-
-              for palabra in PALABRAS_NARRATIVAS:
-
-                  if normalizar(palabra) in texto_completo:
-
-                      puntuacion += 2
-
-
-              # ---------------------------------------------
-              # BONIFICACIÓN SI APARECE EN EL TÍTULO
-              # ---------------------------------------------
-
-              for palabra in PALABRAS_FUERTES:
-
-                  if normalizar(palabra) in titulo_normalizado:
-
-                      puntuacion += 5
-
-
-              for palabra in PALABRAS_GENERO:
-
-                  if normalizar(palabra) in titulo_normalizado:
-
-                      puntuacion += 2
-
-
-              # ---------------------------------------------
-              # DEVOLVEMOS LA PUNTUACIÓN
-              # ---------------------------------------------
-
-              return puntuacion
-
-
           # =====================================================
           # LEER RSS
           # =====================================================
@@ -441,7 +100,6 @@ jobs:
           )
 
           raiz = arbol.getroot()
-
 
           canal = raiz.find(
               "channel"
@@ -462,148 +120,113 @@ jobs:
 
           print("")
           print("====================================")
-          print("ANÁLISIS DEL RSS")
+          print("ANÁLISIS COMPLETO DEL RSS")
           print("====================================")
+
           print(
-              f"Noticias totales en RSS: {len(items)}"
+              f"Noticias totales encontradas: {len(items)}"
           )
 
 
-          noticias_puntuadas = []
-
-
           # =====================================================
-          # ANALIZAR TODAS LAS NOTICIAS
+          # MOSTRAR TODAS LAS NOTICIAS
           # =====================================================
 
-          for item in items:
+          for numero, item in enumerate(
+              items,
+              start=1
+          ):
 
-              (
-                  titulo,
-                  descripcion,
-                  categoria,
-                  enlace,
-                  fecha
-              ) = obtener_datos(item)
-
-
-              if not titulo or not enlace:
-                  continue
+              titulo = limpiar_texto(
+                  item.findtext(
+                      "title",
+                      ""
+                  )
+              )
 
 
-              puntuacion = puntuacion_noticia(
-                  titulo,
-                  descripcion,
-                  categoria
+              descripcion = limpiar_texto(
+                  item.findtext(
+                      "description",
+                      ""
+                  )
+              )
+
+
+              categoria = limpiar_texto(
+                  item.findtext(
+                      "category",
+                      ""
+                  )
+              )
+
+
+              enlace = (
+                  item.findtext(
+                      "link",
+                      ""
+                  )
+                  .strip()
+              )
+
+
+              fecha = (
+                  item.findtext(
+                      "pubDate",
+                      ""
+                  )
+                  .strip()
               )
 
 
               print("")
+              print("====================================")
               print(
-                  f"Título: {titulo}"
+                  f"NOTICIA {numero}"
               )
+              print("====================================")
 
+              print("")
               print(
-                  f"Categoría: {categoria}"
+                  f"TÍTULO: {titulo}"
               )
 
+              print("")
               print(
-                  f"Puntuación: {puntuacion}"
+                  f"CATEGORÍA: {categoria}"
               )
 
-
-              # Solo guardamos las que tengan
-              # una puntuación mínima.
-
-              if puntuacion >= 3:
-
-                  noticias_puntuadas.append({
-
-                      "title": titulo,
-
-                      "link": enlace,
-
-                      "description": descripcion,
-
-                      "category": categoria,
-
-                      "pubDate": fecha,
-
-                      "score": puntuacion
-
-                  })
-
-
-          # =====================================================
-          # ORDENAR
-          # =====================================================
-
-          noticias_puntuadas.sort(
-              key=lambda noticia: noticia["score"],
-              reverse=True
-          )
-
-
-          # =====================================================
-          # LIMITAR RESULTADOS
-          # =====================================================
-
-          noticias = noticias_puntuadas[
-              :NUMERO_MAXIMO_NOTICIAS
-          ]
-
-
-          # =====================================================
-          # ELIMINAR SCORE DEL JSON FINAL
-          # =====================================================
-
-          for noticia in noticias:
-
-              noticia.pop(
-                  "score",
-                  None
+              print("")
+              print(
+                  f"FECHA: {fecha}"
               )
 
-
-          # =====================================================
-          # GUARDAR JSON
-          # =====================================================
-
-          with open(
-              JSON_FILE,
-              "w",
-              encoding="utf-8"
-          ) as archivo:
-
-              json.dump(
-                  noticias,
-                  archivo,
-                  ensure_ascii=False,
-                  indent=2
+              print("")
+              print(
+                  "DESCRIPCIÓN:"
               )
 
+              if descripcion:
 
-          # =====================================================
-          # RESULTADO FINAL
-          # =====================================================
+                  print(
+                      descripcion[:2000]
+                  )
+
+              else:
+
+                  print(
+                      "[SIN DESCRIPCIÓN]"
+                  )
+
+              print("")
+              print(
+                  f"ENLACE: {enlace}"
+              )
+
 
           print("")
           print("====================================")
-          print("RESULTADO")
-          print("====================================")
-
-          print(
-              f"Noticias totales en RSS: {len(items)}"
-          )
-
-          print(
-              f"Noticias relevantes: {len(noticias_puntuadas)}"
-          )
-
-          print(
-              f"Noticias guardadas: {len(noticias)}"
-          )
-
+          print("FIN DEL ANÁLISIS")
           print("====================================")
 
 
@@ -611,43 +234,22 @@ jobs:
 
 
       # =====================================================
-      # 4. MOSTRAR JSON GENERADO
+      # 4. NO MODIFICAR noticias.json TODAVÍA
       # =====================================================
 
-      - name: Mostrar noticias generadas
+      - name: Estado de noticias.json
         run: |
 
           echo "===================================="
-          echo "CONTENIDO DE noticias.json"
+          echo "ESTADO ACTUAL DE noticias.json"
           echo "===================================="
 
-          cat noticias.json
+          if [ -f noticias.json ]; then
 
-
-      # =====================================================
-      # 5. GUARDAR CAMBIOS EN GITHUB
-      # =====================================================
-
-      - name: Guardar cambios
-        run: |
-
-          git config user.name \
-            "github-actions[bot]"
-
-          git config user.email \
-            "41898282+github-actions[bot]@users.noreply.github.com"
-
-          git add noticias.json
-
-          if git diff --cached --quiet; then
-
-              echo "No hay cambios en noticias.json."
+              cat noticias.json
 
           else
 
-              git commit \
-                -m "Actualizar noticias de uVeJuegos"
-
-              git push
+              echo "El archivo noticias.json todavía no existe."
 
           fi
