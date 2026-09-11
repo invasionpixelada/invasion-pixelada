@@ -2,9 +2,12 @@ name: Actualizar noticias
 
 on:
   schedule:
+    # Ejecutar cada hora
     - cron: "0 * * * *"
 
+  # También permite ejecutarlo manualmente desde GitHub
   workflow_dispatch:
+
 
 jobs:
 
@@ -16,6 +19,7 @@ jobs:
       contents: write
 
     steps:
+
 
       # =====================================================
       # 1. DESCARGAR EL REPOSITORIO
@@ -40,17 +44,123 @@ jobs:
             "https://uvejuegos.com/contenidosRSS.jsp" \
             -o noticias-rss.xml
 
-          echo "RSS descargado."
+          echo ""
+          echo "RSS descargado correctamente."
+          echo ""
 
           echo "Tamaño del archivo:"
           wc -c noticias-rss.xml
 
-          echo "Primeras líneas:"
+          echo ""
+          echo "Primeras líneas del RSS:"
+          echo "===================================="
+
           head -20 noticias-rss.xml
+
+          echo ""
+          echo "===================================="
 
 
       # =====================================================
-      # 3. GENERAR noticias.json
+      # 3. MOSTRAR LOS TITULARES DEL RSS
+      # =====================================================
+
+      - name: Mostrar titulares del RSS
+        run: |
+
+          echo ""
+          echo "===================================="
+          echo "TÍTULOS DEL RSS DE UVEJUEGOS"
+          echo "===================================="
+
+          python3 <<'PY'
+
+          import xml.etree.ElementTree as ET
+
+
+          RSS_FILE = "noticias-rss.xml"
+
+
+          arbol = ET.parse(
+              RSS_FILE
+          )
+
+
+          raiz = arbol.getroot()
+
+
+          canal = raiz.find(
+              "channel"
+          )
+
+
+          if canal is None:
+
+              raise Exception(
+                  "No se ha encontrado el elemento <channel>."
+              )
+
+
+          items = canal.findall(
+              "item"
+          )
+
+
+          print(
+              f"Total de elementos encontrados: {len(items)}"
+          )
+
+
+          print("")
+
+
+          for numero, item in enumerate(
+              items,
+              1
+          ):
+
+              titulo = item.findtext(
+                  "title",
+                  ""
+              )
+
+
+              fecha = item.findtext(
+                  "pubDate",
+                  ""
+              )
+
+
+              categoria = item.findtext(
+                  "category",
+                  ""
+              )
+
+
+              print(
+                  f"{numero}. {titulo}"
+              )
+
+              print(
+                  f"   Categoría: {categoria}"
+              )
+
+              print(
+                  f"   Fecha: {fecha}"
+              )
+
+              print("")
+
+
+          PY
+
+          echo "===================================="
+          echo "FIN DE LOS TITULARES"
+          echo "===================================="
+
+
+      # =====================================================
+      # 4. GENERAR noticias.json
       # =====================================================
 
       - name: Generar noticias.json
@@ -157,7 +267,11 @@ jobs:
               if not texto:
                   return ""
 
-              texto = html.unescape(texto)
+
+              texto = html.unescape(
+                  texto
+              )
+
 
               texto = re.sub(
                   r"<[^>]+>",
@@ -165,11 +279,13 @@ jobs:
                   texto
               )
 
+
               texto = re.sub(
                   r"\s+",
                   " ",
                   texto
               )
+
 
               return texto.strip()
 
@@ -196,15 +312,18 @@ jobs:
                   ""
               )
 
+
               descripcion = item.findtext(
                   "description",
                   ""
               )
 
+
               categoria = item.findtext(
                   "category",
                   ""
               )
+
 
               return normalizar(
                   f"{titulo} {descripcion} {categoria}"
@@ -229,6 +348,7 @@ jobs:
               for palabra in PALABRAS_EXCLUIDAS:
 
                   if palabra in texto:
+
                       return False
 
 
@@ -239,6 +359,7 @@ jobs:
               for palabra in PALABRAS_FUERTES:
 
                   if palabra in texto:
+
                       return True
 
 
@@ -248,9 +369,11 @@ jobs:
 
               coincidencias = 0
 
+
               for palabra in PALABRAS_COMPLEMENTARIAS:
 
                   if palabra in texto:
+
                       coincidencias += 1
 
 
@@ -261,28 +384,13 @@ jobs:
           # LEER RSS
           # =====================================================
 
-          try:
-
-              arbol = ET.parse(
-                  RSS_FILE
-              )
-
-          except Exception as error:
-
-              print(
-                  "ERROR leyendo el RSS:",
-                  error
-              )
-
-              raise
+          arbol = ET.parse(
+              RSS_FILE
+          )
 
 
           raiz = arbol.getroot()
 
-
-          # =====================================================
-          # BUSCAR CHANNEL
-          # =====================================================
 
           canal = raiz.find(
               "channel"
@@ -292,7 +400,7 @@ jobs:
           if canal is None:
 
               raise Exception(
-                  "No se ha encontrado el elemento <channel> del RSS."
+                  "No se ha encontrado el canal RSS."
               )
 
 
@@ -302,17 +410,23 @@ jobs:
 
           noticias = []
 
+
           total_items = 0
+
 
           relevantes = 0
 
 
-          for item in canal.findall("item"):
+          for item in canal.findall(
+              "item"
+          ):
 
               total_items += 1
 
 
-              if not es_relevante(item):
+              if not es_relevante(
+                  item
+              ):
 
                   continue
 
@@ -384,7 +498,10 @@ jobs:
               })
 
 
-              if len(noticias) >= NUMERO_MAXIMO_NOTICIAS:
+              if (
+                  len(noticias)
+                  >= NUMERO_MAXIMO_NOTICIAS
+              ):
 
                   break
 
@@ -408,22 +525,26 @@ jobs:
 
 
           # =====================================================
-          # INFORMACIÓN PARA GITHUB ACTIONS
+          # RESULTADO
           # =====================================================
 
           print("")
           print("====================================")
           print("RESULTADO")
           print("====================================")
+
           print(
               f"Noticias totales en RSS: {total_items}"
           )
+
           print(
               f"Noticias relevantes: {relevantes}"
           )
+
           print(
               f"Noticias guardadas: {len(noticias)}"
           )
+
           print("====================================")
 
 
@@ -431,7 +552,7 @@ jobs:
 
 
       # =====================================================
-      # 4. MOSTRAR RESULTADO
+      # 5. MOSTRAR noticias.json
       # =====================================================
 
       - name: Mostrar noticias generadas
@@ -444,11 +565,12 @@ jobs:
           cat noticias.json
 
           echo ""
+
           echo "===================================="
 
 
       # =====================================================
-      # 5. GUARDAR CAMBIOS EN GITHUB
+      # 6. GUARDAR CAMBIOS EN GITHUB
       # =====================================================
 
       - name: Guardar cambios
@@ -456,6 +578,7 @@ jobs:
 
           git config user.name \
             "github-actions[bot]"
+
 
           git config user.email \
             "41898282+github-actions[bot]@users.noreply.github.com"
