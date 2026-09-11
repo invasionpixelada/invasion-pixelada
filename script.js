@@ -1,6 +1,6 @@
 /*
     INVASIÓN PIXELADA
-    VERSIÓN INTERNA: IP-JS-003
+    VERSIÓN INTERNA: IP-JS-004
 */
 
 
@@ -82,7 +82,8 @@ async function cargarVideos() {
 
 
             // Título
-            titulo.textContent = snippet.title;
+            titulo.textContent =
+                snippet.title;
 
 
             // Fecha
@@ -113,16 +114,17 @@ async function cargarVideos() {
    NOTICIAS
    ========================================================= */
 
-const NUMERO_NOTICIAS =
-    6;
+const NUMERO_NOTICIAS = 6;
 
 
 /*
     Palabras y conceptos relacionados con el contenido
     de Invasión Pixelada.
 
-    Se utilizarán para seleccionar las noticias del RSS
-    que tengan relación con:
+    El filtro NO exige que aparezca una frase exacta como
+    "aventura gráfica".
+
+    Se busca cualquier relación razonable con:
 
     - Aventuras gráficas
     - Point & Click
@@ -130,40 +132,142 @@ const NUMERO_NOTICIAS =
     - Visual novels
     - Walking simulators
     - Misterio
-    - Terror narrativo
-    - Ciencia ficción narrativa
-    - Juegos centrados en la historia
+    - Terror
+    - Horror
+    - Lovecraft
+    - Ciencia ficción
+    - Thriller
+    - Detectives
+    - Investigación
+    - Puzles
+    - Historia
+    - Narrativa
+    - Juegos de autor
+    - Indies narrativos
 */
+
 
 const PALABRAS_NOTICIAS = [
 
+    // Aventuras gráficas
     "aventura gráfica",
     "aventura grafica",
+    "aventura",
+    "aventuras gráficas",
+    "aventuras graficas",
+
+    // Point & Click
     "point & click",
     "point and click",
     "point-and-click",
-    "visual novel",
-    "visual novels",
-    "novela visual",
-    "walking simulator",
-    "walking simulators",
+    "point and click adventure",
+
+    // Narrativa
     "narrativo",
     "narrativa",
     "narración",
+    "narracion",
     "historia",
+    "historias",
+    "story",
+    "story-driven",
+
+    // Visual novels
+    "visual novel",
+    "visual novels",
+    "novela visual",
+    "novelas visuales",
+
+    // Walking simulators
+    "walking simulator",
+    "walking simulators",
+
+    // Misterio
     "misterio",
+    "misterios",
+    "misterioso",
+    "misteriosa",
+
+    // Terror
     "terror",
     "horror",
+    "horrible",
+    "horror psicológico",
+    "horror psicologico",
+
+    // Lovecraft
     "lovecraft",
     "lovecraftiano",
+    "lovecraftiana",
+    "mitos de cthulhu",
+    "cthulhu",
+
+    // Ciencia ficción
     "ciencia ficción",
     "ciencia ficcion",
+    "sci-fi",
+    "ciencia-ficción",
+    "ciencia-ficcion",
+
+    // Thriller
     "thriller",
+    "suspense",
+
+    // Investigación
     "detective",
+    "detectives",
     "investigación",
     "investigacion",
+    "investigar",
+    "caso",
+    "casos",
+
+    // Puzles
+    "puzle",
     "puzles",
-    "puzzles"
+    "puzzle",
+    "puzzles",
+    "rompecabezas",
+    "enigmas",
+    "enigma",
+
+    // Personajes / investigación narrativa
+    "protagonista",
+    "protagonistas",
+
+    // Géneros que pueden tener relación
+    "metroidvania",
+    "rol narrativo",
+    "rpg narrativo",
+    "juego narrativo",
+
+    // Temáticas
+    "realidad",
+    "universo",
+    "dimensiones",
+    "memoria",
+    "recuerdos",
+    "misterio",
+    "oculto",
+    "oculta",
+
+    // Desarrollo independiente
+    "indie",
+    "independiente",
+
+    // Terror y ciencia ficción
+    "monstruo",
+    "monstruos",
+    "criatura",
+    "criaturas",
+    "alien",
+    "extraterrestre",
+    "distopía",
+    "distopia",
+    "cyberpunk",
+    "apocalipsis",
+    "sobrenatural"
+
 ];
 
 
@@ -182,8 +286,114 @@ function noticiaEsRelevante(noticia) {
 
 
     return PALABRAS_NOTICIAS.some(
-        palabra => texto.includes(palabra)
+        palabra =>
+            texto.includes(
+                palabra.toLowerCase()
+            )
     );
+
+}
+
+
+/*
+    Calcula una puntuación para ordenar las noticias.
+
+    Las palabras encontradas en el TÍTULO tienen más peso
+    que las encontradas únicamente en la descripción.
+
+    Esto permite que una noticia claramente relacionada
+    aparezca antes que otra donde solamente se menciona
+    una palabra relacionada de pasada.
+*/
+
+function puntuarNoticia(noticia) {
+
+    const titulo =
+        `${noticia.title || ""}`.toLowerCase();
+
+    const descripcion =
+        `${noticia.description || ""}`.toLowerCase();
+
+    const categoria =
+        `${noticia.category || ""}`.toLowerCase();
+
+
+    let puntuacion = 0;
+
+
+    PALABRAS_NOTICIAS.forEach(
+        palabra => {
+
+            const termino =
+                palabra.toLowerCase();
+
+
+            if (titulo.includes(termino)) {
+                puntuacion += 5;
+            }
+
+
+            if (descripcion.includes(termino)) {
+                puntuacion += 2;
+            }
+
+
+            if (categoria.includes(termino)) {
+                puntuacion += 1;
+            }
+
+        }
+    );
+
+
+    /*
+        Algunas palabras son especialmente importantes
+        para nuestra temática.
+    */
+
+    const palabrasMuyRelevantes = [
+
+        "aventura gráfica",
+        "aventura grafica",
+        "point & click",
+        "point and click",
+        "visual novel",
+        "walking simulator",
+        "narrativo",
+        "narrativa",
+        "misterio",
+        "terror",
+        "horror",
+        "lovecraft",
+        "puzle",
+        "puzles",
+        "puzzle",
+        "puzzles"
+
+    ];
+
+
+    palabrasMuyRelevantes.forEach(
+        palabra => {
+
+            const termino =
+                palabra.toLowerCase();
+
+
+            if (titulo.includes(termino)) {
+                puntuacion += 10;
+            }
+
+
+            if (descripcion.includes(termino)) {
+                puntuacion += 4;
+            }
+
+        }
+    );
+
+
+    return puntuacion;
 
 }
 
@@ -225,16 +435,38 @@ function formatearFechaNoticia(fechaOriginal) {
 
 async function cargarNoticias() {
 
+    /*
+        IMPORTANTE:
+
+        El HTML utiliza:
+
+            id="news-container"
+
+        Por eso aquí buscamos exactamente ese ID.
+    */
+
     const contenedor =
-        document.querySelector("#news-grid");
+        document.querySelector("#news-container");
 
 
     if (!contenedor) {
+
+        console.error(
+            "No se encuentra #news-container en el HTML."
+        );
+
         return;
+
     }
 
 
     try {
+
+        /*
+            Añadimos un pequeño control de caché
+            para que el navegador no utilice
+            una versión antigua de noticias.json.
+        */
 
         const respuesta =
             await fetch(
@@ -246,7 +478,8 @@ async function cargarNoticias() {
         if (!respuesta.ok) {
 
             throw new Error(
-                "No se ha podido cargar noticias.json."
+                "No se ha podido cargar noticias.json. Código HTTP: " +
+                respuesta.status
             );
 
         }
@@ -259,10 +492,16 @@ async function cargarNoticias() {
         if (!Array.isArray(datos)) {
 
             throw new Error(
-                "El archivo de noticias no tiene un formato válido."
+                "El archivo noticias.json no tiene un formato válido."
             );
 
         }
+
+
+        console.log(
+            "Noticias recibidas:",
+            datos.length
+        );
 
 
         /*
@@ -270,10 +509,75 @@ async function cargarNoticias() {
             con la temática de la web.
         */
 
-        const noticiasRelevantes =
+        let noticiasRelevantes =
             datos
-                .filter(noticiaEsRelevante)
-                .slice(0, NUMERO_NOTICIAS);
+                .filter(
+                    noticia =>
+                        noticiaEsRelevante(noticia)
+                )
+                .map(
+                    noticia => ({
+                        ...noticia,
+                        puntuacion:
+                            puntuarNoticia(noticia)
+                    })
+                );
+
+
+        /*
+            Ordenamos primero por puntuación
+            y después por fecha.
+        */
+
+        noticiasRelevantes.sort(
+            (a, b) => {
+
+                if (
+                    b.puntuacion !==
+                    a.puntuacion
+                ) {
+
+                    return (
+                        b.puntuacion -
+                        a.puntuacion
+                    );
+
+                }
+
+
+                const fechaA =
+                    new Date(
+                        a.pubDate
+                    ).getTime();
+
+
+                const fechaB =
+                    new Date(
+                        b.pubDate
+                    ).getTime();
+
+
+                return fechaB - fechaA;
+
+            }
+        );
+
+
+        /*
+            Nos quedamos con las primeras noticias.
+        */
+
+        noticiasRelevantes =
+            noticiasRelevantes.slice(
+                0,
+                NUMERO_NOTICIAS
+            );
+
+
+        console.log(
+            "Noticias relevantes:",
+            noticiasRelevantes.length
+        );
 
 
         /*
@@ -293,11 +597,13 @@ async function cargarNoticias() {
             `;
 
             return;
+
         }
 
 
         /*
-            Limpiamos el contenido inicial.
+            Limpiamos el mensaje
+            "Cargando noticias..."
         */
 
         contenedor.innerHTML = "";
@@ -311,7 +617,10 @@ async function cargarNoticias() {
             noticia => {
 
                 const articulo =
-                    document.createElement("article");
+                    document.createElement(
+                        "article"
+                    );
+
 
                 articulo.className =
                     "news-card";
@@ -332,10 +641,14 @@ async function cargarNoticias() {
                 */
 
                 const fuente =
-                    document.createElement("p");
+                    document.createElement(
+                        "p"
+                    );
+
 
                 fuente.className =
                     "news-card-source";
+
 
                 fuente.textContent =
                     "uVeJuegos";
@@ -346,10 +659,14 @@ async function cargarNoticias() {
                 */
 
                 const titulo =
-                    document.createElement("h3");
+                    document.createElement(
+                        "h3"
+                    );
+
 
                 titulo.textContent =
-                    noticia.title || "Noticia";
+                    noticia.title ||
+                    "Noticia";
 
 
                 /*
@@ -357,13 +674,18 @@ async function cargarNoticias() {
                 */
 
                 const descripcion =
-                    document.createElement("p");
+                    document.createElement(
+                        "p"
+                    );
+
 
                 descripcion.className =
                     "news-card-description";
 
+
                 descripcion.textContent =
-                    noticia.description || "";
+                    noticia.description ||
+                    "";
 
 
                 /*
@@ -371,33 +693,45 @@ async function cargarNoticias() {
                 */
 
                 const fechaElemento =
-                    document.createElement("p");
+                    document.createElement(
+                        "p"
+                    );
+
 
                 fechaElemento.className =
                     "news-card-date";
+
 
                 fechaElemento.textContent =
                     fecha;
 
 
                 /*
-                    Enlace a la noticia original
+                    Enlace
                 */
 
                 const enlace =
-                    document.createElement("a");
+                    document.createElement(
+                        "a"
+                    );
+
 
                 enlace.className =
                     "news-card-link";
 
+
                 enlace.href =
-                    noticia.link;
+                    noticia.link ||
+                    "#";
+
 
                 enlace.target =
                     "_blank";
 
+
                 enlace.rel =
                     "noopener noreferrer";
+
 
                 enlace.textContent =
                     "LEER NOTICIA";
@@ -411,13 +745,16 @@ async function cargarNoticias() {
                     fuente
                 );
 
+
                 articulo.appendChild(
                     titulo
                 );
 
+
                 articulo.appendChild(
                     descripcion
                 );
+
 
                 if (fecha) {
 
@@ -426,6 +763,7 @@ async function cargarNoticias() {
                     );
 
                 }
+
 
                 articulo.appendChild(
                     enlace
@@ -469,168 +807,126 @@ const PRODUCTOS_POR_PAGINA = 9;
 function crearPaginacionTienda() {
 
     const categorias =
-        document.querySelectorAll(".store-category");
+        document.querySelectorAll(
+            ".store-category"
+        );
 
 
-    categorias.forEach((categoria) => {
+    categorias.forEach(
+        (categoria) => {
 
-        const grid =
-            categoria.querySelector(".store-grid");
-
-        const paginacion =
-            categoria.querySelector(".store-pagination");
-
-
-        if (!grid || !paginacion) return;
+            const grid =
+                categoria.querySelector(
+                    ".store-grid"
+                );
 
 
-        const productos =
-            Array.from(grid.children).filter((elemento) =>
-                elemento.matches(".store-card")
-            );
+            const paginacion =
+                categoria.querySelector(
+                    ".store-pagination"
+                );
 
 
-        // Si no hay más de 9 productos,
-        // no necesitamos paginación.
-        if (productos.length <= PRODUCTOS_POR_PAGINA) {
-
-            paginacion.innerHTML = "";
-            paginacion.style.display = "none";
-
-            productos.forEach((producto) => {
-                producto.style.display = "";
-            });
-
-            return;
-        }
+            if (
+                !grid ||
+                !paginacion
+            ) {
+                return;
+            }
 
 
-        const totalPaginas =
-            Math.ceil(
-                productos.length / PRODUCTOS_POR_PAGINA
-            );
+            const productos =
+                Array.from(
+                    grid.children
+                ).filter(
+                    (elemento) =>
+                        elemento.matches(
+                            ".store-card"
+                        )
+                );
 
 
-        let paginaActual = 1;
+            /*
+                Si no hay más de 9 productos,
+                no necesitamos paginación.
+            */
 
-
-        function mostrarPagina(numeroPagina) {
-
-            paginaActual = numeroPagina;
-
-
-            const inicio =
-                (paginaActual - 1) *
-                PRODUCTOS_POR_PAGINA;
-
-            const fin =
-                inicio +
-                PRODUCTOS_POR_PAGINA;
-
-
-            productos.forEach((producto, index) => {
-
-                if (
-                    index >= inicio &&
-                    index < fin
-                ) {
-
-                    producto.style.display = "";
-
-                } else {
-
-                    producto.style.display = "none";
-
-                }
-
-            });
-
-
-            construirControles();
-
-
-            // Volver al comienzo de la categoría
-            // al cambiar de página.
-            categoria.scrollIntoView({
-                behavior: "smooth",
-                block: "start"
-            });
-
-        }
-
-
-        function construirControles() {
-
-            paginacion.innerHTML = "";
-
-
-            // Botón ANTERIOR
-            const anterior =
-                document.createElement("button");
-
-            anterior.type = "button";
-            anterior.className = "store-pagination-button";
-            anterior.textContent = "← ANTERIOR";
-
-            anterior.disabled =
-                paginaActual === 1;
-
-
-            anterior.addEventListener(
-                "click",
-                () => {
-
-                    if (paginaActual > 1) {
-                        mostrarPagina(
-                            paginaActual - 1
-                        );
-                    }
-
-                }
-            );
-
-
-            paginacion.appendChild(anterior);
-
-
-            // Números de página
-            for (
-                let numero = 1;
-                numero <= totalPaginas;
-                numero++
+            if (
+                productos.length <=
+                PRODUCTOS_POR_PAGINA
             ) {
 
-                const boton =
-                    document.createElement("button");
+                paginacion.innerHTML =
+                    "";
 
-                boton.type = "button";
-
-                boton.className =
-                    "store-pagination-button";
+                paginacion.style.display =
+                    "none";
 
 
-                if (numero === paginaActual) {
+                productos.forEach(
+                    (producto) => {
 
-                    boton.classList.add(
-                        "active"
-                    );
+                        producto.style.display =
+                            "";
 
-                }
-
-
-                boton.textContent =
-                    numero;
+                    }
+                );
 
 
-                boton.addEventListener(
-                    "click",
-                    () => {
+                return;
+
+            }
+
+
+            const totalPaginas =
+                Math.ceil(
+                    productos.length /
+                    PRODUCTOS_POR_PAGINA
+                );
+
+
+            let paginaActual = 1;
+
+
+            function mostrarPagina(
+                numeroPagina
+            ) {
+
+                paginaActual =
+                    numeroPagina;
+
+
+                const inicio =
+                    (
+                        paginaActual -
+                        1
+                    ) *
+                    PRODUCTOS_POR_PAGINA;
+
+
+                const fin =
+                    inicio +
+                    PRODUCTOS_POR_PAGINA;
+
+
+                productos.forEach(
+                    (
+                        producto,
+                        index
+                    ) => {
 
                         if (
-                            numero !== paginaActual
+                            index >= inicio &&
+                            index < fin
                         ) {
 
-                            mostrarPagina(numero);
+                            producto.style.display =
+                                "";
+
+                        } else {
+
+                            producto.style.display =
+                                "none";
 
                         }
 
@@ -638,57 +934,208 @@ function crearPaginacionTienda() {
                 );
 
 
-                paginacion.appendChild(boton);
+                construirControles();
+
+
+                /*
+                    Volver al comienzo de la categoría
+                    al cambiar de página.
+                */
+
+                categoria.scrollIntoView({
+                    behavior: "smooth",
+                    block: "start"
+                });
 
             }
 
 
-            // Botón SIGUIENTE
-            const siguiente =
-                document.createElement("button");
+            function construirControles() {
 
-            siguiente.type = "button";
-            siguiente.className =
-                "store-pagination-button";
-
-            siguiente.textContent =
-                "SIGUIENTE →";
+                paginacion.innerHTML =
+                    "";
 
 
-            siguiente.disabled =
-                paginaActual === totalPaginas;
+                /*
+                    Botón ANTERIOR
+                */
+
+                const anterior =
+                    document.createElement(
+                        "button"
+                    );
 
 
-            siguiente.addEventListener(
-                "click",
-                () => {
+                anterior.type =
+                    "button";
+
+
+                anterior.className =
+                    "store-pagination-button";
+
+
+                anterior.textContent =
+                    "← ANTERIOR";
+
+
+                anterior.disabled =
+                    paginaActual === 1;
+
+
+                anterior.addEventListener(
+                    "click",
+                    () => {
+
+                        if (
+                            paginaActual >
+                            1
+                        ) {
+
+                            mostrarPagina(
+                                paginaActual -
+                                1
+                            );
+
+                        }
+
+                    }
+                );
+
+
+                paginacion.appendChild(
+                    anterior
+                );
+
+
+                /*
+                    Números de página
+                */
+
+                for (
+                    let numero = 1;
+                    numero <= totalPaginas;
+                    numero++
+                ) {
+
+                    const boton =
+                        document.createElement(
+                            "button"
+                        );
+
+
+                    boton.type =
+                        "button";
+
+
+                    boton.className =
+                        "store-pagination-button";
+
 
                     if (
-                        paginaActual <
-                        totalPaginas
+                        numero ===
+                        paginaActual
                     ) {
 
-                        mostrarPagina(
-                            paginaActual + 1
+                        boton.classList.add(
+                            "active"
                         );
 
                     }
 
+
+                    boton.textContent =
+                        numero;
+
+
+                    boton.addEventListener(
+                        "click",
+                        () => {
+
+                            if (
+                                numero !==
+                                paginaActual
+                            ) {
+
+                                mostrarPagina(
+                                    numero
+                                );
+
+                            }
+
+                        }
+                    );
+
+
+                    paginacion.appendChild(
+                        boton
+                    );
+
                 }
-            );
 
 
-            paginacion.appendChild(
-                siguiente
-            );
+                /*
+                    Botón SIGUIENTE
+                */
+
+                const siguiente =
+                    document.createElement(
+                        "button"
+                    );
+
+
+                siguiente.type =
+                    "button";
+
+
+                siguiente.className =
+                    "store-pagination-button";
+
+
+                siguiente.textContent =
+                    "SIGUIENTE →";
+
+
+                siguiente.disabled =
+                    paginaActual ===
+                    totalPaginas;
+
+
+                siguiente.addEventListener(
+                    "click",
+                    () => {
+
+                        if (
+                            paginaActual <
+                            totalPaginas
+                        ) {
+
+                            mostrarPagina(
+                                paginaActual +
+                                1
+                            );
+
+                        }
+
+                    }
+                );
+
+
+                paginacion.appendChild(
+                    siguiente
+                );
+
+            }
+
+
+            /*
+                Mostrar inicialmente
+                la primera página.
+            */
+
+            mostrarPagina(1);
 
         }
-
-
-        // Mostrar inicialmente la primera página.
-        mostrarPagina(1);
-
-    });
+    );
 
 }
 
@@ -697,7 +1144,17 @@ function crearPaginacionTienda() {
    INICIALIZACIÓN
    ========================================================= */
 
+/*
+    YouTube
+*/
+
 cargarVideos();
+
+
+/*
+    Esperamos a que el HTML esté cargado
+    antes de buscar noticias y tienda.
+*/
 
 document.addEventListener(
     "DOMContentLoaded",
