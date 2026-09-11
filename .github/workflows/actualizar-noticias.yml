@@ -10,23 +10,43 @@ permissions:
   contents: write
 
 jobs:
+
   actualizar-noticias:
 
     runs-on: ubuntu-latest
 
     steps:
 
+      # =========================================================
+      # DESCARGAR REPOSITORIO
+      # =========================================================
+
       - name: Descargar repositorio
         uses: actions/checkout@v4
+
+
+      # =========================================================
+      # CONFIGURAR PYTHON
+      # =========================================================
 
       - name: Configurar Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.x"
 
+
+      # =========================================================
+      # INSTALAR DEPENDENCIAS
+      # =========================================================
+
       - name: Instalar dependencias
         run: |
           pip install requests feedparser beautifulsoup4
+
+
+      # =========================================================
+      # DESCARGAR RSS Y GENERAR noticias.json
+      # =========================================================
 
       - name: Descargar RSS de uVeJuegos y generar noticias.json
         run: |
@@ -36,19 +56,38 @@ jobs:
           import json
           import requests
           import feedparser
+
           from bs4 import BeautifulSoup
+          from urllib.parse import urljoin
 
 
-          print("====================================")
+          print("========================================")
           print("ACTUALIZANDO NOTICIAS")
-          print("====================================")
+          print("========================================")
 
 
-          # =========================================================
-          # RSS DE UVEJUEGOS
-          # =========================================================
+          # =====================================================
+          # CONFIGURACIÓN
+          # =====================================================
 
           RSS_URL = "https://uvejuegos.com/contenidosRSS.jsp"
+
+          MAX_NOTICIAS = 30
+
+          HEADERS = {
+              "User-Agent": (
+                  "Mozilla/5.0 "
+                  "(Windows NT 10.0; Win64; x64) "
+                  "AppleWebKit/537.36 "
+                  "(KHTML, like Gecko) "
+                  "Chrome/140.0 Safari/537.36"
+              )
+          }
+
+
+          # =====================================================
+          # DESCARGAR RSS
+          # =====================================================
 
           print("")
           print("Descargando RSS de uVeJuegos...")
@@ -57,22 +96,27 @@ jobs:
 
           respuesta = requests.get(
               RSS_URL,
-              headers={
-                  "User-Agent": "Mozilla/5.0"
-              },
+              headers=HEADERS,
               timeout=30
           )
+
 
           respuesta.raise_for_status()
 
 
-          print("RSS descargado correctamente.")
-          print("Código HTTP:", respuesta.status_code)
+          print(
+              "RSS descargado correctamente."
+          )
+
+          print(
+              "Código HTTP:",
+              respuesta.status_code
+          )
 
 
-          # =========================================================
+          # =====================================================
           # PROCESAR RSS
-          # =========================================================
+          # =====================================================
 
           feed = feedparser.parse(
               respuesta.content
@@ -80,14 +124,313 @@ jobs:
 
 
           print("")
-          print("Elementos encontrados en el RSS:")
-          print(len(feed.entries))
+          print(
+              "Elementos encontrados en el RSS:",
+              len(feed.entries)
+          )
 
 
           noticias = []
 
 
-          for entrada in feed.entries:
+          # =====================================================
+          # FUNCIÓN PARA BUSCAR IMAGEN
+          # =====================================================
+
+          def buscar_imagen(entrada, enlace, descripcion):
+
+              imagen = ""
+
+
+              # -------------------------------------------------
+              # 1. media:content
+              # -------------------------------------------------
+
+              if hasattr(
+                  entrada,
+                  "media_content"
+              ):
+
+                  try:
+
+                      for media in entrada.media_content:
+
+                          url = media.get(
+                              "url",
+                              ""
+                          )
+
+                          if url:
+
+                              imagen = url
+                              break
+
+                  except Exception:
+
+                      pass
+
+
+              # -------------------------------------------------
+              # 2. media:thumbnail
+              # -------------------------------------------------
+
+              if not imagen and hasattr(
+                  entrada,
+                  "media_thumbnail"
+              ):
+
+                  try:
+
+                      for media in entrada.media_thumbnail:
+
+                          url = media.get(
+                              "url",
+                              ""
+                          )
+
+                          if url:
+
+                              imagen = url
+                              break
+
+                  except Exception:
+
+                      pass
+
+
+              # -------------------------------------------------
+              # 3. enclosure
+              # -------------------------------------------------
+
+              if not imagen and hasattr(
+                  entrada,
+                  "enclosures"
+              ):
+
+                  try:
+
+                      for enclosure in entrada.enclosures:
+
+                          url = enclosure.get(
+                              "href",
+                              enclosure.get(
+                                  "url",
+                                  ""
+                              )
+                          )
+
+                          tipo = enclosure.get(
+                              "type",
+                              ""
+                          )
+
+                          if url and (
+                              "image" in tipo
+                              or url.lower().endswith(
+                                  (
+                                      ".jpg",
+                                      ".jpeg",
+                                      ".png",
+                                      ".webp"
+                                  )
+                              )
+                          ):
+
+                              imagen = url
+                              break
+
+                  except Exception:
+
+                      pass
+
+
+              # -------------------------------------------------
+              # 4. Campo image del RSS
+              # -------------------------------------------------
+
+              if not imagen and hasattr(
+                  entrada,
+                  "image"
+              ):
+
+                  try:
+
+                      if isinstance(
+                          entrada.image,
+                          dict
+                      ):
+
+                          imagen = entrada.image.get(
+                              "href",
+                              entrada.image.get(
+                                  "url",
+                                  ""
+                              )
+                          )
+
+                  except Exception:
+
+                      pass
+
+
+              # -------------------------------------------------
+              # 5. Buscar <img> dentro de description
+              # -------------------------------------------------
+
+              if not imagen and descripcion:
+
+                  try:
+
+                      soup = BeautifulSoup(
+                          descripcion,
+                          "html.parser"
+                      )
+
+                      img = soup.find(
+                          "img"
+                      )
+
+                      if img:
+
+                          imagen = img.get(
+                              "src",
+                              ""
+                          )
+
+                  except Exception:
+
+                      pass
+
+
+              # -------------------------------------------------
+              # 6. Si todavía no hay imagen,
+              #    entrar en la noticia y buscar og:image
+              # -------------------------------------------------
+
+              if not imagen and enlace:
+
+                  try:
+
+                      print(
+                          "Buscando imagen en:",
+                          enlace
+                      )
+
+
+                      pagina = requests.get(
+                          enlace,
+                          headers=HEADERS,
+                          timeout=20
+                      )
+
+
+                      if pagina.ok:
+
+                          soup = BeautifulSoup(
+                              pagina.text,
+                              "html.parser"
+                          )
+
+
+                          # og:image
+                          meta = soup.find(
+                              "meta",
+                              property="og:image"
+                          )
+
+
+                          if meta:
+
+                              imagen = meta.get(
+                                  "content",
+                                  ""
+                              )
+
+
+                          # twitter:image
+                          if not imagen:
+
+                              meta = soup.find(
+                                  "meta",
+                                  attrs={
+                                      "name":
+                                      "twitter:image"
+                                  }
+                              )
+
+
+                              if meta:
+
+                                  imagen = meta.get(
+                                      "content",
+                                      ""
+                                  )
+
+
+                          # Primera imagen grande de la página
+                          if not imagen:
+
+                              for img in soup.find_all(
+                                  "img"
+                              ):
+
+                                  src = img.get(
+                                      "src",
+                                      ""
+                                  )
+
+                                  if not src:
+                                      continue
+
+
+                                  src_lower = src.lower()
+
+
+                                  if any(
+                                      extension
+                                      in src_lower
+                                      for extension in (
+                                          ".jpg",
+                                          ".jpeg",
+                                          ".png",
+                                          ".webp"
+                                      )
+                                  ):
+
+                                      imagen = src
+                                      break
+
+
+                  except Exception as error:
+
+                      print(
+                          "No se pudo obtener la imagen:",
+                          error
+                      )
+
+
+              # -------------------------------------------------
+              # Convertir URL relativa en absoluta
+              # -------------------------------------------------
+
+              if imagen:
+
+                  imagen = urljoin(
+                      enlace,
+                      imagen
+                  )
+
+
+              return imagen
+
+
+          # =====================================================
+          # PROCESAR CADA NOTICIA
+          # =====================================================
+
+          for entrada in feed.entries[
+              :MAX_NOTICIAS
+          ]:
 
               titulo = entrada.get(
                   "title",
@@ -107,6 +450,10 @@ jobs:
               ).strip()
 
 
+              # -------------------------------------------------
+              # CATEGORÍAS
+              # -------------------------------------------------
+
               categoria = ""
 
 
@@ -114,22 +461,30 @@ jobs:
 
                   categorias = []
 
+
                   for tag in entrada.tags:
 
                       termino = tag.get(
                           "term",
                           ""
-                      )
+                      ).strip()
+
 
                       if termino:
+
                           categorias.append(
                               termino
                           )
+
 
                   categoria = ", ".join(
                       categorias
                   )
 
+
+              # -------------------------------------------------
+              # FECHA
+              # -------------------------------------------------
 
               fecha = entrada.get(
                   "published",
@@ -140,7 +495,9 @@ jobs:
               )
 
 
-              # Limpiar HTML de la descripción
+              # -------------------------------------------------
+              # LIMPIAR DESCRIPCIÓN
+              # -------------------------------------------------
 
               descripcion_limpia = BeautifulSoup(
                   descripcion,
@@ -151,11 +508,53 @@ jobs:
               )
 
 
+              # -------------------------------------------------
+              # BUSCAR IMAGEN
+              # -------------------------------------------------
+
+              print("")
+              print(
+                  "----------------------------------------"
+              )
+
+              print(
+                  "Procesando:",
+                  titulo
+              )
+
+
+              imagen = buscar_imagen(
+                  entrada,
+                  enlace,
+                  descripcion
+              )
+
+
+              if imagen:
+
+                  print(
+                      "Imagen encontrada:",
+                      imagen
+                  )
+
+              else:
+
+                  print(
+                      "NO se encontró imagen."
+                  )
+
+
+              # -------------------------------------------------
+              # CREAR NOTICIA
+              # -------------------------------------------------
+
               noticia = {
 
-                  "title": titulo,
+                  "title":
+                      titulo,
 
-                  "link": enlace,
+                  "link":
+                      enlace,
 
                   "description":
                       descripcion_limpia,
@@ -164,7 +563,10 @@ jobs:
                       categoria,
 
                   "pubDate":
-                      fecha
+                      fecha,
+
+                  "image":
+                      imagen
               }
 
 
@@ -173,9 +575,9 @@ jobs:
               )
 
 
-          # =========================================================
-          # GUARDAR JSON
-          # =========================================================
+          # =====================================================
+          # GUARDAR noticias.json
+          # =====================================================
 
           with open(
               "noticias.json",
@@ -191,10 +593,14 @@ jobs:
               )
 
 
+          # =====================================================
+          # RESULTADO
+          # =====================================================
+
           print("")
-          print("====================================")
+          print("========================================")
           print("RESULTADO")
-          print("====================================")
+          print("========================================")
 
           print(
               "Noticias guardadas:",
@@ -205,21 +611,31 @@ jobs:
               "Archivo generado: noticias.json"
           )
 
-          print("====================================")
+          print("========================================")
+
 
           PY
 
 
+      # =========================================================
+      # COMPROBAR noticias.json
+      # =========================================================
+
       - name: Comprobar noticias.json
         run: |
 
-          echo "Contenido de noticias.json:"
-          echo "--------------------------------"
+          echo "========================================"
+          echo "CONTENIDO DE noticias.json"
+          echo "========================================"
 
           cat noticias.json
 
-          echo "--------------------------------"
+          echo "========================================"
 
+
+      # =========================================================
+      # GUARDAR CAMBIOS
+      # =========================================================
 
       - name: Guardar cambios
         run: |
