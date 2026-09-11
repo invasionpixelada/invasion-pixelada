@@ -2,11 +2,12 @@ name: Actualizar noticias
 
 on:
   schedule:
-    # Ejecutar cada hora
-    - cron: "0 * * * *"
+    - cron: "0 */6 * * *"
 
-  # Permite ejecutarlo manualmente desde GitHub
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
 
@@ -14,13 +15,10 @@ jobs:
 
     runs-on: ubuntu-latest
 
-    permissions:
-      contents: write
-
     steps:
 
       # =====================================================
-      # 1. DESCARGAR EL REPOSITORIO
+      # DESCARGAR REPOSITORIO
       # =====================================================
 
       - name: Descargar repositorio
@@ -28,504 +26,406 @@ jobs:
 
 
       # =====================================================
-      # 2. DESCARGAR RSS DE UVEJUEGOS
+      # CONFIGURAR PYTHON
       # =====================================================
 
-      - name: Descargar RSS de uVeJuegos
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+
+      # =====================================================
+      # INSTALAR DEPENDENCIAS
+      # =====================================================
+
+      - name: Instalar dependencias
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests beautifulsoup4
+
+
+      # =====================================================
+      # LEER RSS Y CREAR noticias.json
+      # =====================================================
+
+      - name: Actualizar noticias
         run: |
 
-          curl -L \
-            --fail \
-            --silent \
-            --show-error \
-            "https://uvejuegos.com/contenidosRSS.jsp" \
-            -o noticias-rss.xml
+          python <<'PY'
 
-          echo "RSS descargado."
-
-          echo "Tamaño del archivo:"
-          wc -c noticias-rss.xml
-
-
-      # =====================================================
-      # 3. GENERAR noticias.json
-      # =====================================================
-
-      - name: Generar noticias.json
-        run: |
-
-          python3 <<'PY'
-
-          import xml.etree.ElementTree as ET
           import json
-          import html
           import re
+          import requests
+
+          from bs4 import BeautifulSoup
+          from xml.etree import ElementTree as ET
 
 
-          RSS_FILE = "noticias-rss.xml"
-          JSON_FILE = "noticias.json"
+          # =================================================
+          # CONFIGURACIÓN
+          # =================================================
 
-          NUMERO_MAXIMO_NOTICIAS = 30
+          RSS_URL = "https://uvejuegos.com/rss"
 
+          ARCHIVO_SALIDA = "noticias.json"
 
-          # =====================================================
-          # PALABRAS MUY RELEVANTES
-          # =====================================================
-
-          PALABRAS_FUERTES = [
-
-              "aventura gráfica",
-              "aventura grafica",
-              "aventuras gráficas",
-              "aventuras graficas",
-
-              "point & click",
-              "point and click",
-              "point-and-click",
-
-              "visual novel",
-              "visual novels",
-              "novela visual",
-              "novelas visuales",
-
-              "walking simulator",
-              "walking simulators",
-
-              "aventura narrativa",
-              "aventuras narrativas",
-
-              "juego narrativo",
-              "juegos narrativos",
-
-              "historia interactiva",
-
-              "horror narrativo",
-              "terror narrativo"
-
-          ]
+          MAX_NOTICIAS_RSS = 20
 
 
-          # =====================================================
-          # PALABRAS RELACIONADAS
-          # =====================================================
+          # =================================================
+          # PALABRAS RELACIONADAS CON LA WEB
+          # =================================================
 
-          PALABRAS_RELACIONADAS = {
+          PALABRAS = {
 
-              "aventura": 5,
-              "aventuras": 5,
+              "aventura gráfica": 10,
+              "aventura grafica": 10,
 
-              "narrativa": 4,
-              "narrativo": 4,
-              "narrativas": 4,
-              "narrativos": 4,
+              "point & click": 10,
+              "point and click": 10,
+              "point-and-click": 10,
 
-              "misterio": 4,
-              "misterios": 4,
+              "visual novel": 9,
+              "visual novels": 9,
+              "novela visual": 9,
 
-              "detective": 4,
-              "detectives": 4,
+              "walking simulator": 8,
+              "walking simulators": 8,
 
-              "investigación": 4,
-              "investigacion": 4,
+              "narrativo": 6,
+              "narrativa": 6,
+              "videojuego narrativo": 8,
 
-              "puzles": 3,
-              "puzzles": 3,
+              "aventura cooperativa": 5,
 
-              "terror": 3,
-              "horror": 3,
+              "misterio": 5,
+              "detective": 5,
+              "investigación": 5,
+              "investigacion": 5,
 
-              "lovecraft": 4,
-              "lovecraftiano": 4,
+              "terror": 5,
+              "horror": 5,
 
-              "ciencia ficción": 3,
-              "ciencia ficcion": 3,
+              "lovecraft": 6,
+              "lovecraftiano": 6,
 
-              "thriller": 3,
+              "ciencia ficción": 5,
+              "ciencia ficcion": 5,
 
-              "supervivencia": 2,
+              "thriller": 4,
 
-              "historia": 2,
+              "puzles": 5,
+              "puzzles": 5,
 
-              "guion": 2,
-              "guión": 2,
+              "historia": 3,
+              "historia del juego": 4,
 
               "personajes": 2,
+              "guion": 5,
+              "guión": 5,
 
-              "decisiones": 2,
-              "elecciones": 2,
+              "rol narrativo": 4,
 
-              "exploración": 2,
-              "exploracion": 2,
-
-              "investigar": 3,
-
-              "enigma": 3,
-              "enigmas": 3,
-
-              "secreto": 2,
-              "secretos": 2,
-
-              "fantasía": 2,
-              "fantasia": 2,
-
-              "ciencia ficción": 3,
-              "ciencia ficcion": 3
-
+              "story driven": 5,
+              "storytelling": 5
           }
 
 
-          # =====================================================
-          # PALABRAS QUE DESCARTAMOS
-          # =====================================================
+          # =================================================
+          # DESCARGAR RSS
+          # =================================================
 
-          PALABRAS_EXCLUIDAS = [
+          print("Descargando RSS de uVeJuegos...")
 
-              "fifa",
-              "ea sports",
-              "call of duty",
-              "fortnite",
-              "pokemon go",
-              "pokémon go",
+          respuesta = requests.get(
+              RSS_URL,
+              timeout=30,
+              headers={
+                  "User-Agent": "Mozilla/5.0 InvasionPixeladaBot/1.0"
+              }
+          )
 
-              "hardware",
+          respuesta.raise_for_status()
 
-              "mando",
-              "mandos",
-
-              "consola",
-              "consolas",
-
-              "merchandising",
-
-              "comic-con",
-              "comic con",
-
-              "televisión",
-              "television",
-
-              "serie de televisión",
-              "serie de television"
-
-          ]
+          root = ET.fromstring(respuesta.content)
 
 
-          # =====================================================
-          # NORMALIZACIÓN
-          # =====================================================
+          # =================================================
+          # LOCALIZAR ITEMS
+          # =================================================
+
+          items = root.findall(".//item")
+
+          print(
+              f"Noticias encontradas en RSS: {len(items)}"
+          )
+
+
+          noticias = []
+
+
+          # =================================================
+          # FUNCIONES
+          # =================================================
 
           def limpiar_texto(texto):
 
               if not texto:
                   return ""
 
-              texto = html.unescape(texto)
-
-              texto = re.sub(
-                  r"<[^>]+>",
-                  " ",
-                  texto
+              soup = BeautifulSoup(
+                  texto,
+                  "html.parser"
               )
 
-              texto = re.sub(
-                  r"\s+",
+              return soup.get_text(
                   " ",
-                  texto
+                  strip=True
               )
 
-              return texto.strip()
+
+          def obtener_imagen(url):
+
+              if not url:
+                  return ""
 
 
-          def normalizar(texto):
+              try:
 
-              return limpiar_texto(
-                  texto
+                  pagina = requests.get(
+                      url,
+                      timeout=20,
+                      headers={
+                          "User-Agent":
+                          "Mozilla/5.0 "
+                          "InvasionPixeladaBot/1.0"
+                      }
+                  )
+
+
+                  if pagina.status_code != 200:
+                      return ""
+
+
+                  soup = BeautifulSoup(
+                      pagina.text,
+                      "html.parser"
+                  )
+
+
+                  # -----------------------------------------
+                  # OG IMAGE
+                  # -----------------------------------------
+
+                  meta = soup.find(
+                      "meta",
+                      property="og:image"
+                  )
+
+
+                  if meta and meta.get("content"):
+
+                      return meta["content"].strip()
+
+
+                  # -----------------------------------------
+                  # TWITTER IMAGE
+                  # -----------------------------------------
+
+                  meta = soup.find(
+                      "meta",
+                      attrs={
+                          "name": "twitter:image"
+                      }
+                  )
+
+
+                  if meta and meta.get("content"):
+
+                      return meta["content"].strip()
+
+
+                  return ""
+
+
+              except Exception as error:
+
+                  print(
+                      "No se pudo obtener imagen:",
+                      error
+                  )
+
+                  return ""
+
+
+          def calcular_puntuacion(
+              titulo,
+              descripcion,
+              categoria
+          ):
+
+              texto = (
+                  titulo +
+                  " " +
+                  descripcion
               ).lower()
 
-
-          # =====================================================
-          # OBTENER DATOS DE UNA NOTICIA
-          # =====================================================
-
-          def obtener_datos(item):
-
-              titulo = limpiar_texto(
-                  item.findtext(
-                      "title",
-                      ""
-                  )
-              )
-
-              descripcion = limpiar_texto(
-                  item.findtext(
-                      "description",
-                      ""
-                  )
-              )
-
-              categoria = limpiar_texto(
-                  item.findtext(
-                      "category",
-                      ""
-                  )
-              )
-
-              fecha = limpiar_texto(
-                  item.findtext(
-                      "pubDate",
-                      ""
-                  )
-              )
-
-              enlace = limpiar_texto(
-                  item.findtext(
-                      "link",
-                      ""
-                  )
-              )
-
-              texto = normalizar(
-                  f"{titulo} {descripcion} {categoria}"
-              )
-
-              return (
-                  titulo,
-                  descripcion,
-                  categoria,
-                  fecha,
-                  enlace,
-                  texto
-              )
-
-
-          # =====================================================
-          # CALCULAR PUNTUACIÓN
-          # =====================================================
-
-          def calcular_puntuacion(texto):
 
               puntuacion = 0
 
 
-              # ---------------------------------------------
-              # Palabras fuertes
-              # ---------------------------------------------
-
-              for palabra in PALABRAS_FUERTES:
-
-                  if palabra in texto:
-
-                      puntuacion += 10
-
-
-              # ---------------------------------------------
-              # Palabras relacionadas
-              # ---------------------------------------------
-
-              for palabra, puntos in PALABRAS_RELACIONADAS.items():
+              for palabra, puntos in PALABRAS.items():
 
                   if palabra in texto:
 
                       puntuacion += puntos
 
 
+              # -----------------------------------------
+              # Categorías
+              # -----------------------------------------
+
+              categoria_lower = categoria.lower()
+
+
+              if categoria_lower == "ps5":
+                  puntuacion += 0
+
+
+              if categoria_lower == "switch2":
+                  puntuacion += 0
+
+
               return puntuacion
 
 
-          # =====================================================
-          # COMPROBAR EXCLUSIONES
-          # =====================================================
+          # =================================================
+          # PROCESAR NOTICIAS
+          # =================================================
 
-          def esta_excluida(texto):
+          for item in items[:MAX_NOTICIAS_RSS]:
 
-              for palabra in PALABRAS_EXCLUIDAS:
-
-                  if palabra in texto:
-
-                      return True
-
-              return False
+              titulo = (
+                  item.findtext("title") or ""
+              ).strip()
 
 
-          # =====================================================
-          # LEER RSS
-          # =====================================================
-
-          arbol = ET.parse(
-              RSS_FILE
-          )
-
-          raiz = arbol.getroot()
-
-          canal = raiz.find(
-              "channel"
-          )
+              enlace = (
+                  item.findtext("link") or ""
+              ).strip()
 
 
-          if canal is None:
-
-              raise Exception(
-                  "No se ha encontrado el canal RSS."
+              descripcion = limpiar_texto(
+                  item.findtext("description") or ""
               )
 
 
-          items = canal.findall(
-              "item"
-          )
+              categoria = (
+                  item.findtext("category") or ""
+              ).strip()
 
 
-          print(
-              "===================================="
-          )
-
-          print(
-              "ANÁLISIS DE NOTICIAS"
-          )
-
-          print(
-              "===================================="
-          )
-
-          print(
-              f"Noticias totales en RSS: {len(items)}"
-          )
+              pub_date = (
+                  item.findtext("pubDate") or ""
+              ).strip()
 
 
-          # =====================================================
-          # ANALIZAR NOTICIAS
-          # =====================================================
-
-          candidatas = []
-
-
-          for item in items:
-
-              (
-                  titulo,
-                  descripcion,
-                  categoria,
-                  fecha,
-                  enlace,
-                  texto
-              ) = obtener_datos(item)
+              if not titulo or not enlace:
+                  continue
 
 
               puntuacion = calcular_puntuacion(
-                  texto
+                  titulo,
+                  descripcion,
+                  categoria
               )
 
 
-              excluida = esta_excluida(
-                  texto
-              )
+              print("")
+              print("------------------------------------")
+              print("TÍTULO:", titulo)
+              print("PUNTUACIÓN:", puntuacion)
 
 
-              print()
-              print(
-                  f"Título: {titulo}"
-              )
+              # -----------------------------------------
+              # Guardamos solamente noticias relacionadas
+              # -----------------------------------------
 
-              print(
-                  f"Categoría: {categoria}"
-              )
+              if puntuacion <= 0:
 
-              print(
-                  f"Puntuación: {puntuacion}"
-              )
-
-
-              if excluida:
-
-                  print(
-                      "Estado: DESCARTADA"
-                  )
+                  print("DESCARTADA")
 
                   continue
 
 
-              # -------------------------------------------------
-              # Umbral mínimo
-              # -------------------------------------------------
+              print("RELEVANTE")
 
-              if puntuacion >= 3:
 
-                  candidatas.append({
+              # -----------------------------------------
+              # Obtener imagen
+              # -----------------------------------------
 
-                      "title": titulo,
+              imagen = obtener_imagen(enlace)
 
-                      "link": enlace,
 
-                      "description": descripcion,
-
-                      "category": categoria,
-
-                      "pubDate": fecha,
-
-                      "_score": puntuacion
-
-                  })
+              if imagen:
 
                   print(
-                      "Estado: RELEVANTE"
+                      "IMAGEN:",
+                      imagen
                   )
 
               else:
 
                   print(
-                      "Estado: NO RELEVANTE"
+                      "IMAGEN: no encontrada"
                   )
 
 
-          # =====================================================
-          # ORDENAR POR FECHA ORIGINAL DEL RSS
-          #
-          # El RSS ya viene ordenado de más reciente
-          # a más antiguo, por lo que mantenemos ese orden.
-          # =====================================================
+              noticias.append({
+
+                  "title": titulo,
+
+                  "link": enlace,
+
+                  "description": descripcion,
+
+                  "category": categoria,
+
+                  "pubDate": pub_date,
+
+                  "image": imagen,
+
+                  "score": puntuacion
+
+              })
 
 
-          noticias = []
+          # =================================================
+          # ORDENAR
+          # =================================================
+
+          noticias.sort(
+              key=lambda noticia:
+                  noticia.get("pubDate", ""),
+              reverse=True
+          )
 
 
-          for noticia in candidatas:
+          # =================================================
+          # LIMITAR RESULTADOS
+          # =================================================
 
-              noticia_sin_puntuacion = {
-
-                  "title":
-                      noticia["title"],
-
-                  "link":
-                      noticia["link"],
-
-                  "description":
-                      noticia["description"],
-
-                  "category":
-                      noticia["category"],
-
-                  "pubDate":
-                      noticia["pubDate"]
-
-              }
-
-              noticias.append(
-                  noticia_sin_puntuacion
-              )
+          noticias = noticias[:6]
 
 
-              if (
-                  len(noticias)
-                  >= NUMERO_MAXIMO_NOTICIAS
-              ):
-
-                  break
-
-
-          # =====================================================
+          # =================================================
           # GUARDAR JSON
-          # =====================================================
+          # =================================================
 
           with open(
-              JSON_FILE,
+              ARCHIVO_SALIDA,
               "w",
               encoding="utf-8"
           ) as archivo:
@@ -538,85 +438,50 @@ jobs:
               )
 
 
-          # =====================================================
-          # RESULTADO FINAL
-          # =====================================================
+          # =================================================
+          # INFORMACIÓN FINAL
+          # =================================================
 
-          print()
+          print("")
+          print("====================================")
+          print("RESULTADO FINAL")
+          print("====================================")
+
           print(
-              "===================================="
+              "Noticias guardadas:",
+              len(noticias)
           )
 
-          print(
-              "RESULTADO"
-          )
+          for noticia in noticias:
+
+              print(
+                  "-",
+                  noticia["title"]
+              )
 
           print(
-              "===================================="
-          )
-
-          print(
-              f"Noticias totales en RSS: {len(items)}"
-          )
-
-          print(
-              f"Noticias relevantes: {len(candidatas)}"
-          )
-
-          print(
-              f"Noticias guardadas: {len(noticias)}"
-          )
-
-          print(
-              "===================================="
+              "Archivo:",
+              ARCHIVO_SALIDA
           )
 
           PY
 
 
       # =====================================================
-      # 4. MOSTRAR EL JSON GENERADO
+      # GUARDAR CAMBIOS EN GITHUB
       # =====================================================
 
-      - name: Mostrar noticias generadas
+      - name: Guardar noticias en GitHub
         run: |
 
-          echo "===================================="
-          echo "CONTENIDO DE noticias.json"
-          echo "===================================="
-
-          cat noticias.json
-
-          echo
-          echo "===================================="
-
-
-      # =====================================================
-      # 5. GUARDAR CAMBIOS EN GITHUB
-      # =====================================================
-
-      - name: Guardar cambios
-        run: |
-
-          git config user.name \
-            "github-actions[bot]"
+          git config user.name "github-actions[bot]"
 
           git config user.email \
             "41898282+github-actions[bot]@users.noreply.github.com"
 
-
           git add noticias.json
 
+          git diff --cached --quiet || \
+            git commit -m "Actualizar noticias"
 
-          if git diff --cached --quiet; then
-
-              echo "No hay cambios en noticias.json."
-
-          else
-
-              git commit \
-                -m "Actualizar noticias de uVeJuegos"
-
-              git push
-
-          fi
+          git push
