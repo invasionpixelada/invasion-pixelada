@@ -2,10 +2,8 @@ name: Actualizar noticias
 
 on:
   schedule:
-    # Ejecutar cada hora
     - cron: "0 * * * *"
 
-  # También permite ejecutarlo manualmente desde GitHub
   workflow_dispatch:
 
 jobs:
@@ -19,23 +17,42 @@ jobs:
 
     steps:
 
-      # 1. Descargar el repositorio
+      # =====================================================
+      # 1. DESCARGAR EL REPOSITORIO
+      # =====================================================
+
       - name: Descargar repositorio
         uses: actions/checkout@v4
 
 
-      # 2. Descargar el RSS de uVeJuegos
+      # =====================================================
+      # 2. DESCARGAR RSS DE UVEJUEGOS
+      # =====================================================
+
       - name: Descargar RSS de uVeJuegos
         run: |
+
           curl -L \
             --fail \
             --silent \
             --show-error \
+            --user-agent "Mozilla/5.0" \
             "https://uvejuegos.com/contenidosRSS.jsp" \
             -o noticias-rss.xml
 
+          echo "RSS descargado."
 
-      # 3. Procesar el RSS y crear noticias.json
+          echo "Tamaño del archivo:"
+          wc -c noticias-rss.xml
+
+          echo "Primeras líneas:"
+          head -20 noticias-rss.xml
+
+
+      # =====================================================
+      # 3. GENERAR noticias.json
+      # =====================================================
+
       - name: Generar noticias.json
         run: |
 
@@ -62,19 +79,29 @@ jobs:
 
               "aventura gráfica",
               "aventura grafica",
+              "aventuras gráficas",
+              "aventuras graficas",
+
               "point & click",
               "point and click",
               "point-and-click",
-              "point-and-click",
+
               "visual novel",
               "visual novels",
               "novela visual",
+              "novelas visuales",
+
               "walking simulator",
               "walking simulators",
+
               "aventura narrativa",
               "aventuras narrativas",
+
               "juego narrativo",
-              "juegos narrativos"
+              "juegos narrativos",
+
+              "videojuego narrativo",
+              "videojuegos narrativos"
 
           ]
 
@@ -83,16 +110,23 @@ jobs:
 
               "lovecraft",
               "lovecraftiano",
+
               "misterio",
+
               "terror",
               "horror",
+
               "detective",
+
               "investigación",
               "investigacion",
+
               "puzles",
               "puzzles",
+
               "ciencia ficción",
               "ciencia ficcion",
+
               "thriller"
 
           ]
@@ -105,10 +139,9 @@ jobs:
               "call of duty",
               "fortnite",
               "pokemon go",
-              "nintendo switch 2",
+
               "hardware",
-              "consola",
-              "mando",
+
               "comic-con",
               "merchandising"
 
@@ -116,7 +149,7 @@ jobs:
 
 
           # =====================================================
-          # FUNCIONES
+          # LIMPIAR TEXTO
           # =====================================================
 
           def limpiar_texto(texto):
@@ -141,12 +174,20 @@ jobs:
               return texto.strip()
 
 
+          # =====================================================
+          # NORMALIZAR TEXTO
+          # =====================================================
+
           def normalizar(texto):
 
               return limpiar_texto(
                   texto
               ).lower()
 
+
+          # =====================================================
+          # OBTENER TEXTO DE UNA NOTICIA
+          # =====================================================
 
           def obtener_texto_noticia(item):
 
@@ -170,6 +211,10 @@ jobs:
               )
 
 
+          # =====================================================
+          # COMPROBAR SI ES RELEVANTE
+          # =====================================================
+
           def es_relevante(item):
 
               texto = obtener_texto_noticia(
@@ -178,8 +223,7 @@ jobs:
 
 
               # ---------------------------------------------
-              # Primero descartamos contenidos claramente
-              # alejados de la temática.
+              # DESCARTES
               # ---------------------------------------------
 
               for palabra in PALABRAS_EXCLUIDAS:
@@ -189,7 +233,7 @@ jobs:
 
 
               # ---------------------------------------------
-              # Las palabras fuertes tienen prioridad.
+              # PALABRAS FUERTES
               # ---------------------------------------------
 
               for palabra in PALABRAS_FUERTES:
@@ -199,12 +243,7 @@ jobs:
 
 
               # ---------------------------------------------
-              # Para las palabras complementarias exigimos
-              # que haya al menos DOS coincidencias.
-              #
-              # Así evitamos que una noticia cualquiera que
-              # simplemente mencione "historia" o "terror"
-              # entre automáticamente.
+              # PALABRAS COMPLEMENTARIAS
               # ---------------------------------------------
 
               coincidencias = 0
@@ -222,11 +261,28 @@ jobs:
           # LEER RSS
           # =====================================================
 
-          arbol = ET.parse(
-              RSS_FILE
-          )
+          try:
+
+              arbol = ET.parse(
+                  RSS_FILE
+              )
+
+          except Exception as error:
+
+              print(
+                  "ERROR leyendo el RSS:",
+                  error
+              )
+
+              raise
+
 
           raiz = arbol.getroot()
+
+
+          # =====================================================
+          # BUSCAR CHANNEL
+          # =====================================================
 
           canal = raiz.find(
               "channel"
@@ -236,21 +292,32 @@ jobs:
           if canal is None:
 
               raise Exception(
-                  "No se ha encontrado el canal RSS."
+                  "No se ha encontrado el elemento <channel> del RSS."
               )
-
-
-          noticias = []
 
 
           # =====================================================
           # PROCESAR NOTICIAS
           # =====================================================
 
+          noticias = []
+
+          total_items = 0
+
+          relevantes = 0
+
+
           for item in canal.findall("item"):
 
+              total_items += 1
+
+
               if not es_relevante(item):
+
                   continue
+
+
+              relevantes += 1
 
 
               titulo = limpiar_texto(
@@ -296,6 +363,7 @@ jobs:
 
 
               if not titulo or not enlace:
+
                   continue
 
 
@@ -309,15 +377,15 @@ jobs:
 
                   "category": categoria,
 
-                  "pubDate": fecha
+                  "pubDate": fecha,
+
+                  "source": "uVeJuegos"
 
               })
 
 
-              if (
-                  len(noticias)
-                  >= NUMERO_MAXIMO_NOTICIAS
-              ):
+              if len(noticias) >= NUMERO_MAXIMO_NOTICIAS:
+
                   break
 
 
@@ -339,35 +407,72 @@ jobs:
               )
 
 
+          # =====================================================
+          # INFORMACIÓN PARA GITHUB ACTIONS
+          # =====================================================
+
+          print("")
+          print("====================================")
+          print("RESULTADO")
+          print("====================================")
           print(
-              f"Noticias encontradas: {len(noticias)}"
+              f"Noticias totales en RSS: {total_items}"
           )
+          print(
+              f"Noticias relevantes: {relevantes}"
+          )
+          print(
+              f"Noticias guardadas: {len(noticias)}"
+          )
+          print("====================================")
+
 
           PY
 
 
-      # 4. Comprobar qué se ha generado
+      # =====================================================
+      # 4. MOSTRAR RESULTADO
+      # =====================================================
+
       - name: Mostrar noticias generadas
         run: |
+
           echo "===================================="
-          echo "NOTICIAS GENERADAS"
+          echo "CONTENIDO DE noticias.json"
           echo "===================================="
+
           cat noticias.json
 
+          echo ""
+          echo "===================================="
 
-      # 5. Guardar los cambios en GitHub
+
+      # =====================================================
+      # 5. GUARDAR CAMBIOS EN GITHUB
+      # =====================================================
+
       - name: Guardar cambios
         run: |
 
-          git config user.name "github-actions[bot]"
+          git config user.name \
+            "github-actions[bot]"
 
           git config user.email \
             "41898282+github-actions[bot]@users.noreply.github.com"
 
+
           git add noticias.json
 
-          git diff --cached --quiet || \
-            git commit \
-              -m "Actualizar noticias de uVeJuegos"
 
-          git push
+          if git diff --cached --quiet; then
+
+              echo "No hay cambios en noticias.json."
+
+          else
+
+              git commit \
+                -m "Actualizar noticias de uVeJuegos"
+
+              git push
+
+          fi
