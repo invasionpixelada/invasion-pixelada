@@ -5,9 +5,8 @@ on:
     # Ejecutar cada hora
     - cron: "0 * * * *"
 
-  # También permite ejecutarlo manualmente desde GitHub
+  # Permite ejecutarlo manualmente desde GitHub
   workflow_dispatch:
-
 
 jobs:
 
@@ -20,9 +19,8 @@ jobs:
 
     steps:
 
-
       # =====================================================
-      # 1. DESCARGAR EL REPOSITORIO
+      # 1. DESCARGAR REPOSITORIO
       # =====================================================
 
       - name: Descargar repositorio
@@ -40,127 +38,21 @@ jobs:
             --fail \
             --silent \
             --show-error \
-            --user-agent "Mozilla/5.0" \
             "https://uvejuegos.com/contenidosRSS.jsp" \
             -o noticias-rss.xml
 
-          echo ""
-          echo "RSS descargado correctamente."
-          echo ""
+          echo "RSS descargado."
 
           echo "Tamaño del archivo:"
           wc -c noticias-rss.xml
 
           echo ""
-          echo "Primeras líneas del RSS:"
-          echo "===================================="
-
+          echo "Primeras líneas:"
           head -20 noticias-rss.xml
 
-          echo ""
-          echo "===================================="
-
 
       # =====================================================
-      # 3. MOSTRAR LOS TITULARES DEL RSS
-      # =====================================================
-
-      - name: Mostrar titulares del RSS
-        run: |
-
-          echo ""
-          echo "===================================="
-          echo "TÍTULOS DEL RSS DE UVEJUEGOS"
-          echo "===================================="
-
-          python3 <<'PY'
-
-          import xml.etree.ElementTree as ET
-
-
-          RSS_FILE = "noticias-rss.xml"
-
-
-          arbol = ET.parse(
-              RSS_FILE
-          )
-
-
-          raiz = arbol.getroot()
-
-
-          canal = raiz.find(
-              "channel"
-          )
-
-
-          if canal is None:
-
-              raise Exception(
-                  "No se ha encontrado el elemento <channel>."
-              )
-
-
-          items = canal.findall(
-              "item"
-          )
-
-
-          print(
-              f"Total de elementos encontrados: {len(items)}"
-          )
-
-
-          print("")
-
-
-          for numero, item in enumerate(
-              items,
-              1
-          ):
-
-              titulo = item.findtext(
-                  "title",
-                  ""
-              )
-
-
-              fecha = item.findtext(
-                  "pubDate",
-                  ""
-              )
-
-
-              categoria = item.findtext(
-                  "category",
-                  ""
-              )
-
-
-              print(
-                  f"{numero}. {titulo}"
-              )
-
-              print(
-                  f"   Categoría: {categoria}"
-              )
-
-              print(
-                  f"   Fecha: {fecha}"
-              )
-
-              print("")
-
-
-          PY
-
-          echo "===================================="
-          echo "FIN DE LOS TITULARES"
-          echo "===================================="
-
-
-      # =====================================================
-      # 4. GENERAR noticias.json
+      # 3. PROCESAR RSS
       # =====================================================
 
       - name: Generar noticias.json
@@ -172,6 +64,7 @@ jobs:
           import json
           import html
           import re
+          import unicodedata
 
 
           RSS_FILE = "noticias-rss.xml"
@@ -184,6 +77,10 @@ jobs:
 
           NUMERO_MAXIMO_NOTICIAS = 30
 
+
+          # Palabras muy relacionadas con nuestra temática.
+          # Si aparece una de ellas, la noticia obtiene
+          # una puntuación alta.
 
           PALABRAS_FUERTES = [
 
@@ -210,56 +107,145 @@ jobs:
               "juego narrativo",
               "juegos narrativos",
 
-              "videojuego narrativo",
-              "videojuegos narrativos"
+              "narrativa interactiva",
+
+              "story driven",
+              "story-driven"
 
           ]
 
 
-          PALABRAS_COMPLEMENTARIAS = [
+          # Palabras relacionadas con los géneros
+          # que nos interesan.
 
-              "lovecraft",
-              "lovecraftiano",
+          PALABRAS_GENERO = [
 
               "misterio",
-
-              "terror",
-              "horror",
+              "mystery",
 
               "detective",
+              "detectives",
 
               "investigación",
               "investigacion",
 
-              "puzles",
-              "puzzles",
+              "terror",
+              "horror",
+
+              "lovecraft",
+              "lovecraftiano",
+
+              "thriller",
 
               "ciencia ficción",
               "ciencia ficcion",
+              "sci-fi",
 
-              "thriller"
+              "supervivencia",
+              "survival",
+
+              "puzles",
+              "puzzles",
+
+              "enigma",
+              "enigmas",
+
+              "crimen",
+              "crímenes",
+              "crimenes",
+
+              "investigar",
+              "investigación",
+
+              "exploración",
+              "exploracion"
 
           ]
 
+
+          # Palabras que suelen aparecer en juegos
+          # narrativos o centrados en la historia.
+
+          PALABRAS_NARRATIVAS = [
+
+              "historia",
+              "historias",
+
+              "personajes",
+              "personaje",
+
+              "guion",
+              "guión",
+
+              "narrativa",
+              "narrativo",
+              "narrativa",
+
+              "protagonista",
+              "protagonistas",
+
+              "decisiones",
+              "decisión",
+              "decision",
+
+              "finales",
+              "final",
+
+              "diálogos",
+              "dialogos",
+              "diálogo",
+              "dialogo",
+
+              "historia interactiva",
+
+              "experiencia narrativa"
+
+          ]
+
+
+          # Palabras que pueden indicar que el contenido
+          # está muy alejado de nuestra temática.
 
           PALABRAS_EXCLUIDAS = [
 
               "fifa",
               "ea sports",
+
               "call of duty",
+
               "fortnite",
+
               "pokemon go",
+
+              "pokémon go",
+
+              "comic-con",
+              "comic con",
+
+              "merchandising",
 
               "hardware",
 
-              "comic-con",
-              "merchandising"
+              "mando",
+
+              "monitor",
+
+              "televisor",
+
+              "televisión",
+
+              "tarjeta gráfica",
+              "tarjeta grafica",
+
+              "procesador",
+
+              "memoria ram"
 
           ]
 
 
           # =====================================================
-          # LIMPIAR TEXTO
+          # FUNCIONES
           # =====================================================
 
           def limpiar_texto(texto):
@@ -267,11 +253,7 @@ jobs:
               if not texto:
                   return ""
 
-
-              texto = html.unescape(
-                  texto
-              )
-
+              texto = html.unescape(texto)
 
               texto = re.sub(
                   r"<[^>]+>",
@@ -279,65 +261,102 @@ jobs:
                   texto
               )
 
-
               texto = re.sub(
                   r"\s+",
                   " ",
                   texto
               )
 
-
               return texto.strip()
 
 
-          # =====================================================
-          # NORMALIZAR TEXTO
-          # =====================================================
-
           def normalizar(texto):
 
-              return limpiar_texto(
+              texto = limpiar_texto(texto)
+
+              texto = texto.lower()
+
+              # Eliminamos tildes para poder comparar
+              # "gráfica" y "grafica".
+
+              texto = unicodedata.normalize(
+                  "NFD",
                   texto
-              ).lower()
+              )
+
+              texto = "".join(
+                  caracter
+                  for caracter in texto
+                  if unicodedata.category(caracter) != "Mn"
+              )
+
+              return texto
+
+
+          def obtener_datos(item):
+
+              titulo = limpiar_texto(
+                  item.findtext(
+                      "title",
+                      ""
+                  )
+              )
+
+              descripcion = limpiar_texto(
+                  item.findtext(
+                      "description",
+                      ""
+                  )
+              )
+
+              categoria = limpiar_texto(
+                  item.findtext(
+                      "category",
+                      ""
+                  )
+              )
+
+              enlace = (
+                  item.findtext(
+                      "link",
+                      ""
+                  )
+                  .strip()
+              )
+
+              fecha = (
+                  item.findtext(
+                      "pubDate",
+                      ""
+                  )
+                  .strip()
+              )
+
+              return (
+                  titulo,
+                  descripcion,
+                  categoria,
+                  enlace,
+                  fecha
+              )
 
 
           # =====================================================
-          # OBTENER TEXTO DE UNA NOTICIA
+          # SISTEMA DE PUNTUACIÓN
           # =====================================================
 
-          def obtener_texto_noticia(item):
+          def puntuacion_noticia(
+              titulo,
+              descripcion,
+              categoria
+          ):
 
-              titulo = item.findtext(
-                  "title",
-                  ""
-              )
-
-
-              descripcion = item.findtext(
-                  "description",
-                  ""
-              )
-
-
-              categoria = item.findtext(
-                  "category",
-                  ""
-              )
-
-
-              return normalizar(
+              texto_completo = normalizar(
                   f"{titulo} {descripcion} {categoria}"
               )
 
-
-          # =====================================================
-          # COMPROBAR SI ES RELEVANTE
-          # =====================================================
-
-          def es_relevante(item):
-
-              texto = obtener_texto_noticia(
-                  item
+              titulo_normalizado = normalizar(
+                  titulo
               )
 
 
@@ -347,9 +366,12 @@ jobs:
 
               for palabra in PALABRAS_EXCLUIDAS:
 
-                  if palabra in texto:
+                  if normalizar(palabra) in texto_completo:
 
-                      return False
+                      return -100
+
+
+              puntuacion = 0
 
 
               # ---------------------------------------------
@@ -358,26 +380,56 @@ jobs:
 
               for palabra in PALABRAS_FUERTES:
 
-                  if palabra in texto:
+                  if normalizar(palabra) in texto_completo:
 
-                      return True
+                      puntuacion += 8
 
 
               # ---------------------------------------------
-              # PALABRAS COMPLEMENTARIAS
+              # PALABRAS DE GÉNERO
               # ---------------------------------------------
 
-              coincidencias = 0
+              for palabra in PALABRAS_GENERO:
+
+                  if normalizar(palabra) in texto_completo:
+
+                      puntuacion += 3
 
 
-              for palabra in PALABRAS_COMPLEMENTARIAS:
+              # ---------------------------------------------
+              # PALABRAS NARRATIVAS
+              # ---------------------------------------------
 
-                  if palabra in texto:
+              for palabra in PALABRAS_NARRATIVAS:
 
-                      coincidencias += 1
+                  if normalizar(palabra) in texto_completo:
+
+                      puntuacion += 2
 
 
-              return coincidencias >= 2
+              # ---------------------------------------------
+              # BONIFICACIÓN SI APARECE EN EL TÍTULO
+              # ---------------------------------------------
+
+              for palabra in PALABRAS_FUERTES:
+
+                  if normalizar(palabra) in titulo_normalizado:
+
+                      puntuacion += 5
+
+
+              for palabra in PALABRAS_GENERO:
+
+                  if normalizar(palabra) in titulo_normalizado:
+
+                      puntuacion += 2
+
+
+              # ---------------------------------------------
+              # DEVOLVEMOS LA PUNTUACIÓN
+              # ---------------------------------------------
+
+              return puntuacion
 
 
           # =====================================================
@@ -387,7 +439,6 @@ jobs:
           arbol = ET.parse(
               RSS_FILE
           )
-
 
           raiz = arbol.getroot()
 
@@ -404,106 +455,114 @@ jobs:
               )
 
 
-          # =====================================================
-          # PROCESAR NOTICIAS
-          # =====================================================
-
-          noticias = []
-
-
-          total_items = 0
-
-
-          relevantes = 0
-
-
-          for item in canal.findall(
+          items = canal.findall(
               "item"
-          ):
-
-              total_items += 1
+          )
 
 
-              if not es_relevante(
-                  item
-              ):
-
-                  continue
-
-
-              relevantes += 1
-
-
-              titulo = limpiar_texto(
-                  item.findtext(
-                      "title",
-                      ""
-                  )
-              )
+          print("")
+          print("====================================")
+          print("ANÁLISIS DEL RSS")
+          print("====================================")
+          print(
+              f"Noticias totales en RSS: {len(items)}"
+          )
 
 
-              enlace = (
-                  item.findtext(
-                      "link",
-                      ""
-                  )
-                  .strip()
-              )
+          noticias_puntuadas = []
 
 
-              descripcion = limpiar_texto(
-                  item.findtext(
-                      "description",
-                      ""
-                  )
-              )
+          # =====================================================
+          # ANALIZAR TODAS LAS NOTICIAS
+          # =====================================================
 
+          for item in items:
 
-              categoria = limpiar_texto(
-                  item.findtext(
-                      "category",
-                      ""
-                  )
-              )
-
-
-              fecha = (
-                  item.findtext(
-                      "pubDate",
-                      ""
-                  )
-                  .strip()
-              )
+              (
+                  titulo,
+                  descripcion,
+                  categoria,
+                  enlace,
+                  fecha
+              ) = obtener_datos(item)
 
 
               if not titulo or not enlace:
-
                   continue
 
 
-              noticias.append({
-
-                  "title": titulo,
-
-                  "link": enlace,
-
-                  "description": descripcion,
-
-                  "category": categoria,
-
-                  "pubDate": fecha,
-
-                  "source": "uVeJuegos"
-
-              })
+              puntuacion = puntuacion_noticia(
+                  titulo,
+                  descripcion,
+                  categoria
+              )
 
 
-              if (
-                  len(noticias)
-                  >= NUMERO_MAXIMO_NOTICIAS
-              ):
+              print("")
+              print(
+                  f"Título: {titulo}"
+              )
 
-                  break
+              print(
+                  f"Categoría: {categoria}"
+              )
+
+              print(
+                  f"Puntuación: {puntuacion}"
+              )
+
+
+              # Solo guardamos las que tengan
+              # una puntuación mínima.
+
+              if puntuacion >= 3:
+
+                  noticias_puntuadas.append({
+
+                      "title": titulo,
+
+                      "link": enlace,
+
+                      "description": descripcion,
+
+                      "category": categoria,
+
+                      "pubDate": fecha,
+
+                      "score": puntuacion
+
+                  })
+
+
+          # =====================================================
+          # ORDENAR
+          # =====================================================
+
+          noticias_puntuadas.sort(
+              key=lambda noticia: noticia["score"],
+              reverse=True
+          )
+
+
+          # =====================================================
+          # LIMITAR RESULTADOS
+          # =====================================================
+
+          noticias = noticias_puntuadas[
+              :NUMERO_MAXIMO_NOTICIAS
+          ]
+
+
+          # =====================================================
+          # ELIMINAR SCORE DEL JSON FINAL
+          # =====================================================
+
+          for noticia in noticias:
+
+              noticia.pop(
+                  "score",
+                  None
+              )
 
 
           # =====================================================
@@ -525,7 +584,7 @@ jobs:
 
 
           # =====================================================
-          # RESULTADO
+          # RESULTADO FINAL
           # =====================================================
 
           print("")
@@ -534,11 +593,11 @@ jobs:
           print("====================================")
 
           print(
-              f"Noticias totales en RSS: {total_items}"
+              f"Noticias totales en RSS: {len(items)}"
           )
 
           print(
-              f"Noticias relevantes: {relevantes}"
+              f"Noticias relevantes: {len(noticias_puntuadas)}"
           )
 
           print(
@@ -552,7 +611,7 @@ jobs:
 
 
       # =====================================================
-      # 5. MOSTRAR noticias.json
+      # 4. MOSTRAR JSON GENERADO
       # =====================================================
 
       - name: Mostrar noticias generadas
@@ -564,13 +623,9 @@ jobs:
 
           cat noticias.json
 
-          echo ""
-
-          echo "===================================="
-
 
       # =====================================================
-      # 6. GUARDAR CAMBIOS EN GITHUB
+      # 5. GUARDAR CAMBIOS EN GITHUB
       # =====================================================
 
       - name: Guardar cambios
@@ -579,13 +634,10 @@ jobs:
           git config user.name \
             "github-actions[bot]"
 
-
           git config user.email \
             "41898282+github-actions[bot]@users.noreply.github.com"
 
-
           git add noticias.json
-
 
           if git diff --cached --quiet; then
 
