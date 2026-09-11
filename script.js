@@ -435,6 +435,7 @@ function formatearFechaNoticia(fechaOriginal) {
 
 async function cargarNoticias() {
 
+    console.log("CARGANDO NOTICIAS - VERSION NUEVA");
     /*
         IMPORTANTE:
 
