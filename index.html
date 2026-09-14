@@ -123,10 +123,204 @@
         href="style.css"
     >
 
+
+    <!-- =================================================
+         ESTILOS DE PRÓXIMOS LANZAMIENTOS
+         ================================================= -->
+
+    <style>
+
+        /* ================================================
+           PRÓXIMOS LANZAMIENTOS
+           ================================================ */
+
+        .upcoming-section {
+            overflow: hidden;
+        }
+
+
+        .upcoming-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 28px;
+            width: 100%;
+            margin-top: 35px;
+        }
+
+
+        .upcoming-card {
+            min-width: 0;
+            overflow: hidden;
+            border-radius: 10px;
+            background: #111118;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 0 18px rgba(180, 0, 255, 0.12);
+        }
+
+
+        .upcoming-card-link {
+            display: block;
+            text-decoration: none;
+            color: inherit;
+        }
+
+
+        .upcoming-card-image {
+            width: 100%;
+            height: 310px;
+            display: block;
+            object-fit: cover;
+            object-position: center;
+        }
+
+
+        .upcoming-card-content {
+            padding: 20px;
+        }
+
+
+        .upcoming-card-category {
+            margin: 0 0 8px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            opacity: 0.7;
+        }
+
+
+        .upcoming-card-title {
+            margin: 0 0 12px;
+            font-size: 1.25rem;
+            line-height: 1.25;
+        }
+
+
+        .upcoming-card-date {
+            margin: 0;
+            font-size: 0.95rem;
+            font-weight: 600;
+        }
+
+
+        /* ================================================
+           PAGINACIÓN
+           ================================================ */
+
+        .upcoming-pagination {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 28px;
+            margin-top: 42px;
+            width: 100%;
+        }
+
+
+        .upcoming-pagination-button {
+            min-width: 155px;
+            padding: 16px 24px;
+            border: 2px solid rgba(255, 255, 255, 0.25);
+            border-radius: 7px;
+            background: #aa20f5;
+            color: #ffffff;
+            font-size: 1rem;
+            font-weight: 800;
+            letter-spacing: 0.3px;
+            cursor: pointer;
+            transition:
+                transform 0.2s ease,
+                opacity 0.2s ease,
+                box-shadow 0.2s ease;
+        }
+
+
+        .upcoming-pagination-button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 0 18px rgba(180, 0, 255, 0.4);
+        }
+
+
+        .upcoming-pagination-button:disabled {
+            opacity: 0.35;
+            cursor: default;
+        }
+
+
+        .upcoming-page-number {
+            min-width: 130px;
+            text-align: center;
+            font-size: 1.05rem;
+            font-weight: 700;
+        }
+
+
+        .upcoming-loading,
+        .upcoming-empty,
+        .upcoming-error {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 35px 20px;
+        }
+
+
+        /* ================================================
+           TABLET
+           ================================================ */
+
+        @media (max-width: 900px) {
+
+            .upcoming-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .upcoming-card-image {
+                height: 280px;
+            }
+
+        }
+
+
+        /* ================================================
+           MÓVIL
+           ================================================ */
+
+        @media (max-width: 600px) {
+
+            .upcoming-grid {
+                grid-template-columns: 1fr;
+                gap: 22px;
+            }
+
+            .upcoming-card-image {
+                height: 360px;
+            }
+
+            .upcoming-pagination {
+                gap: 12px;
+                flex-wrap: wrap;
+            }
+
+            .upcoming-pagination-button {
+                min-width: 120px;
+                padding: 14px 16px;
+            }
+
+            .upcoming-page-number {
+                order: -1;
+                flex-basis: 100%;
+                margin-bottom: 4px;
+            }
+
+        }
+
+    </style>
+
 </head>
 
 
 <body>
+
 
     <!-- =================================================
          CABECERA
@@ -157,7 +351,7 @@
                 </a>
 
                 <a href="#proximos">
-                    Próximos
+                    Próximos lanzamientos
                 </a>
 
                 <a href="#noticias">
@@ -230,7 +424,6 @@
         </section>
 
 
-
         <!-- =================================================
              PRÓXIMOS LANZAMIENTOS
              ================================================= -->
@@ -251,8 +444,9 @@
                 </h2>
 
                 <p>
-                    Aventuras y videojuegos narrativos que llegarán
-                    próximamente.
+                    Las próximas aventuras gráficas, visual novels,
+                    walking simulators y videojuegos narrativos que
+                    llegarán a GOG.
                 </p>
 
             </div>
@@ -270,8 +464,6 @@
             </div>
 
 
-            <!-- PAGINACIÓN -->
-
             <div
                 id="upcoming-pagination"
                 class="upcoming-pagination"
@@ -280,24 +472,24 @@
 
                 <button
                     id="upcoming-prev"
-                    class="button secondary-button"
+                    class="upcoming-pagination-button"
                     type="button"
                 >
-                    ← ANTERIORES
+                    ← ANTERIOR
                 </button>
 
 
                 <span
-                    id="upcoming-page"
-                    class="upcoming-page"
+                    id="upcoming-page-number"
+                    class="upcoming-page-number"
                 >
-                    Página 1
+                    Página 1 de 1
                 </span>
 
 
                 <button
                     id="upcoming-next"
-                    class="button secondary-button"
+                    class="upcoming-pagination-button"
                     type="button"
                 >
                     SIGUIENTE →
@@ -306,7 +498,6 @@
             </div>
 
         </section>
-
 
 
         <!-- =================================================
@@ -372,7 +563,6 @@
         </section>
 
 
-
         <!-- =================================================
              VÍDEOS
              ================================================= -->
@@ -402,6 +592,7 @@
 
 
             <div class="video-grid">
+
 
                 <article class="video-card">
 
@@ -582,6 +773,7 @@
 
                 </article>
 
+
             </div>
 
 
@@ -599,7 +791,6 @@
             </div>
 
         </section>
-
 
 
         <!-- =================================================
@@ -638,6 +829,10 @@
                 <div class="reviews-grid">
 
 
+                    <!-- =================================================
+                         RESEÑA LUNA'S ROOM
+                         ================================================= -->
+
                     <article
                         class="review-card"
                         data-search="Luna's Room Aventura gráfica, narrativa"
@@ -668,9 +863,11 @@
                             </h3>
 
                             <p>
-                                Una aventura gráfica breve e íntima
-                                que combina narrativa, misterio y
-                                una historia con bastante carga emocional.
+                                Normalmente me gusta empezar a escribir una
+                                reseña nada más terminar el juego en cuestión,
+                                al menos plasmar las primeras ideas, porque lo
+                                tengo más fresco y las ideas están ahí, como
+                                que salen prácticamente solas....
                             </p>
 
                             <a
@@ -685,6 +882,9 @@
                     </article>
 
 
+                    <!-- =================================================
+                         RESEÑA CALL OF THE ELDER GODS
+                         ================================================= -->
 
                     <article
                         class="review-card"
@@ -716,8 +916,8 @@
                             </h3>
 
                             <p>
-                                Out of the Blue Games vuelve con
-                                una aventura que continúa la historia
+                                Out of the Blue Games vuelve con Call of the
+                                Elder Gods, una aventura que continúa la historia
                                 de Call of the Sea.
                             </p>
 
@@ -733,6 +933,9 @@
                     </article>
 
 
+                    <!-- =================================================
+                         PLACEHOLDER
+                         ================================================= -->
 
                     <article class="review-card review-card-placeholder">
 
@@ -758,6 +961,8 @@
             </div>
 
 
+            <!-- VER TODAS LAS RESEÑAS -->
+
             <div class="reviews-button-container">
 
                 <a
@@ -770,7 +975,6 @@
             </div>
 
         </section>
-
 
 
         <!-- =================================================
@@ -800,10 +1004,14 @@
             </div>
 
 
+            <!-- PRODUCTOS DESTACADOS -->
+
             <div class="store-grid">
 
 
-                <!-- PRODUCTO 1 -->
+                <!-- =================================================
+                     PRODUCTO 1
+                     ================================================= -->
 
                 <article class="store-card">
 
@@ -847,8 +1055,9 @@
                 </article>
 
 
-
-                <!-- PRODUCTO 2 -->
+                <!-- =================================================
+                     PRODUCTO 2
+                     ================================================= -->
 
                 <article class="store-card">
 
@@ -893,8 +1102,9 @@
                 </article>
 
 
-
-                <!-- PRODUCTO 3 -->
+                <!-- =================================================
+                     PRODUCTO 3
+                     ================================================= -->
 
                 <article class="store-card">
 
@@ -942,6 +1152,8 @@
             </div>
 
 
+            <!-- VER TODA LA TIENDA -->
+
             <div class="store-button-container">
 
                 <a
@@ -956,7 +1168,6 @@
         </section>
 
     </main>
-
 
 
     <!-- =================================================
@@ -976,144 +1187,269 @@
     </footer>
 
 
-
     <!-- =================================================
-         JAVASCRIPT
+         LANZAMIENTOS + SCRIPT GENERAL
          ================================================= -->
 
     <script>
 
-        /* =====================================================
-           PRÓXIMOS LANZAMIENTOS
-           ===================================================== */
-
-        const upcomingContainer =
-            document.getElementById("upcoming-container");
-
-        const upcomingPagination =
-            document.getElementById("upcoming-pagination");
-
-        const upcomingPrev =
-            document.getElementById("upcoming-prev");
-
-        const upcomingNext =
-            document.getElementById("upcoming-next");
-
-        const upcomingPage =
-            document.getElementById("upcoming-page");
+        document.addEventListener(
+            "DOMContentLoaded",
+            function () {
 
 
-        const UPCOMING_PER_PAGE = 3;
+                /* =================================================
+                   CONFIGURACIÓN
+                   ================================================= */
 
-        let upcomingGames = [];
-
-        let upcomingCurrentPage = 1;
+                const JUEGOS_POR_PAGINA = 3;
 
 
-        /* =====================================================
-           FORMATEAR FECHA
-           ===================================================== */
+                let juegos = [];
 
-        function formatUpcomingDate(dateString) {
+                let paginaActual = 1;
 
-            if (!dateString) {
-                return "";
-            }
 
-            const partes =
-                dateString.split(".");
+                const contenedor =
+                    document.getElementById(
+                        "upcoming-container"
+                    );
 
-            if (partes.length !== 3) {
-                return dateString;
-            }
 
-            const year =
-                partes[0];
+                const paginacion =
+                    document.getElementById(
+                        "upcoming-pagination"
+                    );
 
-            const month =
-                partes[1];
 
-            const day =
-                partes[2];
+                const botonAnterior =
+                    document.getElementById(
+                        "upcoming-prev"
+                    );
 
-            const fecha =
-                new Date(
-                    Number(year),
-                    Number(month) - 1,
-                    Number(day)
-                );
 
-            return fecha.toLocaleDateString(
-                "es-ES",
-                {
-                    day: "numeric",
-                    month: "long",
-                    year: "numeric"
+                const botonSiguiente =
+                    document.getElementById(
+                        "upcoming-next"
+                    );
+
+
+                const numeroPagina =
+                    document.getElementById(
+                        "upcoming-page-number"
+                    );
+
+
+                /* =================================================
+                   MESES
+                   ================================================= */
+
+                const meses = [
+
+                    "enero",
+                    "febrero",
+                    "marzo",
+                    "abril",
+                    "mayo",
+                    "junio",
+                    "julio",
+                    "agosto",
+                    "septiembre",
+                    "octubre",
+                    "noviembre",
+                    "diciembre"
+
+                ];
+
+
+                /* =================================================
+                   FORMATEAR FECHA
+                   ================================================= */
+
+                function formatearFecha(fecha) {
+
+                    if (!fecha) {
+                        return "";
+                    }
+
+
+                    const partes =
+                        fecha.split(".");
+
+
+                    if (partes.length !== 3) {
+                        return fecha;
+                    }
+
+
+                    const año =
+                        parseInt(
+                            partes[0],
+                            10
+                        );
+
+
+                    const mes =
+                        parseInt(
+                            partes[1],
+                            10
+                        );
+
+
+                    const dia =
+                        parseInt(
+                            partes[2],
+                            10
+                        );
+
+
+                    if (
+                        isNaN(año) ||
+                        isNaN(mes) ||
+                        isNaN(dia) ||
+                        mes < 1 ||
+                        mes > 12
+                    ) {
+                        return fecha;
+                    }
+
+
+                    return (
+                        dia +
+                        " de " +
+                        meses[mes - 1] +
+                        " de " +
+                        año
+                    );
+
                 }
-            );
-        }
 
 
-        /* =====================================================
-           MOSTRAR PÁGINA
-           ===================================================== */
+                /* =================================================
+                   VALIDAR FECHA
+                   ================================================= */
 
-        function renderUpcomingPage() {
+                function fechaValida(fecha) {
 
-            upcomingContainer.innerHTML = "";
-
-
-            const inicio =
-                (upcomingCurrentPage - 1)
-                * UPCOMING_PER_PAGE;
+                    if (!fecha) {
+                        return false;
+                    }
 
 
-            const fin =
-                inicio + UPCOMING_PER_PAGE;
+                    const partes =
+                        fecha.split(".");
 
 
-            const juegosPagina =
-                upcomingGames.slice(
-                    inicio,
-                    fin
-                );
+                    if (partes.length !== 3) {
+                        return false;
+                    }
 
 
-            juegosPagina.forEach(
-                function(juego) {
+                    const año =
+                        parseInt(
+                            partes[0],
+                            10
+                        );
 
 
-                    const article =
-                        document.createElement("article");
+                    const mes =
+                        parseInt(
+                            partes[1],
+                            10
+                        );
 
-                    article.className =
+
+                    const dia =
+                        parseInt(
+                            partes[2],
+                            10
+                        );
+
+
+                    if (
+                        isNaN(año) ||
+                        isNaN(mes) ||
+                        isNaN(dia)
+                    ) {
+                        return false;
+                    }
+
+
+                    const fechaObjeto =
+                        new Date(
+                            año,
+                            mes - 1,
+                            dia
+                        );
+
+
+                    return (
+                        fechaObjeto.getFullYear() === año &&
+                        fechaObjeto.getMonth() === mes - 1 &&
+                        fechaObjeto.getDate() === dia
+                    );
+
+                }
+
+
+                /* =================================================
+                   CREAR TARJETA
+                   ================================================= */
+
+                function crearTarjeta(juego) {
+
+                    const articulo =
+                        document.createElement(
+                            "article"
+                        );
+
+
+                    articulo.className =
                         "upcoming-card";
 
 
                     const enlace =
-                        document.createElement("a");
+                        document.createElement(
+                            "a"
+                        );
+
+
+                    enlace.className =
+                        "upcoming-card-link";
+
 
                     enlace.href =
                         juego.link || "#";
 
+
                     enlace.target =
                         "_blank";
+
 
                     enlace.rel =
                         "noopener noreferrer";
 
-                    enlace.className =
-                        "upcoming-card-image";
 
+                    /* IMAGEN */
 
                     const imagen =
-                        document.createElement("img");
+                        document.createElement(
+                            "img"
+                        );
+
+
+                    imagen.className =
+                        "upcoming-card-image";
+
 
                     imagen.src =
                         juego.image || "";
 
+
                     imagen.alt =
-                        "Portada de " + juego.title;
+                        "Portada de " +
+                        (juego.title || "videojuego");
+
 
                     imagen.loading =
                         "lazy";
@@ -1124,281 +1460,396 @@
                     );
 
 
+                    /* CONTENIDO */
+
                     const contenido =
-                        document.createElement("div");
+                        document.createElement(
+                            "div"
+                        );
+
 
                     contenido.className =
                         "upcoming-card-content";
 
 
+                    /* CATEGORÍA */
+
                     const categoria =
-                        document.createElement("p");
+                        document.createElement(
+                            "p"
+                        );
+
 
                     categoria.className =
                         "upcoming-card-category";
 
+
                     categoria.textContent =
-                        juego.category || "GOG";
-
-
-                    const titulo =
-                        document.createElement("h3");
-
-                    titulo.textContent =
-                        juego.title;
+                        juego.category ||
+                        "GOG";
 
 
                     contenido.appendChild(
                         categoria
                     );
 
+
+                    /* TÍTULO */
+
+                    const titulo =
+                        document.createElement(
+                            "h3"
+                        );
+
+
+                    titulo.className =
+                        "upcoming-card-title";
+
+
+                    titulo.textContent =
+                        juego.title ||
+                        "Sin título";
+
+
                     contenido.appendChild(
                         titulo
                     );
 
 
-                    if (juego.releaseDate) {
+                    /* FECHA */
 
-                        const fecha =
-                            document.createElement("p");
-
-                        fecha.className =
-                            "upcoming-card-date";
-
-                        fecha.textContent =
-                            formatUpcomingDate(
-                                juego.releaseDate
-                            );
-
-                        contenido.appendChild(
-                            fecha
+                    const fecha =
+                        document.createElement(
+                            "p"
                         );
-                    }
 
 
-                    article.appendChild(
-                        enlace
+                    fecha.className =
+                        "upcoming-card-date";
+
+
+                    fecha.textContent =
+                        formatearFecha(
+                            juego.releaseDate
+                        );
+
+
+                    contenido.appendChild(
+                        fecha
                     );
 
-                    article.appendChild(
+
+                    enlace.appendChild(
                         contenido
                     );
 
 
-                    upcomingContainer.appendChild(
-                        article
+                    articulo.appendChild(
+                        enlace
                     );
 
-                }
-            );
 
-
-            const totalPaginas =
-                Math.ceil(
-                    upcomingGames.length
-                    / UPCOMING_PER_PAGE
-                );
-
-
-            upcomingPage.textContent =
-                "Página "
-                + upcomingCurrentPage
-                + " de "
-                + totalPaginas;
-
-
-            upcomingPrev.disabled =
-                upcomingCurrentPage === 1;
-
-
-            upcomingNext.disabled =
-                upcomingCurrentPage === totalPaginas;
-
-
-            if (totalPaginas > 1) {
-
-                upcomingPagination.style.display =
-                    "flex";
-
-            } else {
-
-                upcomingPagination.style.display =
-                    "none";
-
-            }
-
-        }
-
-
-        /* =====================================================
-           CARGAR JSON
-           ===================================================== */
-
-        fetch(
-            "proximos.json"
-        )
-        .then(
-            function(response) {
-
-                if (!response.ok) {
-
-                    throw new Error(
-                        "No se pudo cargar proximos.json"
-                    );
+                    return articulo;
 
                 }
 
-                return response.json();
 
-            }
-        )
-        .then(
-            function(data) {
+                /* =================================================
+                   MOSTRAR PÁGINA
+                   ================================================= */
+
+                function mostrarPagina() {
+
+                    contenedor.innerHTML =
+                        "";
 
 
-                /*
-                 * Solo mostramos entradas que tengan
-                 * una fecha de lanzamiento.
-                 */
+                    const totalPaginas =
+                        Math.ceil(
+                            juegos.length /
+                            JUEGOS_POR_PAGINA
+                        );
 
-                upcomingGames =
-                    data.filter(
-                        function(juego) {
 
-                            return (
-                                juego.releaseDate
-                                &&
-                                juego.releaseDate.trim() !== ""
+                    if (
+                        paginaActual < 1
+                    ) {
+                        paginaActual = 1;
+                    }
+
+
+                    if (
+                        paginaActual > totalPaginas
+                    ) {
+                        paginaActual =
+                            totalPaginas;
+                    }
+
+
+                    const inicio =
+                        (
+                            paginaActual - 1
+                        ) *
+                        JUEGOS_POR_PAGINA;
+
+
+                    const fin =
+                        inicio +
+                        JUEGOS_POR_PAGINA;
+
+
+                    const juegosPagina =
+                        juegos.slice(
+                            inicio,
+                            fin
+                        );
+
+
+                    juegosPagina.forEach(
+                        function (juego) {
+
+                            contenedor.appendChild(
+                                crearTarjeta(juego)
                             );
 
                         }
                     );
 
 
-                /*
-                 * Ordenamos por fecha.
-                 */
+                    numeroPagina.textContent =
+                        "Página " +
+                        paginaActual +
+                        " de " +
+                        totalPaginas;
 
-                upcomingGames.sort(
-                    function(a, b) {
 
-                        return (
-                            a.releaseDate.localeCompare(
-                                b.releaseDate
-                            )
-                        );
+                    botonAnterior.disabled =
+                        paginaActual === 1;
+
+
+                    botonSiguiente.disabled =
+                        paginaActual === totalPaginas;
+
+
+                    paginacion.style.display =
+                        "flex";
+
+
+                    /*
+                     * Al cambiar de página volvemos
+                     * al principio de la sección.
+                     */
+
+                    document
+                        .getElementById(
+                            "proximos"
+                        )
+                        .scrollIntoView({
+                            behavior: "smooth",
+                            block: "start"
+                        });
+
+                }
+
+
+                /* =================================================
+                   ANTERIOR
+                   ================================================= */
+
+                botonAnterior.addEventListener(
+                    "click",
+                    function () {
+
+                        if (
+                            paginaActual > 1
+                        ) {
+
+                            paginaActual--;
+
+                            mostrarPagina();
+
+                        }
 
                     }
                 );
 
 
-                if (
-                    upcomingGames.length === 0
-                ) {
+                /* =================================================
+                   SIGUIENTE
+                   ================================================= */
 
-                    upcomingContainer.innerHTML =
-                        "<p class='upcoming-loading'>No hay próximos lanzamientos disponibles.</p>";
+                botonSiguiente.addEventListener(
+                    "click",
+                    function () {
 
-                    return;
-                }
+                        const totalPaginas =
+                            Math.ceil(
+                                juegos.length /
+                                JUEGOS_POR_PAGINA
+                            );
 
 
-                renderUpcomingPage();
+                        if (
+                            paginaActual <
+                            totalPaginas
+                        ) {
 
-            }
-        )
-        .catch(
-            function(error) {
+                            paginaActual++;
 
-                console.error(
-                    error
+                            mostrarPagina();
+
+                        }
+
+                    }
                 );
 
-                upcomingContainer.innerHTML =
-                    "<p class='upcoming-loading'>No se han podido cargar los próximos lanzamientos.</p>";
 
-            }
-        );
+                /* =================================================
+                   CARGAR JSON
+                   ================================================= */
 
+                fetch(
+                    "proximos.json"
+                )
 
-        /* =====================================================
-           BOTÓN ANTERIOR
-           ===================================================== */
+                    .then(
+                        function (respuesta) {
 
-        upcomingPrev.addEventListener(
-            "click",
-            function() {
+                            if (
+                                !respuesta.ok
+                            ) {
 
-                if (
-                    upcomingCurrentPage > 1
-                ) {
+                                throw new Error(
+                                    "No se pudo cargar proximos.json"
+                                );
 
-                    upcomingCurrentPage--;
-
-                    renderUpcomingPage();
-
-                    document
-                        .getElementById("proximos")
-                        .scrollIntoView({
-                            behavior: "smooth"
-                        });
-
-                }
-
-            }
-        );
+                            }
 
 
-        /* =====================================================
-           BOTÓN SIGUIENTE
-           ===================================================== */
+                            return respuesta.json();
 
-        upcomingNext.addEventListener(
-            "click",
-            function() {
+                        }
+                    )
 
-                const totalPaginas =
-                    Math.ceil(
-                        upcomingGames.length
-                        / UPCOMING_PER_PAGE
+                    .then(
+                        function (datos) {
+
+                            /*
+                             * Nos aseguramos de que
+                             * sea un array.
+                             */
+
+                            if (
+                                !Array.isArray(
+                                    datos
+                                )
+                            ) {
+
+                                throw new Error(
+                                    "proximos.json no contiene una lista válida"
+                                );
+
+                            }
+
+
+                            /*
+                             * SOLO JUEGOS CON FECHA
+                             */
+
+                            juegos =
+                                datos.filter(
+                                    function (juego) {
+
+                                        return (
+                                            juego &&
+                                            fechaValida(
+                                                juego.releaseDate
+                                            )
+                                        );
+
+                                    }
+                                );
+
+
+                            /*
+                             * ORDENAR POR FECHA
+                             */
+
+                            juegos.sort(
+                                function (
+                                    a,
+                                    b
+                                ) {
+
+                                    return (
+                                        a.releaseDate.localeCompare(
+                                            b.releaseDate
+                                        )
+                                    );
+
+                                }
+                            );
+
+
+                            /*
+                             * SIN RESULTADOS
+                             */
+
+                            if (
+                                juegos.length === 0
+                            ) {
+
+                                contenedor.innerHTML =
+                                    '<p class="upcoming-empty">No hay próximos lanzamientos con fecha disponible.</p>';
+
+                                paginacion.style.display =
+                                    "none";
+
+                                return;
+
+                            }
+
+
+                            /*
+                             * MOSTRAR PRIMERA PÁGINA
+                             */
+
+                            mostrarPagina();
+
+                        }
+                    )
+
+                    .catch(
+                        function (error) {
+
+                            console.error(
+                                "Error cargando próximos lanzamientos:",
+                                error
+                            );
+
+
+                            contenedor.innerHTML =
+                                '<p class="upcoming-error">No se han podido cargar los próximos lanzamientos.</p>';
+
+                            paginacion.style.display =
+                                "none";
+
+                        }
                     );
 
-
-                if (
-                    upcomingCurrentPage
-                    < totalPaginas
-                ) {
-
-                    upcomingCurrentPage++;
-
-                    renderUpcomingPage();
-
-                    document
-                        .getElementById("proximos")
-                        .scrollIntoView({
-                            behavior: "smooth"
-                        });
-
-                }
-
             }
+
         );
-
-
-        /* =====================================================
-           NOTICIAS
-           ===================================================== */
-
-        /*
-         * IMPORTANTE:
-         * Aquí dejamos que el script.js existente
-         * siga gestionando las noticias.
-         */
 
     </script>
 
 
+    <!-- =================================================
+         SCRIPT GENERAL DE LA WEB
+         ================================================= -->
+
     <script src="script.js"></script>
+
 
 </body>
 
