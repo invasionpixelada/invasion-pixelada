@@ -106,6 +106,10 @@ jobs:
 
           EXCLUSIONES = [
 
+              # -----------------------------------------
+              # GÉNEROS QUE NO QUEREMOS
+              # -----------------------------------------
+
               "first-person shooter",
               "third-person shooter",
 
@@ -123,7 +127,16 @@ jobs:
 
               "fighting",
 
-              "platformer"
+              "platformer",
+
+              # -----------------------------------------
+              # CONTENIDO SEXUAL / ADULTO
+              # -----------------------------------------
+
+              "sexual content",
+              "nudity",
+              "nsfw",
+              "dating sim"
 
           ]
 
