@@ -99,6 +99,19 @@ jobs:
               len(productos)
           )
 
+          if productos:
+            print("")
+            print("====================================")
+            print("EJEMPLO DE PRODUCTO GOG")
+            print("====================================")
+            print(
+              json.dumps(
+              productos[0],
+              ensure_ascii=False,
+              indent=2
+              )
+            )
+          print("====================================")
 
           # =========================================================
           # PALABRAS CLAVE MUY ESPECÍFICAS
