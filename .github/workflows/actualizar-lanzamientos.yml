@@ -10,23 +10,43 @@ permissions:
   contents: write
 
 jobs:
+
   actualizar-lanzamientos:
 
     runs-on: ubuntu-latest
 
     steps:
 
+      # =========================================================
+      # DESCARGAR REPOSITORIO
+      # =========================================================
+
       - name: Descargar repositorio
         uses: actions/checkout@v4
+
+
+      # =========================================================
+      # CONFIGURAR PYTHON
+      # =========================================================
 
       - name: Configurar Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.x"
 
+
+      # =========================================================
+      # INSTALAR DEPENDENCIAS
+      # =========================================================
+
       - name: Instalar dependencias
         run: |
           pip install requests
+
+
+      # =========================================================
+      # OBTENER PRÓXIMOS LANZAMIENTOS
+      # =========================================================
 
       - name: Obtener próximos lanzamientos de GOG
         run: |
@@ -35,6 +55,7 @@ jobs:
 
           import json
           import requests
+          from datetime import datetime, timezone
 
 
           print("====================================")
@@ -43,86 +64,17 @@ jobs:
 
 
           # =========================================================
-          # CATÁLOGO DE GOG
+          # FECHA ACTUAL
           # =========================================================
 
-          URL = (
-              "https://catalog.gog.com/v1/catalog"
-              "?limit=100"
-              "&releaseStatuses=in%3Aupcoming"
-              "&order=asc%3AreleaseDate"
-              "&productType=in%3Agame"
-              "&page=1"
-          )
-
+          hoy = datetime.now(timezone.utc).date()
 
           print("")
-          print("Consultando catálogo de GOG...")
-          print(URL)
-
-
-          respuesta = requests.get(
-              URL,
-              headers={
-                  "User-Agent": "Mozilla/5.0"
-              },
-              timeout=30
-          )
-
-
-          respuesta.raise_for_status()
-
-
-          datos = respuesta.json()
-
-
-          print("")
-          print(
-              "Código HTTP:",
-              respuesta.status_code
-          )
+          print("Fecha actual:", hoy)
 
 
           # =========================================================
-          # PRODUCTOS
-          # =========================================================
-
-          productos = datos.get(
-              "products",
-              []
-          )
-
-
-          print(
-              "Productos encontrados:",
-              len(productos)
-          )
-
-
-          # =========================================================
-          # DIAGNÓSTICO
-          # =========================================================
-
-          if productos:
-
-              print("")
-              print("====================================")
-              print("EJEMPLO DE PRODUCTO GOG")
-              print("====================================")
-
-              print(
-                  json.dumps(
-                      productos[0],
-                      ensure_ascii=False,
-                      indent=2
-                  )
-              )
-
-              print("====================================")
-
-
-          # =========================================================
-          # PALABRAS CLAVE MUY ESPECÍFICAS
+          # PALABRAS CLAVE
           # =========================================================
 
           PALABRAS_CLAVE = [
@@ -155,210 +107,425 @@ jobs:
           EXCLUSIONES = [
 
               "first-person shooter",
-              "fps",
               "third-person shooter",
-              "shooter",
+
               "battle royale",
+
               "racing",
+
               "sports",
+
               "strategy",
               "real-time strategy",
+
               "rpg",
               "role-playing",
+
               "fighting",
+
               "platformer"
 
           ]
 
 
+          # =========================================================
+          # LISTA FINAL
+          # =========================================================
+
           juegos = []
 
 
           # =========================================================
-          # PROCESAR PRODUCTOS
+          # EVITAR DUPLICADOS
           # =========================================================
 
-          for producto in productos:
-
-              titulo = str(
-                  producto.get(
-                      "title",
-                      ""
-                  )
-              ).strip()
+          ids_procesados = set()
 
 
-              if not titulo:
-                  continue
+          # =========================================================
+          # CONSULTAR VARIAS PÁGINAS
+          # =========================================================
+
+          MAX_PAGINAS = 5
 
 
-              # -----------------------------------------------------
-              # Convertir producto completo a texto
-              # -----------------------------------------------------
-
-              texto = json.dumps(
-                  producto,
-                  ensure_ascii=False
-              ).lower()
+          for pagina in range(1, MAX_PAGINAS + 1):
 
 
-              # -----------------------------------------------------
-              # FILTRO DE EXCLUSIÓN
-              # -----------------------------------------------------
-
-              if any(
-                  exclusion in texto
-                  for exclusion in EXCLUSIONES
-              ):
-
-                  print(
-                      "Excluido:",
-                      titulo
-                  )
-
-                  continue
-
-
-              # -----------------------------------------------------
-              # FILTRO TEMÁTICO
-              # -----------------------------------------------------
-
-              coincide = any(
-                  palabra in texto
-                  for palabra in PALABRAS_CLAVE
+              URL = (
+                  "https://catalog.gog.com/v1/catalog"
+                  "?limit=100"
+                  "&releaseStatuses=in%3Aupcoming"
+                  "&order=asc%3AreleaseDate"
+                  "&productType=in%3Agame"
+                  f"&page={pagina}"
               )
 
-
-              if not coincide:
-
-                  continue
-
-
-              # =====================================================
-              # PRODUCTO ENCONTRADO
-              # =====================================================
 
               print("")
-              print("--------------------------------")
-              print(
-                  "Encontrado:",
-                  titulo
+              print("====================================")
+              print("CONSULTANDO PÁGINA", pagina)
+              print("====================================")
+
+              print(URL)
+
+
+              try:
+
+                  respuesta = requests.get(
+                      URL,
+                      headers={
+                          "User-Agent": "Mozilla/5.0"
+                      },
+                      timeout=30
+                  )
+
+                  respuesta.raise_for_status()
+
+                  datos = respuesta.json()
+
+              except Exception as error:
+
+                  print(
+                      "ERROR consultando página:",
+                      pagina,
+                      error
+                  )
+
+                  continue
+
+
+              productos = datos.get(
+                  "products",
+                  []
               )
 
 
-              # =====================================================
-              # ENLACE DIRECTO DE GOG
-              # =====================================================
+              print(
+                  "Productos encontrados:",
+                  len(productos)
+              )
 
-              enlace = str(
-                  producto.get(
-                      "storeLink",
-                      ""
-                  )
-              ).strip()
+
+              if not productos:
+                  break
 
 
               # =====================================================
-              # IMAGEN VERTICAL
+              # PROCESAR PRODUCTOS
               # =====================================================
 
-              imagen = str(
-                  producto.get(
-                      "coverVertical",
-                      ""
-                  )
-              ).strip()
+              for producto in productos:
 
 
-              # Si por algún motivo no existe la vertical,
-              # usamos la horizontal como respaldo.
-
-              if not imagen:
-
-                  imagen = str(
+                  titulo = str(
                       producto.get(
-                          "coverHorizontal",
+                          "title",
                           ""
                       )
                   ).strip()
 
 
-              # =====================================================
-              # FECHA
-              # =====================================================
+                  if not titulo:
+                      continue
 
-              fecha = (
-                  producto.get(
-                      "releaseDate"
+
+                  producto_id = str(
+                      producto.get(
+                          "id",
+                          ""
+                      )
                   )
-                  or
-                  producto.get(
-                      "release_date"
+
+
+                  if producto_id in ids_procesados:
+                      continue
+
+
+                  ids_procesados.add(
+                      producto_id
                   )
-                  or
+
+
+                  # =================================================
+                  # TEXTO PARA BUSCAR CATEGORÍAS
+                  # =================================================
+
+                  texto = json.dumps(
+                      producto,
+                      ensure_ascii=False
+                  ).lower()
+
+
+                  # =================================================
+                  # EXCLUSIONES
+                  # =================================================
+
+                  exclusion_encontrada = None
+
+
+                  for exclusion in EXCLUSIONES:
+
+                      if exclusion in texto:
+
+                          exclusion_encontrada = exclusion
+
+                          break
+
+
+                  if exclusion_encontrada:
+
+                      print(
+                          "Excluido:",
+                          titulo,
+                          "->",
+                          exclusion_encontrada
+                      )
+
+                      continue
+
+
+                  # =================================================
+                  # FILTRO TEMÁTICO
+                  # =================================================
+
+                  coincide = False
+
+
+                  for palabra in PALABRAS_CLAVE:
+
+                      if palabra in texto:
+
+                          coincide = True
+
+                          break
+
+
+                  if not coincide:
+
+                      continue
+
+
+                  # =================================================
+                  # FECHA
+                  # =================================================
+
+                  fecha = (
+
+                      producto.get(
+                          "releaseDate"
+                      )
+
+                      or
+
+                      producto.get(
+                          "storeReleaseDate"
+                      )
+
+                      or
+
+                      ""
+                  )
+
+
+                  # =================================================
+                  # COMPROBAR FECHA
+                  # =================================================
+
+                  fecha_valida = None
+
+
+                  if fecha:
+
+                      try:
+
+                          fecha_valida = datetime.strptime(
+                              fecha,
+                              "%Y.%m.%d"
+                          ).date()
+
+                      except ValueError:
+
+                          print(
+                              "Fecha no reconocida:",
+                              titulo,
+                              fecha
+                          )
+
+
+                  # =================================================
+                  # DESCARTAR LANZAMIENTOS PASADOS
+                  # =================================================
+
+                  if fecha_valida:
+
+                      if fecha_valida < hoy:
+
+                          print(
+                              "Descartado por fecha pasada:",
+                              titulo,
+                              fecha
+                          )
+
+                          continue
+
+
+                  # =================================================
+                  # ENLACE
+                  # =================================================
+
+                  enlace = str(
+                      producto.get(
+                          "storeLink",
+                          ""
+                      )
+                  ).strip()
+
+
+                  # =================================================
+                  # IMAGEN
+                  # =================================================
+
+                  imagen = str(
+                      producto.get(
+                          "coverVertical",
+                          ""
+                      )
+                  ).strip()
+
+
+                  # =================================================
+                  # SI NO HAY IMAGEN VERTICAL,
+                  # USAMOS HORIZONTAL
+                  # =================================================
+
+                  if not imagen:
+
+                      imagen = str(
+                          producto.get(
+                              "coverHorizontal",
+                              ""
+                          )
+                      ).strip()
+
+
+                  # =================================================
+                  # GUARDAR
+                  # =================================================
+
+                  juego = {
+
+                      "title":
+                          titulo,
+
+                      "link":
+                          enlace,
+
+                      "image":
+                          imagen,
+
+                      "releaseDate":
+                          fecha,
+
+                      "category":
+                          "GOG"
+
+                  }
+
+
+                  juegos.append(
+                      juego
+                  )
+
+
+                  print("")
+                  print("--------------------------------")
+                  print("ENCONTRADO:", titulo)
+                  print("Imagen:", imagen)
+                  print("Enlace:", enlace)
+                  print("Fecha:", fecha)
+                  print("--------------------------------")
+
+
+          # =========================================================
+          # ORDENAR RESULTADOS
+          # =========================================================
+
+          def fecha_orden(juego):
+
+              fecha = juego.get(
+                  "releaseDate",
                   ""
               )
 
 
-              # =====================================================
-              # MOSTRAR INFORMACIÓN
-              # =====================================================
+              if not fecha:
 
-              print(
-                  "Imagen:",
-                  imagen
-              )
-
-              print(
-                  "Enlace:",
-                  enlace
-              )
-
-              print(
-                  "Fecha:",
-                  fecha
-              )
+                  return (
+                      1,
+                      "9999.99.99"
+                  )
 
 
-              # =====================================================
-              # EVITAR DUPLICADOS
-              # =====================================================
+              try:
 
-              if any(
-                  juego["title"].lower()
-                  == titulo.lower()
-                  for juego in juegos
-              ):
-
-                  continue
-
-
-              # =====================================================
-              # GUARDAR JUEGO
-              # =====================================================
-
-              juegos.append({
-
-                  "title":
-                      titulo,
-
-                  "link":
-                      enlace,
-
-                  "image":
-                      imagen,
-
-                  "releaseDate":
+                  fecha_dt = datetime.strptime(
                       fecha,
+                      "%Y.%m.%d"
+                  ).date()
 
-                  "category":
-                      "GOG"
 
-              })
+                  return (
+                      0,
+                      fecha_dt.isoformat()
+                  )
+
+              except ValueError:
+
+                  return (
+                      1,
+                      "9999.99.99"
+                  )
+
+
+          juegos.sort(
+              key=fecha_orden
+          )
 
 
           # =========================================================
-          # LIMITAR RESULTADOS
+          # ELIMINAR DUPLICADOS POR TÍTULO
+          # =========================================================
+
+          juegos_unicos = []
+
+          titulos_vistos = set()
+
+
+          for juego in juegos:
+
+              clave = juego["title"].lower().strip()
+
+
+              if clave in titulos_vistos:
+                  continue
+
+
+              titulos_vistos.add(
+                  clave
+              )
+
+
+              juegos_unicos.append(
+                  juego
+              )
+
+
+          juegos = juegos_unicos
+
+
+          # =========================================================
+          # LIMITAR A 12
           # =========================================================
 
           juegos = juegos[:12]
@@ -388,8 +555,13 @@ jobs:
 
           print("")
           print("====================================")
-          print("RESULTADO")
+          print("RESULTADO FINAL")
           print("====================================")
+
+          print(
+              "Fecha actual:",
+              hoy
+          )
 
           print(
               "Juegos seleccionados:",
@@ -436,6 +608,10 @@ jobs:
           PY
 
 
+      # =========================================================
+      # COMPROBAR JSON
+      # =========================================================
+
       - name: Comprobar proximos.json
         run: |
 
@@ -448,6 +624,10 @@ jobs:
           echo ""
           echo "===================================="
 
+
+      # =========================================================
+      # GUARDAR CAMBIOS EN GITHUB
+      # =========================================================
 
       - name: Guardar cambios
         run: |
