@@ -1330,7 +1330,7 @@ a {
 
     height: 190px;
 
-    object-fit: cover;
+    object-fit: contain;
 
     display: block;
 
