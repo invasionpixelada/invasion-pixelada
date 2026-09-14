@@ -1,12 +1,5 @@
 [
   {
-    "title": "FOUNTAINS",
-    "link": "https://www.gog.com/en/game/fountains",
-    "image": "https://images.gog-statics.com/f8a7aeceac2057b23efbbf14c3a59cbf0962097328e152a8665ed16dc29f6793.jpg",
-    "releaseDate": "2024.12.20",
-    "category": "GOG"
-  },
-  {
     "title": "I Have Known You",
     "link": "https://www.gog.com/en/game/i_have_known_you",
     "image": "https://images.gog-statics.com/6e56e5b5cca1f1c5b9279739bf623f1a622f15838ac14bd7e62bf9195ce92b1a.jpg",
@@ -80,6 +73,13 @@
     "title": "Broken Sword - The Smoking Mirror: Reforged",
     "link": "https://www.gog.com/en/game/broken_sword_the_smoking_mirror_reforged",
     "image": "https://images.gog-statics.com/594ba6f675a278719c3c5af3603d09df156f33230506013092bbc73a0460c248.jpg",
+    "releaseDate": "",
+    "category": "GOG"
+  },
+  {
+    "title": "Celsius Strays",
+    "link": "https://www.gog.com/en/game/celsius_strays",
+    "image": "https://images.gog-statics.com/0ddd177c59caf7b6b8253e08335df95a7940714b1d545726f038d344962b8760.jpg",
     "releaseDate": "",
     "category": "GOG"
   }
