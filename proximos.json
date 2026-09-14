@@ -1,23 +1,9 @@
 [
   {
-    "title": "FOUNTAINS",
-    "link": "",
-    "image": "",
-    "releaseDate": "2024.12.20",
-    "category": "GOG"
-  },
-  {
     "title": "I Have Known You",
     "link": "",
     "image": "",
     "releaseDate": "2026.09.18",
-    "category": "GOG"
-  },
-  {
-    "title": "Remothered: Red Nun's Legacy",
-    "link": "",
-    "image": "",
-    "releaseDate": "2026.10.27",
     "category": "GOG"
   },
   {
@@ -35,35 +21,7 @@
     "category": "GOG"
   },
   {
-    "title": "SOMBRAS: negative frames",
-    "link": "",
-    "image": "",
-    "releaseDate": "2026.12.03",
-    "category": "GOG"
-  },
-  {
-    "title": "A Week in the Life of Asocial Giraffe",
-    "link": "",
-    "image": "",
-    "releaseDate": "",
-    "category": "GOG"
-  },
-  {
     "title": "Abashed",
-    "link": "",
-    "image": "",
-    "releaseDate": "",
-    "category": "GOG"
-  },
-  {
-    "title": "Agni: Village of Calamity",
-    "link": "",
-    "image": "",
-    "releaseDate": "",
-    "category": "GOG"
-  },
-  {
-    "title": "Airport Contraband",
     "link": "",
     "image": "",
     "releaseDate": "",
@@ -78,6 +36,48 @@
   },
   {
     "title": "Broken Sword - The Smoking Mirror: Reforged",
+    "link": "",
+    "image": "",
+    "releaseDate": "",
+    "category": "GOG"
+  },
+  {
+    "title": "Celsius Strays",
+    "link": "",
+    "image": "",
+    "releaseDate": "",
+    "category": "GOG"
+  },
+  {
+    "title": "Cold Abyss",
+    "link": "",
+    "image": "",
+    "releaseDate": "",
+    "category": "GOG"
+  },
+  {
+    "title": "Cold Hearts",
+    "link": "",
+    "image": "",
+    "releaseDate": "",
+    "category": "GOG"
+  },
+  {
+    "title": "Colors:Zero",
+    "link": "",
+    "image": "",
+    "releaseDate": "",
+    "category": "GOG"
+  },
+  {
+    "title": "Cozy Room",
+    "link": "",
+    "image": "",
+    "releaseDate": "",
+    "category": "GOG"
+  },
+  {
+    "title": "Crowns and Pawns: Amber Road",
     "link": "",
     "image": "",
     "releaseDate": "",
