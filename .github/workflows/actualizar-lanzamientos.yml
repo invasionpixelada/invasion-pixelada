@@ -325,49 +325,58 @@ jobs:
                       or
 
                       ""
-                  )
+                  ).strip()
+
+
+                  # =================================================
+                  # SOLO ACEPTAR JUEGOS CON FECHA
+                  # =================================================
+
+                  if not fecha:
+
+                      print(
+                          "Descartado por no tener fecha:",
+                          titulo
+                      )
+
+                      continue
 
 
                   # =================================================
                   # COMPROBAR FECHA
                   # =================================================
 
-                  fecha_valida = None
+                  try:
 
+                      fecha_valida = datetime.strptime(
+                          fecha,
+                          "%Y.%m.%d"
+                      ).date()
 
-                  if fecha:
+                  except ValueError:
 
-                      try:
+                      print(
+                          "Descartado por fecha no reconocida:",
+                          titulo,
+                          fecha
+                      )
 
-                          fecha_valida = datetime.strptime(
-                              fecha,
-                              "%Y.%m.%d"
-                          ).date()
-
-                      except ValueError:
-
-                          print(
-                              "Fecha no reconocida:",
-                              titulo,
-                              fecha
-                          )
+                      continue
 
 
                   # =================================================
                   # DESCARTAR LANZAMIENTOS PASADOS
                   # =================================================
 
-                  if fecha_valida:
+                  if fecha_valida < hoy:
 
-                      if fecha_valida < hoy:
+                      print(
+                          "Descartado por fecha pasada:",
+                          titulo,
+                          fecha
+                      )
 
-                          print(
-                              "Descartado por fecha pasada:",
-                              titulo,
-                              fecha
-                          )
-
-                          continue
+                      continue
 
 
                   # =================================================
@@ -457,14 +466,6 @@ jobs:
                   "releaseDate",
                   ""
               )
-
-
-              if not fecha:
-
-                  return (
-                      1,
-                      "9999.99.99"
-                  )
 
 
               try:
