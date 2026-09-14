@@ -26,7 +26,7 @@ jobs:
 
       - name: Instalar dependencias
         run: |
-          pip install requests beautifulsoup4
+          pip install requests
 
       - name: Obtener próximos lanzamientos de GOG
         run: |
@@ -35,8 +35,7 @@ jobs:
 
           import json
           import requests
-          from bs4 import BeautifulSoup
-          from urllib.parse import urljoin
+          from datetime import datetime
 
 
           print("====================================")
@@ -44,28 +43,29 @@ jobs:
           print("====================================")
 
 
-          GOG_URL = (
-              "https://www.gog.com/en/games"
-              "?order=desc%3AstoreReleaseDate"
-              "&releaseStatuses=upcoming"
+          # =========================================================
+          # CATÁLOGO DE GOG
+          # =========================================================
+
+          URL = (
+              "https://catalog.gog.com/v1/catalog"
+              "?limit=100"
+              "&releaseStatuses=in%3Aupcoming"
+              "&order=asc%3AreleaseDate"
+              "&productType=in%3Agame"
+              "&page=1"
           )
 
 
           print("")
-          print("Consultando GOG...")
-          print(GOG_URL)
+          print("Consultando catálogo de GOG...")
+          print(URL)
 
 
           respuesta = requests.get(
-              GOG_URL,
+              URL,
               headers={
-                  "User-Agent": (
-                      "Mozilla/5.0 "
-                      "(Windows NT 10.0; Win64; x64) "
-                      "AppleWebKit/537.36 "
-                      "(KHTML, like Gecko) "
-                      "Chrome/140.0 Safari/537.36"
-                  )
+                  "User-Agent": "Mozilla/5.0"
               },
               timeout=30
           )
@@ -74,20 +74,34 @@ jobs:
           respuesta.raise_for_status()
 
 
+          datos = respuesta.json()
+
+
+          print("")
           print(
-              "GOG responde:",
+              "Código HTTP:",
               respuesta.status_code
           )
 
 
-          soup = BeautifulSoup(
-              respuesta.text,
-              "html.parser"
+          # =========================================================
+          # COMPROBAR ESTRUCTURA
+          # =========================================================
+
+          productos = datos.get(
+              "products",
+              []
+          )
+
+
+          print(
+              "Productos encontrados:",
+              len(productos)
           )
 
 
           # =========================================================
-          # PALABRAS CLAVE ESTRICTAS
+          # PALABRAS CLAVE MUY ESPECÍFICAS
           # =========================================================
 
           PALABRAS_CLAVE = [
@@ -97,80 +111,96 @@ jobs:
               "point-and-click",
 
               "graphic adventure",
-              "adventure game",
-              "adventure",
+              "graphic adventures",
 
               "visual novel",
               "visual novels",
 
               "walking simulator",
+              "walking simulators",
 
               "narrative adventure",
+              "narrative adventures",
+
               "story rich"
 
           ]
 
 
           # =========================================================
-          # BUSCAR ENLACES DE JUEGOS
+          # CATEGORÍAS QUE NO QUEREMOS USAR COMO FILTRO
           # =========================================================
 
-          candidatos = []
+          EXCLUSIONES = [
+
+              "first-person shooter",
+              "fps",
+              "third-person shooter",
+              "shooter",
+              "battle royale",
+              "racing",
+              "sports",
+              "strategy",
+              "real-time strategy",
+              "rpg",
+              "role-playing",
+              "fighting",
+              "platformer"
+
+          ]
 
 
-          for enlace in soup.find_all("a", href=True):
-
-              href = enlace.get("href", "")
-
-              texto = enlace.get_text(
-                  " ",
-                  strip=True
-              )
+          juegos = []
 
 
-              if "/game/" not in href:
+          # =========================================================
+          # PROCESAR PRODUCTOS
+          # =========================================================
+
+          for producto in productos:
+
+              titulo = str(
+                  producto.get(
+                      "title",
+                      ""
+                  )
+              ).strip()
+
+
+              if not titulo:
                   continue
 
 
-              if not texto:
-                  continue
+              # -----------------------------------------------------
+              # Convertimos el producto completo a texto.
+              #
+              # Esto permite encontrar etiquetas y categorías
+              # aunque GOG cambie ligeramente la estructura.
+              # -----------------------------------------------------
+
+              texto = json.dumps(
+                  producto,
+                  ensure_ascii=False
+              ).lower()
 
 
-              titulo = texto.strip()
-
-
-              # Evitar enlaces repetidos
+              # -----------------------------------------------------
+              # FILTRO DE EXCLUSIÓN
+              # -----------------------------------------------------
 
               if any(
-                  juego["title"].lower() ==
-                  titulo.lower()
-                  for juego in candidatos
+                  exclusion in texto
+                  for exclusion in EXCLUSIONES
               ):
                   continue
 
 
-              bloque = enlace.parent
-
-
-              informacion = bloque.get_text(
-                  " ",
-                  strip=True
-              ).lower()
-
-
-              texto_busqueda = (
-                  titulo.lower()
-                  + " "
-                  + informacion
-              )
-
-
-              # =====================================================
+              # -----------------------------------------------------
               # FILTRO TEMÁTICO
-              # =====================================================
+              # -----------------------------------------------------
 
               coincide = any(
-                  palabra in texto_busqueda
+                  palabra in texto
                   for palabra in PALABRAS_CLAVE
               )
 
@@ -179,52 +209,119 @@ jobs:
                   continue
 
 
-              # =====================================================
-              # GUARDAR CANDIDATO
-              # =====================================================
+              # -----------------------------------------------------
+              # URL
+              # -----------------------------------------------------
 
-              url = urljoin(
-                  "https://www.gog.com",
-                  href
+              enlace = ""
+
+
+              enlaces = producto.get(
+                  "_links",
+                  {}
               )
 
 
-              candidatos.append({
+              if isinstance(
+                  enlaces,
+                  dict
+              ):
 
-                  "title": titulo,
+                  store = enlaces.get(
+                      "store"
+                  )
 
-                  "link": url,
+                  if isinstance(
+                      store,
+                      dict
+                  ):
 
-                  "description": "",
-
-                  "category": "GOG",
-
-                  "pubDate": ""
-
-              })
-
-
-          # =========================================================
-          # ELIMINAR DUPLICADOS
-          # =========================================================
-
-          juegos = []
-
-          enlaces_vistos = set()
+                      enlace = store.get(
+                          "href",
+                          ""
+                      )
 
 
-          for juego in candidatos:
+              # -----------------------------------------------------
+              # IMAGEN
+              # -----------------------------------------------------
 
-              if juego["link"] in enlaces_vistos:
+              imagen = ""
+
+
+              imagenes = producto.get(
+                  "_links",
+                  {}
+              )
+
+
+              if isinstance(
+                  imagenes,
+                  dict
+              ):
+
+                  boxart = imagenes.get(
+                      "boxArtImage"
+                  )
+
+                  if isinstance(
+                      boxart,
+                      dict
+                  ):
+
+                      imagen = boxart.get(
+                          "href",
+                          ""
+                      )
+
+
+              # -----------------------------------------------------
+              # FECHA
+              # -----------------------------------------------------
+
+              fecha = (
+                  producto.get(
+                      "releaseDate"
+                  )
+                  or
+                  producto.get(
+                      "release_date"
+                  )
+                  or
+                  ""
+              )
+
+
+              # -----------------------------------------------------
+              # EVITAR DUPLICADOS
+              # -----------------------------------------------------
+
+              if any(
+                  juego["title"].lower()
+                  == titulo.lower()
+                  for juego in juegos
+              ):
                   continue
 
-              enlaces_vistos.add(
-                  juego["link"]
-              )
 
-              juegos.append(
-                  juego
-              )
+              juegos.append({
+
+                  "title":
+                      titulo,
+
+                  "link":
+                      enlace,
+
+                  "image":
+                      imagen,
+
+                  "releaseDate":
+                      fecha,
+
+                  "category":
+                      "GOG"
+
+              })
 
 
           # =========================================================
@@ -235,7 +332,7 @@ jobs:
 
 
           # =========================================================
-          # GUARDAR JSON
+          # GUARDAR
           # =========================================================
 
           with open(
@@ -262,7 +359,7 @@ jobs:
           print("====================================")
 
           print(
-              "Juegos encontrados:",
+              "Juegos seleccionados:",
               len(juegos)
           )
 
@@ -272,17 +369,33 @@ jobs:
 
           print("")
 
+
           for juego in juegos:
 
               print(
-                  "-",
+                  "--------------------------------"
+              )
+
+              print(
+                  "Título:",
                   juego["title"]
               )
 
               print(
-                  "  ",
+                  "Fecha:",
+                  juego["releaseDate"]
+              )
+
+              print(
+                  "Imagen:",
+                  juego["image"]
+              )
+
+              print(
+                  "Enlace:",
                   juego["link"]
               )
+
 
           print("")
           print("====================================")
@@ -299,6 +412,7 @@ jobs:
 
           cat proximos.json
 
+          echo ""
           echo "===================================="
 
 
