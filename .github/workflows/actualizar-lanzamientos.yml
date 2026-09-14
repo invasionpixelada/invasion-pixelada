@@ -99,19 +99,28 @@ jobs:
               len(productos)
           )
 
+
+          # =========================================================
+          # DIAGNÓSTICO DE LA ESTRUCTURA REAL DE GOG
+          # =========================================================
+
           if productos:
-            print("")
-            print("====================================")
-            print("EJEMPLO DE PRODUCTO GOG")
-            print("====================================")
-            print(
-              json.dumps(
-              productos[0],
-              ensure_ascii=False,
-              indent=2
+
+              print("")
+              print("====================================")
+              print("EJEMPLO DE PRODUCTO GOG")
+              print("====================================")
+
+              print(
+                  json.dumps(
+                      productos[0],
+                      ensure_ascii=False,
+                      indent=2
+                  )
               )
-            )
-          print("====================================")
+
+              print("====================================")
+
 
           # =========================================================
           # PALABRAS CLAVE MUY ESPECÍFICAS
