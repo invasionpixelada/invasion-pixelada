@@ -1,0 +1,316 @@
+name: Actualizar lanzamientos
+
+on:
+  schedule:
+    - cron: "0 6 * * *"
+
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  actualizar-lanzamientos:
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Instalar dependencias
+        run: |
+          pip install requests beautifulsoup4
+
+      - name: Obtener próximos lanzamientos de GOG
+        run: |
+
+          python <<'PY'
+
+          import json
+          import requests
+          from bs4 import BeautifulSoup
+          from urllib.parse import urljoin
+
+
+          print("====================================")
+          print("ACTUALIZANDO PRÓXIMOS LANZAMIENTOS")
+          print("====================================")
+
+
+          GOG_URL = (
+              "https://www.gog.com/en/games"
+              "?order=desc%3AstoreReleaseDate"
+              "&releaseStatuses=upcoming"
+          )
+
+
+          print("")
+          print("Consultando GOG...")
+          print(GOG_URL)
+
+
+          respuesta = requests.get(
+              GOG_URL,
+              headers={
+                  "User-Agent": (
+                      "Mozilla/5.0 "
+                      "(Windows NT 10.0; Win64; x64) "
+                      "AppleWebKit/537.36 "
+                      "(KHTML, like Gecko) "
+                      "Chrome/140.0 Safari/537.36"
+                  )
+              },
+              timeout=30
+          )
+
+
+          respuesta.raise_for_status()
+
+
+          print(
+              "GOG responde:",
+              respuesta.status_code
+          )
+
+
+          soup = BeautifulSoup(
+              respuesta.text,
+              "html.parser"
+          )
+
+
+          # =========================================================
+          # PALABRAS CLAVE ESTRICTAS
+          # =========================================================
+
+          PALABRAS_CLAVE = [
+
+              "point & click",
+              "point and click",
+              "point-and-click",
+
+              "graphic adventure",
+              "adventure game",
+              "adventure",
+
+              "visual novel",
+              "visual novels",
+
+              "walking simulator",
+
+              "narrative adventure",
+              "story rich"
+
+          ]
+
+
+          # =========================================================
+          # BUSCAR ENLACES DE JUEGOS
+          # =========================================================
+
+          candidatos = []
+
+
+          for enlace in soup.find_all("a", href=True):
+
+              href = enlace.get("href", "")
+
+              texto = enlace.get_text(
+                  " ",
+                  strip=True
+              )
+
+
+              if "/game/" not in href:
+                  continue
+
+
+              if not texto:
+                  continue
+
+
+              titulo = texto.strip()
+
+
+              # Evitar enlaces repetidos
+
+              if any(
+                  juego["title"].lower() ==
+                  titulo.lower()
+                  for juego in candidatos
+              ):
+                  continue
+
+
+              bloque = enlace.parent
+
+
+              informacion = bloque.get_text(
+                  " ",
+                  strip=True
+              ).lower()
+
+
+              texto_busqueda = (
+                  titulo.lower()
+                  + " "
+                  + informacion
+              )
+
+
+              # =====================================================
+              # FILTRO TEMÁTICO
+              # =====================================================
+
+              coincide = any(
+                  palabra in texto_busqueda
+                  for palabra in PALABRAS_CLAVE
+              )
+
+
+              if not coincide:
+                  continue
+
+
+              # =====================================================
+              # GUARDAR CANDIDATO
+              # =====================================================
+
+              url = urljoin(
+                  "https://www.gog.com",
+                  href
+              )
+
+
+              candidatos.append({
+
+                  "title": titulo,
+
+                  "link": url,
+
+                  "description": "",
+
+                  "category": "GOG",
+
+                  "pubDate": ""
+
+              })
+
+
+          # =========================================================
+          # ELIMINAR DUPLICADOS
+          # =========================================================
+
+          juegos = []
+
+          enlaces_vistos = set()
+
+
+          for juego in candidatos:
+
+              if juego["link"] in enlaces_vistos:
+                  continue
+
+              enlaces_vistos.add(
+                  juego["link"]
+              )
+
+              juegos.append(
+                  juego
+              )
+
+
+          # =========================================================
+          # LIMITAR RESULTADOS
+          # =========================================================
+
+          juegos = juegos[:12]
+
+
+          # =========================================================
+          # GUARDAR JSON
+          # =========================================================
+
+          with open(
+              "proximos.json",
+              "w",
+              encoding="utf-8"
+          ) as archivo:
+
+              json.dump(
+                  juegos,
+                  archivo,
+                  ensure_ascii=False,
+                  indent=2
+              )
+
+
+          # =========================================================
+          # RESULTADO
+          # =========================================================
+
+          print("")
+          print("====================================")
+          print("RESULTADO")
+          print("====================================")
+
+          print(
+              "Juegos encontrados:",
+              len(juegos)
+          )
+
+          print(
+              "Archivo generado: proximos.json"
+          )
+
+          print("")
+
+          for juego in juegos:
+
+              print(
+                  "-",
+                  juego["title"]
+              )
+
+              print(
+                  "  ",
+                  juego["link"]
+              )
+
+          print("")
+          print("====================================")
+
+          PY
+
+
+      - name: Comprobar proximos.json
+        run: |
+
+          echo "===================================="
+          echo "CONTENIDO DE proximos.json"
+          echo "===================================="
+
+          cat proximos.json
+
+          echo "===================================="
+
+
+      - name: Guardar cambios
+        run: |
+
+          git config user.name "github-actions[bot]"
+
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add proximos.json
+
+          git diff --cached --quiet || git commit -m "Actualizar próximos lanzamientos"
+
+          git push
