@@ -1581,37 +1581,53 @@ a {
 
 
 /* =========================================================
-   TARJETA DE LANZAMIENTO
+   TARJETA
    ========================================================= */
 
 .upcoming-card {
     min-width: 0;
     overflow: hidden;
+
     background: #101016;
+
     border: 1px solid rgba(255, 255, 255, 0.08);
+
     border-radius: 10px;
-    box-shadow: 0 0 18px rgba(180, 40, 255, 0.12);
+
+    box-shadow:
+        0 0 18px rgba(180, 40, 255, 0.12);
 }
 
 
 /* =========================================================
-   IMAGEN
+   IMAGEN DE LA PORTADA
    ========================================================= */
 
 .upcoming-card-image {
-    display: block;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
     width: 100%;
-    height: 360px;
+
+    height: 480px;
+
     overflow: hidden;
+
+    background: #08080d;
 }
 
 
 .upcoming-card-image img {
     display: block;
+
     width: 100%;
     height: 100%;
-    object-fit: cover;
+
+    object-fit: contain;
+
     object-position: center;
+
     transition: transform 0.3s ease;
 }
 
@@ -1632,24 +1648,33 @@ a {
 
 .upcoming-card-category {
     margin: 0 0 8px;
+
     font-size: 0.8rem;
+
     font-weight: 700;
+
     letter-spacing: 1px;
+
     text-transform: uppercase;
+
     opacity: 0.7;
 }
 
 
 .upcoming-card-content h3 {
     margin: 0 0 12px;
+
     font-size: 1.25rem;
+
     line-height: 1.25;
 }
 
 
 .upcoming-card-date {
     margin: 0;
+
     font-size: 0.95rem;
+
     font-weight: 700;
 }
 
@@ -1660,6 +1685,7 @@ a {
 
 .upcoming-loading {
     grid-column: 1 / -1;
+
     text-align: center;
 }
 
@@ -1670,28 +1696,39 @@ a {
 
 .upcoming-pagination {
     display: flex;
+
     align-items: center;
     justify-content: center;
+
     gap: 45px;
+
     margin: 45px auto 0;
+
     width: 100%;
 }
 
 
 .upcoming-pagination .button {
     min-width: 170px;
+
     margin: 0;
 }
 
 
 .upcoming-page {
     display: flex;
+
     align-items: center;
     justify-content: center;
+
     min-width: 120px;
+
     text-align: center;
+
     white-space: nowrap;
+
     font-size: 1.1rem;
+
     font-weight: 700;
 }
 
@@ -1702,7 +1739,9 @@ a {
 
 .upcoming-pagination button:disabled {
     opacity: 0.35;
+
     cursor: default;
+
     pointer-events: none;
 }
 
@@ -1717,6 +1756,10 @@ a {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
+    .upcoming-card-image {
+        height: 430px;
+    }
+
 }
 
 
@@ -1728,17 +1771,19 @@ a {
 
     .upcoming-grid {
         grid-template-columns: 1fr;
+
         gap: 25px;
     }
 
 
     .upcoming-card-image {
-        height: 400px;
+        height: 430px;
     }
 
 
     .upcoming-pagination {
         gap: 15px;
+
         flex-wrap: wrap;
     }
 
@@ -1750,6 +1795,7 @@ a {
 
     .upcoming-page {
         order: -1;
+
         width: 100%;
     }
 
