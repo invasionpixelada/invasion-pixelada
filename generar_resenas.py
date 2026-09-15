@@ -1,6 +1,6 @@
 # =========================================================
 # INVASIÓN PIXELADA — GENERADOR DE RESEÑAS
-# VERSIÓN INTERNA: IP-GEN-011
+# VERSIÓN INTERNA: IP-GEN-012
 # =========================================================
 
 from pathlib import Path
@@ -180,7 +180,7 @@ def leer_docx(ruta):
 #
 # El generador deja de leer metadatos en cuanto encuentra
 # el primer párrafo que no corresponde a uno de estos campos.
-#
+
 CAMPOS = [
     "Título",
     "Año",
@@ -1334,7 +1334,7 @@ def crear_pagina(
 <!--
     INVASIÓN PIXELADA
     PÁGINA GENERADA AUTOMÁTICAMENTE
-    GENERADOR: IP-GEN-011
+    GENERADOR: IP-GEN-012
 -->
 <html lang="es">
 
@@ -1735,7 +1735,23 @@ def obtener_carpetas_reseñas():
         if docx:
             carpetas.append(carpeta)
 
-    # Más reciente primero
+    # -----------------------------------------------------
+    # MÁS RECIENTE PRIMERO
+    #
+    # El orden se determina por la fecha de modificación
+    # del archivo DOCX de cada reseña.
+    #
+    # reverse=True garantiza:
+    #
+    #   1. Reseña modificada más recientemente
+    #   2. Segunda más reciente
+    #   3. Tercera más reciente
+    #   ...
+    #
+    # Esto se utiliza tanto para index.html como para
+    # resenas.html.
+    # -----------------------------------------------------
+
     carpetas.sort(
         key=lambda carpeta:
             buscar_docx(carpeta).stat().st_mtime,
@@ -1772,7 +1788,7 @@ def actualizar_sitemap():
         '<!--',
         '    INVASIÓN PIXELADA',
         '    SITEMAP GENERADO AUTOMÁTICAMENTE',
-        '    GENERADOR: IP-GEN-011',
+        '    GENERADOR: IP-GEN-012',
         '-->',
         '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
     ]
@@ -1827,11 +1843,18 @@ def actualizar_index():
         encoding="utf-8"
     )
 
+    # obtener_carpetas_reseñas()
+    # YA devuelve las reseñas ordenadas de
+    # más reciente a más antigua.
+
     carpetas = obtener_carpetas_reseñas()
 
     tarjetas = []
 
-    # Solo las tres últimas
+    # Solo las tres últimas.
+    # Como la lista está ordenada de más reciente
+    # a más antigua, aquí entran las tres más recientes.
+
     for carpeta in carpetas[:3]:
 
         tarjeta = crear_tarjeta(
@@ -1844,6 +1867,7 @@ def actualizar_index():
             )
 
     # Siempre exactamente tres espacios
+
     while len(tarjetas) < 3:
 
         tarjetas.append(
@@ -1935,11 +1959,21 @@ def actualizar_resenas_html():
         encoding="utf-8"
     )
 
+    # obtener_carpetas_reseñas()
+    # YA devuelve las reseñas ordenadas de
+    # más reciente a más antigua.
+
     carpetas = obtener_carpetas_reseñas()
 
     tarjetas = []
 
-    # Todas las reseñas, de más reciente a más antigua
+    # -----------------------------------------------------
+    # TODAS LAS RESEÑAS
+    #
+    # El primer elemento es SIEMPRE la reseña cuyo DOCX
+    # tiene la fecha de modificación más reciente.
+    # -----------------------------------------------------
+
     for carpeta in carpetas:
 
         tarjeta = crear_tarjeta(
@@ -2029,6 +2063,12 @@ def main():
                 f"Reseña generada: "
                 f"{carpeta.name}"
             )
+
+    # IMPORTANTE:
+    #
+    # Primero se generan las páginas individuales.
+    # Después se actualizan index.html y resenas.html
+    # utilizando el orden de fecha de modificación del DOCX.
 
     actualizar_index()
 
