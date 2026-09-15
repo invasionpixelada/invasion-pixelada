@@ -131,6 +131,10 @@
 
     <style>
 
+        /* ================================================
+           PRÓXIMOS LANZAMIENTOS
+           ================================================ */
+
         .upcoming-section {
             overflow: visible;
         }
@@ -149,6 +153,10 @@
             margin-top: 35px;
         }
 
+
+        /* ================================================
+           TARJETA
+           ================================================ */
 
         .upcoming-card {
             min-width: 0;
@@ -175,6 +183,10 @@
         }
 
 
+        /* ================================================
+           PORTADA
+           ================================================ */
+
         .upcoming-card-image {
             display: block;
 
@@ -197,6 +209,10 @@
             transform: scale(1.03);
         }
 
+
+        /* ================================================
+           INFORMACIÓN
+           ================================================ */
 
         .upcoming-card-content {
             padding: 20px;
@@ -236,6 +252,10 @@
         }
 
 
+        /* ================================================
+           MENSAJES
+           ================================================ */
+
         .upcoming-loading,
         .upcoming-empty,
         .upcoming-error {
@@ -246,6 +266,10 @@
             padding: 35px 20px;
         }
 
+
+        /* ================================================
+           PAGINACIÓN
+           ================================================ */
 
         .upcoming-pagination {
             display: flex;
@@ -316,6 +340,10 @@
         }
 
 
+        /* ================================================
+           TABLET
+           ================================================ */
+
         @media (max-width: 900px) {
 
             .upcoming-grid {
@@ -332,6 +360,10 @@
 
         }
 
+
+        /* ================================================
+           MÓVIL
+           ================================================ */
 
         @media (max-width: 600px) {
 
@@ -437,7 +469,7 @@
 
 
     <!-- =================================================
-         CONTENIDO
+         CONTENIDO PRINCIPAL
          ================================================= -->
 
     <main>
@@ -652,6 +684,7 @@
 
             <div class="video-grid">
 
+
                 <article class="video-card">
 
                     <a
@@ -831,6 +864,7 @@
 
                 </article>
 
+
             </div>
 
 
@@ -881,8 +915,65 @@
 
             <div class="future-content">
 
+                <!-- RESEÑAS AUTOMÁTICAS: INICIO -->
+
                 <div class="reviews-grid">
 
+
+                    <!-- =================================================
+                         RESEÑA CALL OF THE ELDER GODS
+                         ================================================= -->
+
+                    <article
+                        class="review-card"
+                        data-search="Call of the Elder Gods Narrativo, puzles"
+                    >
+
+                        <a
+                            href="reseñas/Call of the Elder Gods/"
+                            class="review-card-image"
+                        >
+
+                            <img
+                                src="reseñas/Call of the Elder Gods/portada.jpg"
+                                alt="Portada de Call of the Elder Gods"
+                                loading="lazy"
+                            >
+
+                        </a>
+
+
+                        <div class="review-card-content">
+
+                            <p class="review-card-genre">
+                                Narrativo, puzles
+                            </p>
+
+                            <h3>
+                                Call of the Elder Gods
+                            </h3>
+
+                            <p>
+                                Out of the Blue Games vuelve con Call of the
+                                Elder Gods, una aventura que continúa la historia
+                                de Call of the Sea.
+                            </p>
+
+                            <a
+                                href="reseñas/Call of the Elder Gods/"
+                                class="review-card-link"
+                            >
+                                LEER RESEÑA
+                            </a>
+
+                        </div>
+
+                    </article>
+
+
+                    <!-- =================================================
+                         RESEÑA LUNA'S ROOM
+                         ================================================= -->
 
                     <article
                         class="review-card"
@@ -933,52 +1024,9 @@
                     </article>
 
 
-                    <article
-                        class="review-card"
-                        data-search="Call of the Elder Gods Narrativo, puzles"
-                    >
-
-                        <a
-                            href="reseñas/Call of the Elder Gods/"
-                            class="review-card-image"
-                        >
-
-                            <img
-                                src="reseñas/Call of the Elder Gods/portada.jpg"
-                                alt="Portada de Call of the Elder Gods"
-                                loading="lazy"
-                            >
-
-                        </a>
-
-
-                        <div class="review-card-content">
-
-                            <p class="review-card-genre">
-                                Narrativo, puzles
-                            </p>
-
-                            <h3>
-                                Call of the Elder Gods
-                            </h3>
-
-                            <p>
-                                Out of the Blue Games vuelve con Call of the
-                                Elder Gods, una aventura que continúa la historia
-                                de Call of the Sea.
-                            </p>
-
-                            <a
-                                href="reseñas/Call of the Elder Gods/"
-                                class="review-card-link"
-                            >
-                                LEER RESEÑA
-                            </a>
-
-                        </div>
-
-                    </article>
-
+                    <!-- =================================================
+                         PLACEHOLDER
+                         ================================================= -->
 
                     <article class="review-card review-card-placeholder">
 
@@ -999,8 +1047,12 @@
 
                 </div>
 
+                <!-- RESEÑAS AUTOMÁTICAS: FIN -->
+
             </div>
 
+
+            <!-- VER TODAS LAS RESEÑAS -->
 
             <div class="reviews-button-container">
 
@@ -1043,8 +1095,14 @@
             </div>
 
 
+            <!-- PRODUCTOS DESTACADOS -->
+
             <div class="store-grid">
 
+
+                <!-- =================================================
+                     PRODUCTO 1
+                     ================================================= -->
 
                 <article class="store-card">
 
@@ -1088,6 +1146,10 @@
                 </article>
 
 
+                <!-- =================================================
+                     PRODUCTO 2
+                     ================================================= -->
+
                 <article class="store-card">
 
                     <a
@@ -1130,6 +1192,10 @@
 
                 </article>
 
+
+                <!-- =================================================
+                     PRODUCTO 3
+                     ================================================= -->
 
                 <article class="store-card">
 
@@ -1177,6 +1243,8 @@
             </div>
 
 
+            <!-- VER TODA LA TIENDA -->
+
             <div class="store-button-container">
 
                 <a
@@ -1211,7 +1279,7 @@
 
 
     <!-- =================================================
-         LANZAMIENTOS
+         LANZAMIENTOS + SCRIPT GENERAL
          ================================================= -->
 
     <script>
@@ -1221,7 +1289,12 @@
             function () {
 
 
+                /* =================================================
+                   CONFIGURACIÓN
+                   ================================================= */
+
                 const JUEGOS_POR_PAGINA = 3;
+
 
                 let juegos = [];
 
@@ -1257,6 +1330,10 @@
                         "upcoming-page-number"
                     );
 
+
+                /* =================================================
+                   MESES
+                   ================================================= */
 
                 const meses = [
 
@@ -1444,6 +1521,8 @@
                         "noopener noreferrer";
 
 
+                    /* IMAGEN */
+
                     const imagen =
                         document.createElement(
                             "img"
@@ -1472,6 +1551,8 @@
                     );
 
 
+                    /* CONTENIDO */
+
                     const contenido =
                         document.createElement(
                             "div"
@@ -1481,6 +1562,8 @@
                     contenido.className =
                         "upcoming-card-content";
 
+
+                    /* CATEGORÍA */
 
                     const categoria =
                         document.createElement(
@@ -1502,6 +1585,8 @@
                     );
 
 
+                    /* TÍTULO */
+
                     const titulo =
                         document.createElement(
                             "h3"
@@ -1521,6 +1606,8 @@
                         titulo
                     );
 
+
+                    /* FECHA */
 
                     const fecha =
                         document.createElement(
@@ -1578,19 +1665,15 @@
                     if (
                         paginaActual < 1
                     ) {
-
                         paginaActual = 1;
-
                     }
 
 
                     if (
                         paginaActual > totalPaginas
                     ) {
-
                         paginaActual =
                             totalPaginas;
-
                     }
 
 
@@ -1644,10 +1727,8 @@
 
 
                     /*
-                     * IMPORTANTE:
-                     *
-                     * Solo hacemos scroll cuando el usuario
-                     * cambia de página.
+                     * SOLO hacemos scroll cuando el usuario
+                     * cambia manualmente de página.
                      *
                      * Al cargar la web NO hacemos scroll.
                      */
@@ -1750,6 +1831,11 @@
                     .then(
                         function (datos) {
 
+                            /*
+                             * Nos aseguramos de que
+                             * sea un array.
+                             */
+
                             if (
                                 !Array.isArray(
                                     datos
@@ -1763,7 +1849,9 @@
                             }
 
 
-                            /* SOLO JUEGOS CON FECHA */
+                            /*
+                             * SOLO JUEGOS CON FECHA
+                             */
 
                             juegos =
                                 datos.filter(
@@ -1780,7 +1868,9 @@
                                 );
 
 
-                            /* ORDENAR POR FECHA */
+                            /*
+                             * ORDENAR POR FECHA
+                             */
 
                             juegos.sort(
                                 function (
@@ -1798,7 +1888,9 @@
                             );
 
 
-                            /* SIN RESULTADOS */
+                            /*
+                             * SIN RESULTADOS
+                             */
 
                             if (
                                 juegos.length === 0
@@ -1816,9 +1908,7 @@
 
 
                             /*
-                             * PRIMERA CARGA
-                             *
-                             * FALSE = NO HACER SCROLL
+                             * MOSTRAR PRIMERA PÁGINA
                              */
 
                             mostrarPagina(false);
@@ -1838,7 +1928,6 @@
                             contenedor.innerHTML =
                                 '<p class="upcoming-error">No se han podido cargar los próximos lanzamientos.</p>';
 
-
                             paginacion.style.display =
                                 "none";
 
@@ -1853,7 +1942,7 @@
 
 
     <!-- =================================================
-         SCRIPT GENERAL
+         SCRIPT GENERAL DE LA WEB
          ================================================= -->
 
     <script src="script.js"></script>
