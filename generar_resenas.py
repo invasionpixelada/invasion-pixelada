@@ -8,6 +8,7 @@ from docx import Document
 import html
 import re
 import json
+import subprocess
 from urllib.parse import quote
 
 
@@ -151,6 +152,84 @@ def crear_url_archivo_reseña(
 
 
 # =========================================================
+# ORDEN DE LAS RESEÑAS
+# =========================================================
+
+def obtener_fecha_git(archivo):
+
+    """
+    Devuelve la fecha del último commit que modificó
+    el archivo.
+
+    Esta fecha es mucho más fiable que st_mtime dentro
+    de GitHub Actions, ya que el checkout puede cambiar
+    las fechas de modificación de los archivos.
+
+    Devuelve un timestamp UNIX.
+
+    Si Git no está disponible, devuelve 0 para permitir
+    utilizar el sistema de respaldo.
+    """
+
+    try:
+
+        resultado = subprocess.run(
+            [
+                "git",
+                "log",
+                "-1",
+                "--format=%ct",
+                "--",
+                str(archivo)
+            ],
+            capture_output=True,
+            text=True,
+            check=True
+        )
+
+        valor = resultado.stdout.strip()
+
+        if valor:
+
+            return int(valor)
+
+    except Exception:
+        pass
+
+    return 0
+
+
+def obtener_fecha_archivo(archivo):
+
+    """
+    Obtiene una fecha de ordenación.
+
+    Prioridad:
+
+    1. Último commit de Git.
+    2. Fecha de modificación del archivo.
+
+    Cuanto mayor sea el valor, más reciente es el archivo.
+    """
+
+    fecha_git = obtener_fecha_git(
+        archivo
+    )
+
+    if fecha_git:
+
+        return fecha_git
+
+    try:
+
+        return archivo.stat().st_mtime
+
+    except Exception:
+
+        return 0
+
+
+# =========================================================
 # LECTURA DEL DOCX
 # =========================================================
 
@@ -181,6 +260,7 @@ def leer_docx(ruta):
 # El generador deja de leer metadatos en cuanto encuentra
 # el primer párrafo que no corresponde a uno de estos campos.
 #
+
 CAMPOS = [
     "Título",
     "Año",
@@ -574,12 +654,6 @@ def crear_json_ld(
 
     # -----------------------------------------------------
     # IMAGEN DE PORTADA
-    #
-    # Importante:
-    # usamos directamente portada_url, que ya está
-    # correctamente codificada una sola vez.
-    #
-    # Así evitamos generar %2520.
     # -----------------------------------------------------
 
     if portada_url:
@@ -1377,14 +1451,10 @@ def crear_pagina(
         href="../../imagenes/nuevo_logo_invasion_pixelada.png"
     >
 
-    <!-- HOJA DE ESTILOS -->
-
     <link
         rel="stylesheet"
         href="../../style.css"
     >
-
-    <!-- OPEN GRAPH -->
 
     <meta
         property="og:type"
@@ -1599,7 +1669,7 @@ def crear_tarjeta(
     descripcion = ""
 
     # -----------------------------------------------------
-    # EL PRIMER PÁRRAFO REAL DE LA RESEÑA
+    # PRIMER PÁRRAFO REAL DE LA RESEÑA
     # -----------------------------------------------------
 
     for texto in contenido:
@@ -1732,24 +1802,20 @@ def obtener_carpetas_reseñas():
             carpetas.append(carpeta)
 
     # -----------------------------------------------------
-    # ORDEN DE PUBLICACIÓN
+    # ORDEN DEFINITIVO
     #
-    # Se utiliza la fecha del archivo DOCX.
+    # MÁS RECIENTE PRIMERO
     #
-    # Más reciente primero.
-    #
-    # Esto afecta tanto a:
-    # - index.html
-    # - resenas.html
-    # - sitemap.xml
-    #
-    # No se modifica ninguna URL ni el contenido.
+    # Se utiliza la fecha del último commit de Git.
+    # Esto evita que GitHub Actions altere el orden
+    # debido a las fechas de modificación del checkout.
     # -----------------------------------------------------
 
     carpetas.sort(
-        key=lambda carpeta: (
-            buscar_docx(carpeta).stat().st_mtime
-        ),
+        key=lambda carpeta:
+            obtener_fecha_archivo(
+                buscar_docx(carpeta)
+            ),
         reverse=True
     )
 
@@ -1838,11 +1904,17 @@ def actualizar_index():
         encoding="utf-8"
     )
 
+    # -----------------------------------------------------
+    # IMPORTANTE:
+    # utiliza exactamente el mismo listado ordenado
+    # que resenas.html
+    # -----------------------------------------------------
+
     carpetas = obtener_carpetas_reseñas()
 
     tarjetas = []
 
-    # Las tres más recientes primero
+    # Solo las tres últimas
     for carpeta in carpetas[:3]:
 
         tarjeta = crear_tarjeta(
@@ -1946,6 +2018,10 @@ def actualizar_resenas_html():
         encoding="utf-8"
     )
 
+    # -----------------------------------------------------
+    # EXACTAMENTE EL MISMO ORDEN QUE INDEX.HTML
+    # -----------------------------------------------------
+
     carpetas = obtener_carpetas_reseñas()
 
     tarjetas = []
@@ -2040,6 +2116,15 @@ def main():
                 f"Reseña generada: "
                 f"{carpeta.name}"
             )
+
+    # -----------------------------------------------------
+    # ACTUALIZAMOS LAS TRES ZONAS UTILIZANDO SIEMPRE
+    # EL MISMO ORDEN:
+    #
+    # 1. INDEX
+    # 2. RESENAS
+    # 3. SITEMAP
+    # -----------------------------------------------------
 
     actualizar_index()
 
