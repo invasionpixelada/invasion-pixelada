@@ -1,13 +1,8 @@
 <!DOCTYPE html>
-
 <!--
-
     INVASIÓN PIXELADA
-
     VERSIÓN INTERNA: IP-INDEX-010
-
 -->
-
 <html lang="es">
 
 <head>
@@ -15,213 +10,136 @@
     <meta charset="UTF-8">
 
     <meta
-
         name="viewport"
-
         content="width=device-width, initial-scale=1.0"
-
     >
 
     <title>
-
         Invasión Pixelada | Aventuras gráficas y videojuegos narrativos
-
     </title>
 
     <meta
-
         name="description"
-
         content="Invasión Pixelada: reseñas, vídeos, noticias y recomendaciones sobre aventuras gráficas, point & click, visual novels, walking simulators y videojuegos narrativos donde la historia es protagonista."
-
     >
 
     <link
-
         rel="canonical"
-
         href="https://invasionpixelada.github.io/invasion-pixelada/"
-
     >
 
     <link
-
         rel="icon"
-
         type="image/png"
-
         href="imagenes/nuevo_logo_invasion_pixelada.png"
-
     >
 
     <meta
-
         name="theme-color"
-
         content="#08080d"
-
     >
 
+
     <!-- =================================================
-
          OPEN GRAPH
-
          ================================================= -->
 
     <meta
-
         property="og:type"
-
         content="website"
-
     >
 
     <meta
-
         property="og:locale"
-
         content="es_ES"
-
     >
 
     <meta
-
         property="og:title"
-
         content="Invasión Pixelada | Aventuras gráficas y videojuegos narrativos"
-
     >
 
     <meta
-
         property="og:description"
-
         content="Reseñas, vídeos, noticias y recomendaciones sobre aventuras gráficas, point & click, visual novels, walking simulators y videojuegos donde la narrativa es protagonista."
-
     >
 
     <meta
-
         property="og:url"
-
         content="https://invasionpixelada.github.io/invasion-pixelada/"
-
     >
 
     <meta
-
         property="og:site_name"
-
         content="Invasión Pixelada"
-
     >
 
     <meta
-
         property="og:image"
-
         content="https://invasionpixelada.github.io/invasion-pixelada/imagenes/nuevo_logo_invasion_pixelada.png"
-
     >
 
     <meta
-
         property="og:image:alt"
-
         content="Logo de Invasión Pixelada"
-
     >
+
 
     <!-- =================================================
-
          DATOS ESTRUCTURADOS
-
          ================================================= -->
 
     <script type="application/ld+json">
-
     {
-
         "@context": "https://schema.org",
-
         "@graph": [
-
             {
-
                 "@type": "WebSite",
-
                 "@id": "https://invasionpixelada.github.io/invasion-pixelada/#website",
-
                 "url": "https://invasionpixelada.github.io/invasion-pixelada/",
-
                 "name": "Invasión Pixelada",
-
                 "description": "Web dedicada a aventuras gráficas, videojuegos narrativos, point & click, visual novels y walking simulators.",
-
                 "inLanguage": "es"
-
             },
-
             {
-
                 "@type": "Organization",
-
                 "@id": "https://invasionpixelada.github.io/invasion-pixelada/#organization",
-
                 "name": "Invasión Pixelada",
-
                 "url": "https://invasionpixelada.github.io/invasion-pixelada/",
-
                 "logo": {
-
                     "@type": "ImageObject",
-
                     "url": "https://invasionpixelada.github.io/invasion-pixelada/imagenes/nuevo_logo_invasion_pixelada.png"
-
                 },
-
                 "sameAs": [
-
                     "https://www.youtube.com/@invasionpixelada"
-
                 ]
-
             }
-
         ]
-
     }
-
     </script>
 
+
     <link
-
         rel="stylesheet"
-
         href="style.css"
-
     >
 
+
     <!-- =================================================
-
          ESTILOS DE PRÓXIMOS LANZAMIENTOS
-
          ================================================= -->
 
     <style>
 
         .upcoming-section {
-
             overflow: visible;
-
         }
 
-        .upcoming-grid {
 
+        .upcoming-grid {
             display: grid;
 
             grid-template-columns:
-
                 repeat(3, minmax(0, 1fr));
 
             gap: 28px;
@@ -229,11 +147,10 @@
             width: 100%;
 
             margin-top: 35px;
-
         }
 
-        .upcoming-card {
 
+        .upcoming-card {
             min-width: 0;
 
             overflow: hidden;
@@ -245,23 +162,20 @@
             border: 1px solid rgba(255, 255, 255, 0.08);
 
             box-shadow:
-
                 0 0 18px rgba(180, 0, 255, 0.12);
-
         }
 
-        .upcoming-card-link {
 
+        .upcoming-card-link {
             display: block;
 
             text-decoration: none;
 
             color: inherit;
-
         }
 
-        .upcoming-card-image {
 
+        .upcoming-card-image {
             display: block;
 
             width: 100%;
@@ -275,25 +189,21 @@
             background: #08080d;
 
             transition:
-
                 transform 0.3s ease;
-
         }
+
 
         .upcoming-card-link:hover .upcoming-card-image {
-
             transform: scale(1.03);
-
         }
+
 
         .upcoming-card-content {
-
             padding: 20px;
-
         }
 
-        .upcoming-card-category {
 
+        .upcoming-card-category {
             margin: 0 0 8px;
 
             font-size: 0.78rem;
@@ -305,45 +215,39 @@
             text-transform: uppercase;
 
             opacity: 0.7;
-
         }
 
-        .upcoming-card-title {
 
+        .upcoming-card-title {
             margin: 0 0 12px;
 
             font-size: 1.25rem;
 
             line-height: 1.25;
-
         }
 
-        .upcoming-card-date {
 
+        .upcoming-card-date {
             margin: 0;
 
             font-size: 0.95rem;
 
             font-weight: 600;
-
         }
 
+
         .upcoming-loading,
-
         .upcoming-empty,
-
         .upcoming-error {
-
             grid-column: 1 / -1;
 
             text-align: center;
 
             padding: 35px 20px;
-
         }
 
-        .upcoming-pagination {
 
+        .upcoming-pagination {
             display: flex;
 
             align-items: center;
@@ -355,11 +259,10 @@
             margin-top: 42px;
 
             width: 100%;
-
         }
 
-        .upcoming-pagination-button {
 
+        .upcoming-pagination-button {
             min-width: 155px;
 
             padding: 16px 24px;
@@ -381,35 +284,28 @@
             cursor: pointer;
 
             transition:
-
                 transform 0.2s ease,
-
                 opacity 0.2s ease,
-
                 box-shadow 0.2s ease;
-
         }
 
-        .upcoming-pagination-button:hover:not(:disabled) {
 
+        .upcoming-pagination-button:hover:not(:disabled) {
             transform: translateY(-2px);
 
             box-shadow:
-
                 0 0 18px rgba(180, 0, 255, 0.4);
-
         }
 
-        .upcoming-pagination-button:disabled {
 
+        .upcoming-pagination-button:disabled {
             opacity: 0.35;
 
             cursor: default;
-
         }
 
-        .upcoming-page-number {
 
+        .upcoming-page-number {
             min-width: 130px;
 
             text-align: center;
@@ -417,71 +313,62 @@
             font-size: 1.05rem;
 
             font-weight: 700;
-
         }
+
 
         @media (max-width: 900px) {
 
             .upcoming-grid {
-
                 grid-template-columns:
-
                     repeat(2, minmax(0, 1fr));
-
             }
 
-            .upcoming-card-image {
 
+            .upcoming-card-image {
                 height: 360px;
 
                 object-fit: contain;
-
             }
 
         }
 
+
         @media (max-width: 600px) {
 
             .upcoming-grid {
-
                 grid-template-columns: 1fr;
 
                 gap: 22px;
-
             }
 
-            .upcoming-card-image {
 
+            .upcoming-card-image {
                 height: 430px;
 
                 object-fit: contain;
-
             }
 
-            .upcoming-pagination {
 
+            .upcoming-pagination {
                 gap: 12px;
 
                 flex-wrap: wrap;
-
             }
 
-            .upcoming-pagination-button {
 
+            .upcoming-pagination-button {
                 min-width: 120px;
 
                 padding: 14px 16px;
-
             }
 
-            .upcoming-page-number {
 
+            .upcoming-page-number {
                 order: -1;
 
                 flex-basis: 100%;
 
                 margin-bottom: 4px;
-
             }
 
         }
@@ -490,12 +377,12 @@
 
 </head>
 
+
 <body>
 
+
     <!-- =================================================
-
          CABECERA
-
          ================================================= -->
 
     <header class="site-header">
@@ -505,57 +392,41 @@
             <a href="#inicio" class="logo">
 
                 <img
-
                     src="imagenes/nuevo_logo_invasion_pixelada.png"
-
                     alt="Invasión Pixelada"
-
                 >
 
                 <span>
-
                     Invasión Pixelada
-
                 </span>
 
             </a>
 
+
             <nav class="main-nav">
 
                 <a href="#inicio">
-
                     Inicio
-
                 </a>
 
                 <a href="#proximos">
-
                     Próximos lanzamientos
-
                 </a>
 
                 <a href="#noticias">
-
                     Noticias
-
                 </a>
 
                 <a href="#videos">
-
                     Vídeos
-
                 </a>
 
                 <a href="#resenas">
-
                     Reseñas
-
                 </a>
 
                 <a href="#tienda">
-
                     Tienda
-
                 </a>
 
             </nav>
@@ -564,348 +435,244 @@
 
     </header>
 
+
     <!-- =================================================
-
-         CONTENIDO PRINCIPAL
-
+         CONTENIDO
          ================================================= -->
 
     <main>
 
+
         <!-- =================================================
-
              PORTADA
-
              ================================================= -->
 
         <section
-
             id="inicio"
-
             class="hero"
-
         >
 
             <div class="hero-content">
 
                 <p class="hero-label">
-
                     LA IMPORTANCIA DE LA NARRATIVA
-
                 </p>
 
                 <h1>
-
                     Aventuras gráficas<br>
-
                     y mucho más
-
                 </h1>
 
                 <p class="hero-description">
-
                     Un espacio dedicado a las aventuras point & click,
-
                     visual novels, walking simulators y videojuegos
-
                     donde la historia es protagonista.
-
                 </p>
 
                 <a
-
                     href="https://www.youtube.com/@invasionpixelada"
-
                     class="button"
-
                     target="_blank"
-
                     rel="noopener noreferrer"
-
                 >
-
                     Visitar el canal
-
                 </a>
 
             </div>
 
         </section>
 
+
         <!-- =================================================
-
              PRÓXIMOS LANZAMIENTOS
-
              ================================================= -->
 
         <section
-
             id="proximos"
-
             class="content-section upcoming-section"
-
         >
 
             <div class="section-heading">
 
                 <p class="section-label">
-
                     PRÓXIMAMENTE
-
                 </p>
 
                 <h2>
-
                     Próximos lanzamientos
-
                 </h2>
 
                 <p>
-
                     Las próximas aventuras gráficas, visual novels,
-
                     walking simulators y videojuegos narrativos que
-
                     llegarán a GOG.
-
                 </p>
 
             </div>
 
+
             <div
-
                 id="upcoming-container"
-
                 class="upcoming-grid"
-
             >
 
                 <p class="upcoming-loading">
-
                     Cargando próximos lanzamientos...
-
                 </p>
 
             </div>
 
+
             <div
-
                 id="upcoming-pagination"
-
                 class="upcoming-pagination"
-
                 style="display: none;"
-
             >
 
                 <button
-
                     id="upcoming-prev"
-
                     class="upcoming-pagination-button"
-
                     type="button"
-
                 >
-
                     ← ANTERIOR
-
                 </button>
 
+
                 <span
-
                     id="upcoming-page-number"
-
                     class="upcoming-page-number"
-
                 >
-
                     Página 1 de 1
-
                 </span>
 
+
                 <button
-
                     id="upcoming-next"
-
                     class="upcoming-pagination-button"
-
                     type="button"
-
                 >
-
                     SIGUIENTE →
-
                 </button>
 
             </div>
 
         </section>
 
+
         <!-- =================================================
-
              NOTICIAS
-
              ================================================= -->
 
         <section
-
             id="noticias"
-
             class="content-section news-section"
-
         >
 
             <div class="section-heading">
 
                 <p class="section-label">
-
                     ACTUALIDAD
-
                 </p>
 
                 <h2>
-
                     Noticias
-
                 </h2>
 
                 <p>
-
                     Las últimas noticias y novedades del mundo de los
-
                     videojuegos.
-
                 </p>
 
                 <p class="news-source">
-
                     <strong>Fuente:</strong> uVeJuegos.com.
-
                     Esta sección utiliza su canal RSS público para
-
                     mostrar titulares y breves descripciones de sus
-
                     contenidos, enlazando siempre con la publicación
-
                     original.
-
                 </p>
 
             </div>
 
+
             <div
-
                 id="news-container"
-
                 class="news-grid"
-
             >
 
                 <p class="news-loading">
-
                     Cargando noticias...
-
                 </p>
 
             </div>
+
 
             <div class="news-button-container">
 
                 <a
-
                     href="https://uvejuegos.com"
-
                     class="button secondary-button"
-
                     target="_blank"
-
                     rel="noopener noreferrer"
-
                 >
-
                     VER MÁS NOTICIAS EN uVeJuegos
-
                 </a>
 
             </div>
 
         </section>
 
+
         <!-- =================================================
-
              VÍDEOS
-
              ================================================= -->
 
         <section
-
             id="videos"
-
             class="content-section"
-
         >
 
             <div class="section-heading">
 
                 <p class="section-label">
-
                     YOUTUBE
-
                 </p>
 
                 <h2>
-
                     Vídeos
-
                 </h2>
 
                 <p>
-
                     Descubre nuestros vídeos sobre aventuras gráficas,
-
                     point & click y videojuegos centrados en la
-
                     narrativa.
-
                 </p>
 
             </div>
+
 
             <div class="video-grid">
 
                 <article class="video-card">
 
                     <a
-
                         href="https://www.youtube.com/@invasionpixelada"
-
                         target="_blank"
-
                         rel="noopener noreferrer"
-
                         class="video-link"
-
                     >
 
                         <div class="video-placeholder">
-
                             VÍDEO
-
                         </div>
 
                         <div class="video-info">
 
                             <h3>
-
                                 Próximo vídeo
-
                             </h3>
 
                             <p>
-
                                 Aventura gráfica · Point & Click
-
                             </p>
 
                         </div>
@@ -914,38 +681,28 @@
 
                 </article>
 
+
                 <article class="video-card">
 
                     <a
-
                         href="https://www.youtube.com/@invasionpixelada"
-
                         target="_blank"
-
                         rel="noopener noreferrer"
-
                         class="video-link"
-
                     >
 
                         <div class="video-placeholder">
-
                             VÍDEO
-
                         </div>
 
                         <div class="video-info">
 
                             <h3>
-
                                 Próximo vídeo
-
                             </h3>
 
                             <p>
-
                                 Aventura narrativa
-
                             </p>
 
                         </div>
@@ -954,38 +711,28 @@
 
                 </article>
 
+
                 <article class="video-card">
 
                     <a
-
                         href="https://www.youtube.com/@invasionpixelada"
-
                         target="_blank"
-
                         rel="noopener noreferrer"
-
                         class="video-link"
-
                     >
 
                         <div class="video-placeholder">
-
                             VÍDEO
-
                         </div>
 
                         <div class="video-info">
 
                             <h3>
-
                                 Próximo vídeo
-
                             </h3>
 
                             <p>
-
                                 Visual Novel
-
                             </p>
 
                         </div>
@@ -994,38 +741,28 @@
 
                 </article>
 
+
                 <article class="video-card">
 
                     <a
-
                         href="https://www.youtube.com/@invasionpixelada"
-
                         target="_blank"
-
                         rel="noopener noreferrer"
-
                         class="video-link"
-
                     >
 
                         <div class="video-placeholder">
-
                             VÍDEO
-
                         </div>
 
                         <div class="video-info">
 
                             <h3>
-
                                 Próximo vídeo
-
                             </h3>
 
                             <p>
-
                                 Walking Simulator
-
                             </p>
 
                         </div>
@@ -1034,38 +771,28 @@
 
                 </article>
 
+
                 <article class="video-card">
 
                     <a
-
                         href="https://www.youtube.com/@invasionpixelada"
-
                         target="_blank"
-
                         rel="noopener noreferrer"
-
                         class="video-link"
-
                     >
 
                         <div class="video-placeholder">
-
                             VÍDEO
-
                         </div>
 
                         <div class="video-info">
 
                             <h3>
-
                                 Próximo vídeo
-
                             </h3>
 
                             <p>
-
                                 Narrativa · Videojuegos
-
                             </p>
 
                         </div>
@@ -1074,38 +801,28 @@
 
                 </article>
 
+
                 <article class="video-card">
 
                     <a
-
                         href="https://www.youtube.com/@invasionpixelada"
-
                         target="_blank"
-
                         rel="noopener noreferrer"
-
                         class="video-link"
-
                     >
 
                         <div class="video-placeholder">
-
                             VÍDEO
-
                         </div>
 
                         <div class="video-info">
 
                             <h3>
-
                                 Próximo vídeo
-
                             </h3>
 
                             <p>
-
                                 Aventuras gráficas
-
                             </p>
 
                         </div>
@@ -1116,494 +833,1032 @@
 
             </div>
 
+
             <div class="videos-button-container">
 
                 <a
-
                     href="https://www.youtube.com/@invasionpixelada"
-
                     class="button secondary-button"
-
                     target="_blank"
-
                     rel="noopener noreferrer"
-
                 >
-
                     Ver todos los vídeos
-
                 </a>
 
             </div>
 
         </section>
 
+
         <!-- =================================================
-
              RESEÑAS
-
              ================================================= -->
 
         <section
-
             id="resenas"
-
             class="content-section reviews-section"
-
         >
 
             <div class="section-heading">
 
                 <p class="section-label">
-
                     INVASIÓN PIXELADA
-
                 </p>
 
                 <h2>
-
                     Reseñas de aventuras gráficas
-
                 </h2>
 
                 <p>
-
                     Análisis y reseñas de aventuras gráficas,
-
                     point & click y videojuegos narrativos donde
-
                     la historia, la ambientación y la experiencia
-
                     del jugador tienen un papel protagonista.
-
                 </p>
 
             </div>
 
-            <div class="future-content">
 
-                <!-- RESEÑAS AUTOMÁTICAS: INICIO -->
+            <div class="future-content">
 
                 <div class="reviews-grid">
 
+
                     <article
-
                         class="review-card"
-
                         data-search="Luna's Room Aventura gráfica, narrativa"
-
                     >
 
                         <a
-
                             href="reseñas/Lunas Room/"
-
                             class="review-card-image"
-
                         >
 
                             <img
-
                                 src="reseñas/Lunas Room/portada.jpg"
-
                                 alt="Portada de Luna's Room"
-
                                 loading="lazy"
-
                             >
 
                         </a>
 
+
                         <div class="review-card-content">
 
                             <p class="review-card-genre">
-
                                 Aventura gráfica, narrativa
-
                             </p>
 
                             <h3>
-
                                 Luna's Room
-
                             </h3>
 
                             <p>
-
                                 Normalmente me gusta empezar a escribir una
-
                                 reseña nada más terminar el juego en cuestión,
-
                                 al menos plasmar las primeras ideas, porque lo
-
                                 tengo más fresco y las ideas están ahí, como
-
                                 que salen prácticamente solas....
-
                             </p>
 
                             <a
-
                                 href="reseñas/Lunas Room/"
-
                                 class="review-card-link"
-
                             >
-
                                 LEER RESEÑA
-
                             </a>
 
                         </div>
 
                     </article>
+
 
                     <article
-
                         class="review-card"
-
                         data-search="Call of the Elder Gods Narrativo, puzles"
-
                     >
 
                         <a
-
                             href="reseñas/Call of the Elder Gods/"
-
                             class="review-card-image"
-
                         >
 
                             <img
-
                                 src="reseñas/Call of the Elder Gods/portada.jpg"
-
                                 alt="Portada de Call of the Elder Gods"
-
                                 loading="lazy"
-
                             >
 
                         </a>
 
+
                         <div class="review-card-content">
 
                             <p class="review-card-genre">
-
                                 Narrativo, puzles
-
                             </p>
 
                             <h3>
-
                                 Call of the Elder Gods
-
                             </h3>
 
                             <p>
-
                                 Out of the Blue Games vuelve con Call of the
-
                                 Elder Gods, una aventura que continúa la historia
-
                                 de Call of the Sea.
-
                             </p>
 
                             <a
-
                                 href="reseñas/Call of the Elder Gods/"
-
                                 class="review-card-link"
-
                             >
-
                                 LEER RESEÑA
-
                             </a>
 
                         </div>
 
                     </article>
+
 
                     <article class="review-card review-card-placeholder">
 
                         <div class="review-card-placeholder-inner">
 
                             <span>
-
                                 PRÓXIMAMENTE
-
                             </span>
 
                             <h3>
-
                                 Nueva reseña
-
                             </h3>
 
                         </div>
 
                     </article>
 
+
                 </div>
 
-                <!-- RESEÑAS AUTOMÁTICAS: FIN -->
-
             </div>
+
 
             <div class="reviews-button-container">
 
                 <a
-
                     href="resenas.html"
-
                     class="button secondary-button"
-
                 >
-
                     VER TODAS LAS RESEÑAS
-
                 </a>
 
             </div>
 
         </section>
 
+
         <!-- =================================================
-
              TIENDA
-
              ================================================= -->
 
         <section
-
             id="tienda"
-
             class="content-section store-section"
-
         >
 
             <div class="section-heading">
 
                 <p class="section-label">
-
                     RECOMENDACIONES
-
                 </p>
 
                 <h2>
-
                     Tienda
-
                 </h2>
 
                 <p>
-
                     Libros, videojuegos, cómics, películas y otros
-
                     productos relacionados con nuestras pasiones.
-
                 </p>
 
             </div>
 
+
             <div class="store-grid">
 
+
                 <article class="store-card">
 
                     <a
-
                         href="https://amzn.to/4d0vPUG"
-
                         target="_blank"
-
                         rel="noopener noreferrer"
-
                         class="store-card-image"
-
                     >
 
                         <img
-
                             src="imagenes/ocaso.jpg"
-
                             alt="Ocaso: Elige tu propia aventura"
-
                             loading="lazy"
-
                         >
 
                     </a>
 
+
                     <div class="store-card-content">
 
                         <p class="store-card-label">
-
                             DESTACADO
-
                         </p>
 
                         <h3>
-
                             Ocaso: Elige tu propia aventura
-
                         </h3>
 
                         <a
-
                             href="https://amzn.to/4d0vPUG"
-
                             target="_blank"
-
                             rel="noopener noreferrer"
-
                             class="store-card-link"
-
                         >
-
                             VER EN AMAZON
-
                         </a>
 
                     </div>
 
                 </article>
 
+
                 <article class="store-card">
 
                     <a
-
                         href="https://amzn.to/3TbjC93"
-
                         target="_blank"
-
                         rel="noopener noreferrer"
-
                         class="store-card-image"
-
                     >
 
                         <img
-
                             src="imagenes/terror1.jpg"
-
                             alt="El terror está ahí fuera: Antología de ciencia ficción y terror Vol. 1"
-
                             loading="lazy"
-
                         >
 
                     </a>
 
+
                     <div class="store-card-content">
 
                         <p class="store-card-label">
-
                             DESTACADO
-
                         </p>
 
                         <h3>
-
                             El terror está ahí fuera:
-
                             Antología de ciencia ficción y terror Vol. 1
-
                         </h3>
 
                         <a
-
                             href="https://amzn.to/3TbjC93"
-
                             target="_blank"
-
                             rel="noopener noreferrer"
-
                             class="store-card-link"
-
                         >
-
                             VER EN AMAZON
-
                         </a>
 
                     </div>
 
                 </article>
+
 
                 <article class="store-card">
 
                     <a
-
                         href="https://amzn.to/4cOM7Ab"
-
                         target="_blank"
-
                         rel="noopener noreferrer"
-
                         class="store-card-image"
-
                     >
 
                         <img
-
                             src="imagenes/terror2.jpg"
-
                             alt="El terror está ahí fuera: Antología de ciencia ficción y terror Vol. 2"
-
                             loading="lazy"
-
                         >
 
                     </a>
 
+
                     <div class="store-card-content">
 
                         <p class="store-card-label">
-
                             DESTACADO
-
                         </p>
 
                         <h3>
-
                             El terror está ahí fuera:
-
                             Antología de ciencia ficción y terror Vol. 2
-
                         </h3>
 
                         <a
-
                             href="https://amzn.to/4cOM7Ab"
-
                             target="_blank"
-
                             rel="noopener noreferrer"
-
                             class="store-card-link"
-
                         >
-
                             VER EN AMAZON
-
                         </a>
 
                     </div>
 
                 </article>
+
 
             </div>
+
 
             <div class="store-button-container">
 
                 <a
-
                     href="tienda.html"
-
                     class="button secondary-button"
-
                 >
-
                     VER TODA LA TIENDA
+                </a>
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <!-- =================================================
+         FOOTER
+         ================================================= -->
+
+    <footer class="site-footer">
+
+        <p>
+            © 2026 Invasión Pixelada
+        </p>
+
+        <p>
+            Aventuras gráficas · Narrativa · Videojuegos
+        </p>
+
+    </footer>
+
+
+    <!-- =================================================
+         LANZAMIENTOS
+         ================================================= -->
+
+    <script>
+
+        document.addEventListener(
+            "DOMContentLoaded",
+            function () {
+
+
+                const JUEGOS_POR_PAGINA = 3;
+
+                let juegos = [];
+
+                let paginaActual = 1;
+
+
+                const contenedor =
+                    document.getElementById(
+                        "upcoming-container"
+                    );
+
+
+                const paginacion =
+                    document.getElementById(
+                        "upcoming-pagination"
+                    );
+
+
+                const botonAnterior =
+                    document.getElementById(
+                        "upcoming-prev"
+                    );
+
+
+                const botonSiguiente =
+                    document.getElementById(
+                        "upcoming-next"
+                    );
+
+
+                const numeroPagina =
+                    document.getElementById(
+                        "upcoming-page-number"
+                    );
+
+
+                const meses = [
+
+                    "enero",
+                    "febrero",
+                    "marzo",
+                    "abril",
+                    "mayo",
+                    "junio",
+                    "julio",
+                    "agosto",
+                    "septiembre",
+                    "octubre",
+                    "noviembre",
+                    "diciembre"
+
+                ];
+
+
+                /* =================================================
+                   FORMATEAR FECHA
+                   ================================================= */
+
+                function formatearFecha(fecha) {
+
+                    if (!fecha) {
+                        return "";
+                    }
+
+
+                    const partes =
+                        fecha.split(".");
+
+
+                    if (partes.length !== 3) {
+                        return fecha;
+                    }
+
+
+                    const año =
+                        parseInt(
+                            partes[0],
+                            10
+                        );
+
+
+                    const mes =
+                        parseInt(
+                            partes[1],
+                            10
+                        );
+
+
+                    const dia =
+                        parseInt(
+                            partes[2],
+                            10
+                        );
+
+
+                    if (
+                        isNaN(año) ||
+                        isNaN(mes) ||
+                        isNaN(dia) ||
+                        mes < 1 ||
+                        mes > 12
+                    ) {
+                        return fecha;
+                    }
+
+
+                    return (
+                        dia +
+                        " de " +
+                        meses[mes - 1] +
+                        " de " +
+                        año
+                    );
+
+                }
+
+
+                /* =================================================
+                   VALIDAR FECHA
+                   ================================================= */
+
+                function fechaValida(fecha) {
+
+                    if (!fecha) {
+                        return false;
+                    }
+
+
+                    const partes =
+                        fecha.split(".");
+
+
+                    if (partes.length !== 3) {
+                        return false;
+                    }
+
+
+                    const año =
+                        parseInt(
+                            partes[0],
+                            10
+                        );
+
+
+                    const mes =
+                        parseInt(
+                            partes[1],
+                            10
+                        );
+
+
+                    const dia =
+                        parseInt(
+                            partes[2],
+                            10
+                        );
+
+
+                    if (
+                        isNaN(año) ||
+                        isNaN(mes) ||
+                        isNaN(dia)
+                    ) {
+                        return false;
+                    }
+
+
+                    const fechaObjeto =
+                        new Date(
+                            año,
+                            mes - 1,
+                            dia
+                        );
+
+
+                    return (
+                        fechaObjeto.getFullYear() === año &&
+                        fechaObjeto.getMonth() === mes - 1 &&
+                        fechaObjeto.getDate() === dia
+                    );
+
+                }
+
+
+                /* =================================================
+                   CREAR TARJETA
+                   ================================================= */
+
+                function crearTarjeta(juego) {
+
+                    const articulo =
+                        document.createElement(
+                            "article"
+                        );
+
+
+                    articulo.className =
+                        "upcoming-card";
+
+
+                    const enlace =
+                        document.createElement(
+                            "a"
+                        );
+
+
+                    enlace.className =
+                        "upcoming-card-link";
+
+
+                    enlace.href =
+                        juego.link || "#";
+
+
+                    enlace.target =
+                        "_blank";
+
+
+                    enlace.rel =
+                        "noopener noreferrer";
+
+
+                    const imagen =
+                        document.createElement(
+                            "img"
+                        );
+
+
+                    imagen.className =
+                        "upcoming-card-image";
+
+
+                    imagen.src =
+                        juego.image || "";
+
+
+                    imagen.alt =
+                        "Portada de " +
+                        (juego.title || "videojuego");
+
+
+                    imagen.loading =
+                        "lazy";
+
+
+                    enlace.appendChild(
+                        imagen
+                    );
+
+
+                    const contenido =
+                        document.createElement(
+                            "div"
+                        );
+
+
+                    contenido.className =
+                        "upcoming-card-content";
+
+
+                    const categoria =
+                        document.createElement(
+                            "p"
+                        );
+
+
+                    categoria.className =
+                        "upcoming-card-category";
+
+
+                    categoria.textContent =
+                        juego.category ||
+                        "GOG";
+
+
+                    contenido.appendChild(
+                        categoria
+                    );
+
+
+                    const titulo =
+                        document.createElement(
+                            "h3"
+                        );
+
+
+                    titulo.className =
+                        "upcoming-card-title";
+
+
+                    titulo.textContent =
+                        juego.title ||
+                        "Sin título";
+
+
+                    contenido.appendChild(
+                        titulo
+                    );
+
+
+                    const fecha =
+                        document.createElement(
+                            "p"
+                        );
+
+
+                    fecha.className =
+                        "upcoming-card-date";
+
+
+                    fecha.textContent =
+                        formatearFecha(
+                            juego.releaseDate
+                        );
+
+
+                    contenido.appendChild(
+                        fecha
+                    );
+
+
+                    enlace.appendChild(
+                        contenido
+                    );
+
+
+                    articulo.appendChild(
+                        enlace
+                    );
+
+
+                    return articulo;
+
+                }
+
+
+                /* =================================================
+                   MOSTRAR PÁGINA
+                   ================================================= */
+
+                function mostrarPagina(hacerScroll = false) {
+
+                    contenedor.innerHTML =
+                        "";
+
+
+                    const totalPaginas =
+                        Math.ceil(
+                            juegos.length /
+                            JUEGOS_POR_PAGINA
+                        );
+
+
+                    if (
+                        paginaActual < 1
+                    ) {
+
+                        paginaActual = 1;
+
+                    }
+
+
+                    if (
+                        paginaActual > totalPaginas
+                    ) {
+
+                        paginaActual =
+                            totalPaginas;
+
+                    }
+
+
+                    const inicio =
+                        (
+                            paginaActual - 1
+                        ) *
+                        JUEGOS_POR_PAGINA;
+
+
+                    const fin =
+                        inicio +
+                        JUEGOS_POR_PAGINA;
+
+
+                    const juegosPagina =
+                        juegos.slice(
+                            inicio,
+                            fin
+                        );
+
+
+                    juegosPagina.forEach(
+                        function (juego) {
+
+                            contenedor.appendChild(
+                                crearTarjeta(juego)
+                            );
+
+                        }
+                    );
+
+
+                    numeroPagina.textContent =
+                        "Página " +
+                        paginaActual +
+                        " de " +
+                        totalPaginas;
+
+
+                    botonAnterior.disabled =
+                        paginaActual === 1;
+
+
+                    botonSiguiente.disabled =
+                        paginaActual === totalPaginas;
+
+
+                    paginacion.style.display =
+                        "flex";
+
+
+                    /*
+                     * IMPORTANTE:
+                     *
+                     * Solo hacemos scroll cuando el usuario
+                     * cambia de página.
+                     *
+                     * Al cargar la web NO hacemos scroll.
+                     */
+
+                    if (hacerScroll) {
+
+                        document
+                            .getElementById(
+                                "proximos"
+                            )
+                            .scrollIntoView({
+                                behavior: "smooth",
+                                block: "start"
+                            });
+
+                    }
+
+                }
+
+
+                /* =================================================
+                   ANTERIOR
+                   ================================================= */
+
+                botonAnterior.addEventListener(
+                    "click",
+                    function () {
+
+                        if (
+                            paginaActual > 1
+                        ) {
+
+                            paginaActual--;
+
+                            mostrarPagina(true);
+
+                        }
+
+                    }
+                );
+
+
+                /* =================================================
+                   SIGUIENTE
+                   ================================================= */
+
+                botonSiguiente.addEventListener(
+                    "click",
+                    function () {
+
+                        const totalPaginas =
+                            Math.ceil(
+                                juegos.length /
+                                JUEGOS_POR_PAGINA
+                            );
+
+
+                        if (
+                            paginaActual <
+                            totalPaginas
+                        ) {
+
+                            paginaActual++;
+
+                            mostrarPagina(true);
+
+                        }
+
+                    }
+                );
+
+
+                /* =================================================
+                   CARGAR JSON
+                   ================================================= */
+
+                fetch(
+                    "proximos.json"
+                )
+
+                    .then(
+                        function (respuesta) {
+
+                            if (
+                                !respuesta.ok
+                            ) {
+
+                                throw new Error(
+                                    "No se pudo cargar proximos.json"
+                                );
+
+                            }
+
+
+                            return respuesta.json();
+
+                        }
+                    )
+
+                    .then(
+                        function (datos) {
+
+                            if (
+                                !Array.isArray(
+                                    datos
+                                )
+                            ) {
+
+                                throw new Error(
+                                    "proximos.json no contiene una lista válida"
+                                );
+
+                            }
+
+
+                            /* SOLO JUEGOS CON FECHA */
+
+                            juegos =
+                                datos.filter(
+                                    function (juego) {
+
+                                        return (
+                                            juego &&
+                                            fechaValida(
+                                                juego.releaseDate
+                                            )
+                                        );
+
+                                    }
+                                );
+
+
+                            /* ORDENAR POR FECHA */
+
+                            juegos.sort(
+                                function (
+                                    a,
+                                    b
+                                ) {
+
+                                    return (
+                                        a.releaseDate.localeCompare(
+                                            b.releaseDate
+                                        )
+                                    );
+
+                                }
+                            );
+
+
+                            /* SIN RESULTADOS */
+
+                            if (
+                                juegos.length === 0
+                            ) {
+
+                                contenedor.innerHTML =
+                                    '<p class="upcoming-empty">No hay próximos lanzamientos con fecha disponible.</p>';
+
+                                paginacion.style.display =
+                                    "none";
+
+                                return;
+
+                            }
+
+
+                            /*
+                             * PRIMERA CARGA
+                             *
+                             * FALSE = NO HACER SCROLL
+                             */
+
+                            mostrarPagina(false);
+
+                        }
+                    )
+
+                    .catch(
+                        function (error) {
+
+                            console.error(
+                                "Error cargando próximos lanzamientos:",
+                                error
+                            );
+
+
+                            contenedor.innerHTML =
+                                '<p class="upcoming-error">No se han podido cargar los próximos lanzamientos.</p>';
+
+
+                            paginacion.style.display =
+                                "none";
+
+                        }
+                    );
+
+            }
+
+        );
+
+    </script>
+
+
+    <!-- =================================================
+         SCRIPT GENERAL
+         ================================================= -->
+
+    <script src="script.js"></script>
+
+
+</body>
+
+</html>
