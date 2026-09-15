@@ -1730,17 +1730,18 @@
                      * al principio de la sección.
                      */
 
-                    document
-                        .getElementById(
-                            "proximos"
-                        )
-                        .scrollIntoView({
-                            behavior: "smooth",
-                            block: "start"
-                        });
+                    if (hacerScroll) {
+                        
+                        document
+                            .getElementById(
+                                "proximos"
+                            )
+                            .scrollIntoView({
+                                behavior: "smooth",
+                                block: "start"
+                            });
 
-                }
-
+                    }
 
                 /* =================================================
                    ANTERIOR
@@ -1756,7 +1757,7 @@
 
                             paginaActual--;
 
-                            mostrarPagina();
+                            mostrarPagina(false);
 
                         }
 
