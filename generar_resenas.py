@@ -8,7 +8,6 @@ from docx import Document
 import html
 import re
 import json
-import subprocess
 from urllib.parse import quote
 
 
@@ -33,14 +32,28 @@ def escapar(texto):
 
 
 def buscar_docx(carpeta):
+
     archivos = list(carpeta.glob("*.docx"))
-    return archivos[0] if archivos else None
+
+    if not archivos:
+        return None
+
+    # Si hubiera más de un DOCX, usamos el más reciente
+    # según la fecha de modificación del archivo.
+    archivos.sort(
+        key=lambda archivo: archivo.stat().st_mtime,
+        reverse=True
+    )
+
+    return archivos[0]
 
 
 def buscar_imagen(carpeta, numero):
+
     numero = str(numero).strip()
 
     try:
+
         entero = int(numero)
 
         candidatos = [
@@ -49,6 +62,7 @@ def buscar_imagen(carpeta, numero):
         ]
 
     except ValueError:
+
         candidatos = [numero]
 
     for nombre in candidatos:
@@ -100,7 +114,10 @@ def crear_slug(nombre):
     }
 
     for origen, destino in reemplazos.items():
-        texto = texto.replace(origen, destino)
+        texto = texto.replace(
+            origen,
+            destino
+        )
 
     texto = re.sub(
         r"[^a-z0-9]+",
@@ -152,79 +169,32 @@ def crear_url_archivo_reseña(
 
 
 # =========================================================
-# ORDEN DE LAS RESEÑAS
+# FECHA DE LA RESEÑA
 # =========================================================
 
-def obtener_fecha_git(archivo):
+def obtener_fecha_reseña(carpeta):
 
     """
-    Devuelve la fecha del último commit que modificó
-    el archivo.
+    Devuelve la fecha utilizada para ordenar las reseñas.
 
-    Esta fecha es mucho más fiable que st_mtime dentro
-    de GitHub Actions, ya que el checkout puede cambiar
-    las fechas de modificación de los archivos.
+    IMPORTANTE:
+    El orden se basa en la fecha del documento DOCX,
+    no en la fecha de la carpeta ni en la fecha de creación
+    de la página HTML.
 
-    Devuelve un timestamp UNIX.
-
-    Si Git no está disponible, devuelve 0 para permitir
-    utilizar el sistema de respaldo.
+    La reseña más reciente aparece primero.
     """
+
+    docx = buscar_docx(carpeta)
+
+    if not docx:
+        return 0
 
     try:
 
-        resultado = subprocess.run(
-            [
-                "git",
-                "log",
-                "-1",
-                "--format=%ct",
-                "--",
-                str(archivo)
-            ],
-            capture_output=True,
-            text=True,
-            check=True
-        )
+        return docx.stat().st_mtime
 
-        valor = resultado.stdout.strip()
-
-        if valor:
-
-            return int(valor)
-
-    except Exception:
-        pass
-
-    return 0
-
-
-def obtener_fecha_archivo(archivo):
-
-    """
-    Obtiene una fecha de ordenación.
-
-    Prioridad:
-
-    1. Último commit de Git.
-    2. Fecha de modificación del archivo.
-
-    Cuanto mayor sea el valor, más reciente es el archivo.
-    """
-
-    fecha_git = obtener_fecha_git(
-        archivo
-    )
-
-    if fecha_git:
-
-        return fecha_git
-
-    try:
-
-        return archivo.stat().st_mtime
-
-    except Exception:
+    except OSError:
 
         return 0
 
@@ -253,15 +223,8 @@ def leer_docx(ruta):
 # METADATOS
 # =========================================================
 
-# Todos estos campos son OPCIONALES.
-#
-# Una reseña puede tener algunos, todos o ninguno.
-#
-# El generador deja de leer metadatos en cuanto encuentra
-# el primer párrafo que no corresponde a uno de estos campos.
-#
-
 CAMPOS = [
+
     "Título",
     "Año",
     "Temática",
@@ -280,12 +243,14 @@ CAMPOS = [
     "Enlace WikiCAAD",
     "Valoración",
     "Puntuación",
+
 ]
 
 
 def extraer_metadatos(elementos):
 
     metadatos = {}
+
     resto = []
 
     leyendo_metadata = True
@@ -319,9 +284,15 @@ def extraer_metadatos(elementos):
         if not encontrado:
 
             leyendo_metadata = False
-            resto.append(texto)
 
-    return metadatos, resto
+            resto.append(
+                texto
+            )
+
+    return (
+        metadatos,
+        resto
+    )
 
 
 def obtener(
@@ -354,6 +325,7 @@ def extraer_numero_caad(valor):
     )
 
     if coincidencia:
+
         return coincidencia.group(1)
 
     coincidencia = re.search(
@@ -362,16 +334,18 @@ def extraer_numero_caad(valor):
     )
 
     if coincidencia:
+
         return coincidencia.group(1)
 
     return ""
 
 
 # =========================================================
-# ENCABEZADOS DE LA RESEÑA
+# ENCABEZADOS
 # =========================================================
 
 ENCABEZADOS = {
+
     "ambientación",
     "gráficos",
     "jugabilidad",
@@ -383,6 +357,7 @@ ENCABEZADOS = {
     "duración",
     "finales",
     "conclusiones",
+
 }
 
 
@@ -413,7 +388,9 @@ def crear_meta_description(
         if texto_limpio.lower() in ENCABEZADOS:
             continue
 
-        textos.append(texto_limpio)
+        textos.append(
+            texto_limpio
+        )
 
     descripcion_base = ""
 
@@ -461,27 +438,40 @@ def crear_keywords(
 ):
 
     palabras = [
+
         titulo,
         "Invasión Pixelada",
         "reseña"
+
     ]
 
     if genero:
-        palabras.append(genero)
+        palabras.append(
+            genero
+        )
 
     if tematica:
-        palabras.append(tematica)
+        palabras.append(
+            tematica
+        )
 
     if plataforma:
-        palabras.append(plataforma)
+        palabras.append(
+            plataforma
+        )
 
     palabras_limpias = []
 
     for palabra in palabras:
 
-        palabra = str(palabra).strip()
+        palabra = str(
+            palabra
+        ).strip()
 
-        if palabra and palabra not in palabras_limpias:
+        if (
+            palabra
+            and palabra not in palabras_limpias
+        ):
 
             palabras_limpias.append(
                 palabra
@@ -507,125 +497,245 @@ def crear_json_ld(
 ):
 
     datos = {
+
         "@context": "https://schema.org",
+
         "@graph": [
+
             {
+
                 "@type": "Review",
-                "@id": f"{url_reseña}#review",
-                "url": url_reseña,
-                "name": f"Reseña de {titulo}",
-                "headline": (
-                    f"{titulo} | "
-                    f"Reseña de aventura gráfica"
-                ),
-                "reviewBody": (
-                    f"Reseña de {titulo} "
-                    f"publicada por Invasión Pixelada."
-                ),
+
+                "@id":
+                    f"{url_reseña}#review",
+
+                "url":
+                    url_reseña,
+
+                "name":
+                    f"Reseña de {titulo}",
+
+                "headline":
+                    (
+                        f"{titulo} | "
+                        f"Reseña de aventura gráfica"
+                    ),
+
+                "reviewBody":
+                    (
+                        f"Reseña de {titulo} "
+                        f"publicada por "
+                        f"Invasión Pixelada."
+                    ),
+
                 "author": {
-                    "@type": "Organization",
-                    "name": SITE_NAME,
-                    "url": f"{SITE_URL}/"
-                },
-                "publisher": {
-                    "@type": "Organization",
-                    "name": SITE_NAME,
-                    "url": f"{SITE_URL}/"
-                },
-                "itemReviewed": {
-                    "@type": "VideoGame",
-                    "name": titulo
-                }
-            },
 
-            {
-                "@type": "WebPage",
-                "@id": f"{url_reseña}#webpage",
-                "url": url_reseña,
-                "name": f"{titulo} | Invasión Pixelada",
-                "isPartOf": {
-                    "@id": f"{SITE_URL}/#website"
-                }
-            },
+                    "@type":
+                        "Organization",
 
-            {
-                "@type": "WebSite",
-                "@id": f"{SITE_URL}/#website",
-                "url": f"{SITE_URL}/",
-                "name": SITE_NAME,
-                "description": (
-                    "Aventuras gráficas, point & click, "
-                    "visual novels, walking simulators y "
-                    "videojuegos donde la narrativa "
-                    "es protagonista."
-                ),
-                "publisher": {
-                    "@type": "Organization",
-                    "name": SITE_NAME,
-                    "url": f"{SITE_URL}/"
-                }
-            },
+                    "name":
+                        SITE_NAME,
 
-            {
-                "@type": "Organization",
-                "@id": f"{SITE_URL}/#organization",
-                "name": SITE_NAME,
-                "url": f"{SITE_URL}/",
-                "logo": {
-                    "@type": "ImageObject",
-                    "url": (
+                    "url":
                         f"{SITE_URL}/"
-                        "imagenes/"
-                        "nuevo_logo_invasion_pixelada.png"
-                    )
+
                 },
+
+                "publisher": {
+
+                    "@type":
+                        "Organization",
+
+                    "name":
+                        SITE_NAME,
+
+                    "url":
+                        f"{SITE_URL}/"
+
+                },
+
+                "itemReviewed": {
+
+                    "@type":
+                        "VideoGame",
+
+                    "name":
+                        titulo
+
+                }
+
+            },
+
+            {
+
+                "@type":
+                    "WebPage",
+
+                "@id":
+                    f"{url_reseña}#webpage",
+
+                "url":
+                    url_reseña,
+
+                "name":
+                    f"{titulo} | Invasión Pixelada",
+
+                "isPartOf": {
+
+                    "@id":
+                        f"{SITE_URL}/#website"
+
+                }
+
+            },
+
+            {
+
+                "@type":
+                    "WebSite",
+
+                "@id":
+                    f"{SITE_URL}/#website",
+
+                "url":
+                    f"{SITE_URL}/",
+
+                "name":
+                    SITE_NAME,
+
+                "description":
+                    (
+                        "Aventuras gráficas, "
+                        "point & click, "
+                        "visual novels, "
+                        "walking simulators y "
+                        "videojuegos donde la "
+                        "narrativa es protagonista."
+                    ),
+
+                "publisher": {
+
+                    "@type":
+                        "Organization",
+
+                    "name":
+                        SITE_NAME,
+
+                    "url":
+                        f"{SITE_URL}/"
+
+                }
+
+            },
+
+            {
+
+                "@type":
+                    "Organization",
+
+                "@id":
+                    f"{SITE_URL}/#organization",
+
+                "name":
+                    SITE_NAME,
+
+                "url":
+                    f"{SITE_URL}/",
+
+                "logo": {
+
+                    "@type":
+                        "ImageObject",
+
+                    "url":
+                        (
+                            f"{SITE_URL}/"
+                            "imagenes/"
+                            "nuevo_logo_invasion_pixelada.png"
+                        )
+
+                },
+
                 "sameAs": [
+
                     "https://www.youtube.com/@invasionpixelada"
+
                 ]
+
             }
+
         ]
+
     }
 
-    videojuego = datos["@graph"][0]["itemReviewed"]
+    videojuego = (
+        datos["@graph"][0]["itemReviewed"]
+    )
 
     if genero:
+
         videojuego["genre"] = genero
 
     if tematica:
+
         videojuego["keywords"] = tematica
 
     if año:
 
         try:
-            videojuego["datePublished"] = str(año)
+
+            videojuego[
+                "datePublished"
+            ] = str(año)
+
         except Exception:
+
             pass
 
     if autor:
 
         videojuego["creator"] = {
-            "@type": "Person",
-            "name": autor
+
+            "@type":
+                "Person",
+
+            "name":
+                autor
+
         }
 
     if editor:
 
         videojuego["publisher"] = {
-            "@type": "Organization",
-            "name": editor
+
+            "@type":
+                "Organization",
+
+            "name":
+                editor
+
         }
 
     if plataforma:
-        videojuego["gamePlatform"] = plataforma
+
+        videojuego[
+            "gamePlatform"
+        ] = plataforma
 
     if lanzamiento:
-        videojuego["releaseDate"] = lanzamiento
+
+        videojuego[
+            "releaseDate"
+        ] = lanzamiento
 
     if valoracion:
 
         valoracion_limpia = str(
             valoracion
-        ).replace(",", ".").strip()
+        ).replace(
+            ",",
+            "."
+        ).strip()
 
         coincidencia = re.search(
             r"(\d+(?:\.\d+)?)",
@@ -643,33 +753,47 @@ def crear_json_ld(
                 datos["@graph"][0][
                     "reviewRating"
                 ] = {
-                    "@type": "Rating",
-                    "ratingValue": puntuacion,
-                    "bestRating": 10,
-                    "worstRating": 0
+
+                    "@type":
+                        "Rating",
+
+                    "ratingValue":
+                        puntuacion,
+
+                    "bestRating":
+                        10,
+
+                    "worstRating":
+                        0
+
                 }
 
             except ValueError:
-                pass
 
-    # -----------------------------------------------------
-    # IMAGEN DE PORTADA
-    # -----------------------------------------------------
+                pass
 
     if portada_url:
 
-        datos["@graph"][1]["image"] = portada_url
+        datos["@graph"][1][
+            "image"
+        ] = portada_url
 
-        videojuego["image"] = portada_url
+        videojuego[
+            "image"
+        ] = portada_url
 
     return (
+
         '<script type="application/ld+json">\n'
+
         + json.dumps(
             datos,
             ensure_ascii=False,
             indent=4
         )
+
         + "\n</script>"
+
     )
 
 
@@ -689,6 +813,7 @@ def obtener_imagenes(carpeta):
         )
 
         if imagen:
+
             imagenes[numero] = imagen
 
     return imagenes
@@ -700,6 +825,7 @@ def crear_bloque_imagen(
 ):
 
     return f"""
+
     <figure class="review-image">
 
         <img
@@ -709,6 +835,7 @@ def crear_bloque_imagen(
         >
 
     </figure>
+
     """
 
 
@@ -738,15 +865,25 @@ def crear_contenido(
         if texto.lower() in ENCABEZADOS:
 
             bloques.append({
-                "tipo": "heading",
-                "texto": texto
+
+                "tipo":
+                    "heading",
+
+                "texto":
+                    texto
+
             })
 
         else:
 
             bloques.append({
-                "tipo": "paragraph",
-                "texto": texto
+
+                "tipo":
+                    "paragraph",
+
+                "texto":
+                    texto
+
             })
 
     if not imagenes:
@@ -759,9 +896,13 @@ def crear_contenido(
 
                 resultado.append(
                     f"""
+
                     <h2>
-                        {escapar(bloque["texto"])}
+                        {escapar(
+                            bloque["texto"]
+                        )}
                     </h2>
+
                     """
                 )
 
@@ -769,13 +910,19 @@ def crear_contenido(
 
                 resultado.append(
                     f"""
+
                     <p>
-                        {escapar(bloque["texto"])}
+                        {escapar(
+                            bloque["texto"]
+                        )}
                     </p>
+
                     """
                 )
 
-        return "\n".join(resultado)
+        return "\n".join(
+            resultado
+        )
 
     posiciones = {}
 
@@ -791,7 +938,9 @@ def crear_contenido(
                 .lower()
             )
 
-            posiciones[nombre] = indice
+            posiciones[
+                nombre
+            ] = indice
 
     objetivos = {}
 
@@ -802,8 +951,13 @@ def crear_contenido(
     if "ambientación" in posiciones:
 
         objetivos[1] = max(
+
             0,
-            posiciones["ambientación"] + 1
+
+            posiciones[
+                "ambientación"
+            ] + 1
+
         )
 
     # -----------------------------------------------------
@@ -812,25 +966,39 @@ def crear_contenido(
 
     if "ambientación" in posiciones:
 
-        inicio = posiciones["ambientación"]
+        inicio = posiciones[
+            "ambientación"
+        ]
 
-        siguiente = len(bloques)
+        siguiente = len(
+            bloques
+        )
 
         for nombre in [
+
             "gráficos",
             "jugabilidad"
+
         ]:
 
             if nombre in posiciones:
 
                 siguiente = min(
+
                     siguiente,
-                    posiciones[nombre]
+
+                    posiciones[
+                        nombre
+                    ]
+
                 )
 
         objetivos[2] = min(
+
             inicio + 3,
+
             siguiente
+
         )
 
     # -----------------------------------------------------
@@ -839,26 +1007,40 @@ def crear_contenido(
 
     if "jugabilidad" in posiciones:
 
-        inicio = posiciones["jugabilidad"]
+        inicio = posiciones[
+            "jugabilidad"
+        ]
 
-        siguiente = len(bloques)
+        siguiente = len(
+            bloques
+        )
 
         for nombre in [
+
             "dificultad",
             "guion",
             "guión"
+
         ]:
 
             if nombre in posiciones:
 
                 siguiente = min(
+
                     siguiente,
-                    posiciones[nombre]
+
+                    posiciones[
+                        nombre
+                    ]
+
                 )
 
         objetivos[3] = min(
+
             inicio + 4,
+
             siguiente
+
         )
 
     # -----------------------------------------------------
@@ -867,40 +1049,61 @@ def crear_contenido(
 
     if "sonido" in posiciones:
 
-        inicio_sonido = posiciones["sonido"]
+        inicio_sonido = posiciones[
+            "sonido"
+        ]
 
-        siguiente_encabezado = len(bloques)
+        siguiente_encabezado = len(
+            bloques
+        )
 
         for indice in range(
+
             inicio_sonido + 1,
+
             len(bloques)
+
         ):
 
-            if bloques[indice]["tipo"] == "heading":
+            if bloques[
+                indice
+            ]["tipo"] == "heading":
 
-                siguiente_encabezado = indice
+                siguiente_encabezado = (
+                    indice
+                )
+
                 break
 
         parrafos_sonido = []
 
         for indice in range(
+
             inicio_sonido + 1,
+
             siguiente_encabezado
+
         ):
 
-            if bloques[indice]["tipo"] == "paragraph":
+            if bloques[
+                indice
+            ]["tipo"] == "paragraph":
 
                 parrafos_sonido.append(
                     indice
                 )
 
-        if len(parrafos_sonido) >= 2:
+        if len(
+            parrafos_sonido
+        ) >= 2:
 
             objetivos[4] = (
                 parrafos_sonido[1] + 1
             )
 
-        elif len(parrafos_sonido) == 1:
+        elif len(
+            parrafos_sonido
+        ) == 1:
 
             objetivos[4] = (
                 parrafos_sonido[0] + 1
@@ -919,14 +1122,19 @@ def crear_contenido(
     inicio_final = None
 
     for nombre in [
+
         "duración",
         "finales",
         "conclusiones"
+
     ]:
 
         if nombre in posiciones:
 
-            inicio_final = posiciones[nombre]
+            inicio_final = posiciones[
+                nombre
+            ]
+
             break
 
     if inicio_final is not None:
@@ -943,25 +1151,37 @@ def crear_contenido(
         objetivos.values()
     )
 
-    total_bloques = len(bloques)
+    total_bloques = len(
+        bloques
+    )
 
-    for numero in sorted(imagenes):
+    for numero in sorted(
+        imagenes
+    ):
 
         if numero in objetivos:
             continue
 
         posicion = round(
+
             total_bloques
             * numero
             / (len(imagenes) + 1)
+
         )
 
         posicion = max(
+
             0,
+
             min(
+
                 posicion,
+
                 total_bloques
+
             )
+
         )
 
         while posicion in posiciones_ocupadas:
@@ -969,6 +1189,7 @@ def crear_contenido(
             posicion += 1
 
             if posicion > total_bloques:
+
                 posicion = 0
 
         objetivos[numero] = posicion
@@ -978,7 +1199,7 @@ def crear_contenido(
         )
 
     # -----------------------------------------------------
-    # GENERAMOS EL HTML
+    # GENERAMOS HTML
     # -----------------------------------------------------
 
     resultado = []
@@ -992,38 +1213,63 @@ def crear_contenido(
     ):
 
         for numero in sorted(
-            list(imagenes_pendientes.keys())
+            list(
+                imagenes_pendientes.keys()
+            )
         ):
 
-            if objetivos.get(numero) == indice:
+            if objetivos.get(
+                numero
+            ) == indice:
 
                 resultado.append(
+
                     crear_bloque_imagen(
-                        imagenes_pendientes[numero],
+
+                        imagenes_pendientes[
+                            numero
+                        ],
+
                         titulo
+
                     )
+
                 )
 
-                del imagenes_pendientes[numero]
+                del imagenes_pendientes[
+                    numero
+                ]
 
         if bloque["tipo"] == "heading":
 
             resultado.append(
+
                 f"""
+
                 <h2>
-                    {escapar(bloque["texto"])}
+                    {escapar(
+                        bloque["texto"]
+                    )}
                 </h2>
+
                 """
+
             )
 
         else:
 
             resultado.append(
+
                 f"""
+
                 <p>
-                    {escapar(bloque["texto"])}
+                    {escapar(
+                        bloque["texto"]
+                    )}
                 </p>
+
                 """
+
             )
 
     for numero in sorted(
@@ -1031,13 +1277,22 @@ def crear_contenido(
     ):
 
         resultado.append(
+
             crear_bloque_imagen(
-                imagenes_pendientes[numero],
+
+                imagenes_pendientes[
+                    numero
+                ],
+
                 titulo
+
             )
+
         )
 
-    return "\n".join(resultado)
+    return "\n".join(
+        resultado
+    )
 
 
 # =========================================================
@@ -1048,14 +1303,20 @@ def crear_pagina(
     nombre_carpeta
 ):
 
-    carpeta = ROOT / nombre_carpeta
+    carpeta = (
+        ROOT / nombre_carpeta
+    )
 
-    docx = buscar_docx(carpeta)
+    docx = buscar_docx(
+        carpeta
+    )
 
     if not docx:
         return False
 
-    elementos = leer_docx(docx)
+    elementos = leer_docx(
+        docx
+    )
 
     metadatos, contenido = (
         extraer_metadatos(
@@ -1127,10 +1388,12 @@ def crear_pagina(
         )
 
     caad = extraer_numero_caad(
+
         obtener(
             metadatos,
             "caad"
         )
+
     )
 
     enlace_caad = obtener(
@@ -1171,16 +1434,20 @@ def crear_pagina(
     )
 
     meta_description = crear_meta_description(
+
         titulo,
         genero,
         contenido
+
     )
 
     keywords = crear_keywords(
+
         titulo,
         genero,
         tematica,
         plataforma
+
     )
 
     portada = buscar_portada(
@@ -1191,12 +1458,18 @@ def crear_pagina(
 
     if portada:
 
-        portada_url = crear_url_archivo_reseña(
-            nombre_carpeta,
-            portada
+        portada_url = (
+            crear_url_archivo_reseña(
+
+                nombre_carpeta,
+
+                portada
+
+            )
         )
 
     json_ld = crear_json_ld(
+
         titulo,
         genero,
         tematica,
@@ -1208,6 +1481,7 @@ def crear_pagina(
         valoracion,
         portada_url,
         url_reseña
+
     )
 
     # -----------------------------------------------------
@@ -1221,12 +1495,15 @@ def crear_pagina(
         if enlace_caad:
 
             publicacion_html = f"""
+
             <div class="review-publication">
 
                 Publicada originalmente en
 
                 <a
-                    href="{escapar(enlace_caad)}"
+                    href="{escapar(
+                        enlace_caad
+                    )}"
                     target="_blank"
                     rel="noopener noreferrer"
                 >
@@ -1234,17 +1511,20 @@ def crear_pagina(
                 </a>
 
             </div>
+
             """
 
         else:
 
             publicacion_html = f"""
+
             <div class="review-publication">
 
                 Publicada originalmente en
                 CAAD nº {escapar(caad)}
 
             </div>
+
             """
 
     # -----------------------------------------------------
@@ -1256,15 +1536,21 @@ def crear_pagina(
     if portada:
 
         portada_html = f"""
+
         <div class="review-cover-wrap">
 
             <img
                 class="review-cover"
-                src="{escapar(portada)}"
-                alt="Portada de {escapar(titulo)}"
+                src="{escapar(
+                    portada
+                )}"
+                alt="Portada de {escapar(
+                    titulo
+                )}"
             >
 
         </div>
+
         """
 
     # -----------------------------------------------------
@@ -1272,6 +1558,7 @@ def crear_pagina(
     # -----------------------------------------------------
 
     datos = [
+
         ("Año", año),
         ("Temática", tematica),
         ("Autor", autor),
@@ -1281,6 +1568,7 @@ def crear_pagina(
         ("Lanzamiento", lanzamiento),
         ("Voces", voces),
         ("Textos", textos),
+
     ]
 
     filas = []
@@ -1290,7 +1578,9 @@ def crear_pagina(
         if valor:
 
             filas.append(
+
                 f"""
+
                 <div class="review-data-row">
 
                     <span class="review-data-label">
@@ -1302,7 +1592,9 @@ def crear_pagina(
                     </span>
 
                 </div>
+
                 """
+
             )
 
     metadata_html = ""
@@ -1310,6 +1602,7 @@ def crear_pagina(
     if filas:
 
         metadata_html = f"""
+
         <div class="review-metadata">
 
             <div class="review-data-grid">
@@ -1319,6 +1612,7 @@ def crear_pagina(
             </div>
 
         </div>
+
         """
 
     # -----------------------------------------------------
@@ -1330,6 +1624,7 @@ def crear_pagina(
     if valoracion:
 
         valoracion_html = f"""
+
         <div class="review-rating">
 
             <span>
@@ -1337,10 +1632,13 @@ def crear_pagina(
             </span>
 
             <strong>
-                {escapar(valoracion)}
+                {escapar(
+                    valoracion
+                )}
             </strong>
 
         </div>
+
         """
 
     # -----------------------------------------------------
@@ -1352,11 +1650,14 @@ def crear_pagina(
     if web_juego:
 
         web_html = f"""
+
         <div class="review-actions">
 
             <a
                 class="review-button"
-                href="{escapar(web_juego)}"
+                href="{escapar(
+                    web_juego
+                )}"
                 target="_blank"
                 rel="noopener noreferrer"
             >
@@ -1364,6 +1665,7 @@ def crear_pagina(
             </a>
 
         </div>
+
         """
 
     # -----------------------------------------------------
@@ -1371,16 +1673,19 @@ def crear_pagina(
     # -----------------------------------------------------
 
     contenido_html = crear_contenido(
+
         carpeta,
         contenido,
         titulo
+
     )
 
     # -----------------------------------------------------
-    # BOTONES DE NAVEGACIÓN
+    # NAVEGACIÓN
     # -----------------------------------------------------
 
     navegacion_html = """
+
     <div class="review-navigation">
 
         <a
@@ -1398,10 +1703,11 @@ def crear_pagina(
         </a>
 
     </div>
+
     """
 
     # -----------------------------------------------------
-    # HTML DE LA PÁGINA
+    # HTML
     # -----------------------------------------------------
 
     pagina = f"""<!DOCTYPE html>
@@ -1422,22 +1728,30 @@ def crear_pagina(
     >
 
     <title>
-        {escapar(titulo)} | Reseña de aventura gráfica | Invasión Pixelada
+        {escapar(titulo)}
+        | Reseña de aventura gráfica
+        | Invasión Pixelada
     </title>
 
     <meta
         name="description"
-        content="{escapar(meta_description)}"
+        content="{escapar(
+            meta_description
+        )}"
     >
 
     <meta
         name="keywords"
-        content="{escapar(keywords)}"
+        content="{escapar(
+            keywords
+        )}"
     >
 
     <link
         rel="canonical"
-        href="{escapar(url_reseña)}"
+        href="{escapar(
+            url_reseña
+        )}"
     >
 
     <meta
@@ -1468,17 +1782,23 @@ def crear_pagina(
 
     <meta
         property="og:title"
-        content="{escapar(titulo)} | Invasión Pixelada"
+        content="{escapar(
+            titulo
+        )} | Invasión Pixelada"
     >
 
     <meta
         property="og:description"
-        content="{escapar(meta_description)}"
+        content="{escapar(
+            meta_description
+        )}"
     >
 
     <meta
         property="og:url"
-        content="{escapar(url_reseña)}"
+        content="{escapar(
+            url_reseña
+        )}"
     >
 
     <meta
@@ -1488,12 +1808,21 @@ def crear_pagina(
 
     <meta
         property="og:image"
-        content="{escapar(portada_url if portada_url else SITE_URL + '/imagenes/nuevo_logo_invasion_pixelada.png')}"
+        content="{escapar(
+            portada_url
+            if portada_url
+            else
+            SITE_URL
+            + "/imagenes/"
+            + "nuevo_logo_invasion_pixelada.png"
+        )}"
     >
 
     <meta
         property="og:image:alt"
-        content="Portada de {escapar(titulo)}"
+        content="Portada de {escapar(
+            titulo
+        )}"
     >
 
     {json_ld}
@@ -1558,7 +1887,9 @@ def crear_pagina(
             </p>
 
             <h1>
-                {escapar(titulo)}
+                {escapar(
+                    titulo
+                )}
             </h1>
 
             {publicacion_html}
@@ -1608,8 +1939,11 @@ def crear_pagina(
     )
 
     archivo_salida.write_text(
+
         pagina,
+
         encoding="utf-8"
+
     )
 
     return True
@@ -1624,14 +1958,20 @@ def crear_tarjeta(
     ruta_base="reseñas"
 ):
 
-    carpeta = ROOT / nombre_carpeta
+    carpeta = (
+        ROOT / nombre_carpeta
+    )
 
-    docx = buscar_docx(carpeta)
+    docx = buscar_docx(
+        carpeta
+    )
 
     if not docx:
         return ""
 
-    elementos = leer_docx(docx)
+    elementos = leer_docx(
+        docx
+    )
 
     metadatos, contenido = (
         extraer_metadatos(
@@ -1640,18 +1980,25 @@ def crear_tarjeta(
     )
 
     titulo = obtener(
+
         metadatos,
+
         "título",
+
         nombre_carpeta
+
     )
 
     genero = obtener(
+
         metadatos,
+
         "género"
+
     )
 
     # -----------------------------------------------------
-    # TEXTO COMPLETO PARA EL BUSCADOR
+    # TEXTO PARA EL BUSCADOR
     # -----------------------------------------------------
 
     texto_busqueda = " ".join(
@@ -1659,7 +2006,11 @@ def crear_tarjeta(
     )
 
     contenido_busqueda = escapar(
-        f"{titulo} {genero} {texto_busqueda}"
+
+        f"{titulo} "
+        f"{genero} "
+        f"{texto_busqueda}"
+
     )
 
     portada = buscar_portada(
@@ -1669,7 +2020,7 @@ def crear_tarjeta(
     descripcion = ""
 
     # -----------------------------------------------------
-    # PRIMER PÁRRAFO REAL DE LA RESEÑA
+    # PRIMER PÁRRAFO REAL
     # -----------------------------------------------------
 
     for texto in contenido:
@@ -1683,14 +2034,22 @@ def crear_tarjeta(
             continue
 
         descripcion = texto
+
         break
 
-    if len(descripcion) > 220:
+    if len(
+        descripcion
+    ) > 220:
 
         descripcion = (
+
             descripcion[:217]
-            .rsplit(" ", 1)[0]
+            .rsplit(
+                " ",
+                1
+            )[0]
             + "..."
+
         )
 
     portada_html = ""
@@ -1698,11 +2057,21 @@ def crear_tarjeta(
     if portada:
 
         portada_html = f"""
+
         <img
-            src="{escapar(ruta_base)}/{escapar(nombre_carpeta)}/{escapar(portada)}"
-            alt="Portada de {escapar(titulo)}"
+            src="{escapar(
+                ruta_base
+            )}/{escapar(
+                nombre_carpeta
+            )}/{escapar(
+                portada
+            )}"
+            alt="Portada de {escapar(
+                titulo
+            )}"
             loading="lazy"
         >
+
         """
 
     genero_html = ""
@@ -1710,19 +2079,28 @@ def crear_tarjeta(
     if genero:
 
         genero_html = f"""
+
         <p class="review-card-genre">
-            {escapar(genero)}
+            {escapar(
+                genero
+            )}
         </p>
+
         """
 
     return f"""
+
     <article
         class="review-card"
         data-search="{contenido_busqueda}"
     >
 
         <a
-            href="{escapar(ruta_base)}/{escapar(nombre_carpeta)}/"
+            href="{escapar(
+                ruta_base
+            )}/{escapar(
+                nombre_carpeta
+            )}/"
             class="review-card-image"
         >
 
@@ -1735,15 +2113,23 @@ def crear_tarjeta(
             {genero_html}
 
             <h3>
-                {escapar(titulo)}
+                {escapar(
+                    titulo
+                )}
             </h3>
 
             <p>
-                {escapar(descripcion)}
+                {escapar(
+                    descripcion
+                )}
             </p>
 
             <a
-                href="{escapar(ruta_base)}/{escapar(nombre_carpeta)}/"
+                href="{escapar(
+                    ruta_base
+                )}/{escapar(
+                    nombre_carpeta
+                )}/"
                 class="review-card-link"
             >
                 LEER RESEÑA
@@ -1752,6 +2138,7 @@ def crear_tarjeta(
         </div>
 
     </article>
+
     """
 
 
@@ -1762,6 +2149,7 @@ def crear_tarjeta(
 def crear_tarjeta_vacia():
 
     return """
+
     <article class="review-card review-card-placeholder">
 
         <div class="review-card-placeholder-inner">
@@ -1777,6 +2165,7 @@ def crear_tarjeta_vacia():
         </div>
 
     </article>
+
     """
 
 
@@ -1789,6 +2178,7 @@ def obtener_carpetas_reseñas():
     carpetas = []
 
     if not ROOT.exists():
+
         return carpetas
 
     for carpeta in ROOT.iterdir():
@@ -1796,27 +2186,33 @@ def obtener_carpetas_reseñas():
         if not carpeta.is_dir():
             continue
 
-        docx = buscar_docx(carpeta)
+        docx = buscar_docx(
+            carpeta
+        )
 
         if docx:
-            carpetas.append(carpeta)
 
-    # -----------------------------------------------------
-    # ORDEN DEFINITIVO
+            carpetas.append(
+                carpeta
+            )
+
+    # =====================================================
+    # IMPORTANTE
     #
+    # ORDEN:
     # MÁS RECIENTE PRIMERO
     #
-    # Se utiliza la fecha del último commit de Git.
-    # Esto evita que GitHub Actions altere el orden
-    # debido a las fechas de modificación del checkout.
-    # -----------------------------------------------------
+    # Se utiliza EXCLUSIVAMENTE la fecha del DOCX.
+    # No se utiliza la fecha de la carpeta.
+    # No se utiliza la fecha del index.html.
+    # =====================================================
 
     carpetas.sort(
-        key=lambda carpeta:
-            obtener_fecha_archivo(
-                buscar_docx(carpeta)
-            ),
+
+        key=obtener_fecha_reseña,
+
         reverse=True
+
     )
 
     return carpetas
@@ -1829,29 +2225,43 @@ def obtener_carpetas_reseñas():
 def actualizar_sitemap():
 
     urls = [
+
         f"{SITE_URL}/",
         f"{SITE_URL}/resenas.html",
         f"{SITE_URL}/tienda.html",
+
     ]
 
-    carpetas = obtener_carpetas_reseñas()
+    carpetas = (
+        obtener_carpetas_reseñas()
+    )
 
     for carpeta in carpetas:
 
         urls.append(
+
             crear_url_reseña(
                 carpeta.name
             )
+
         )
 
     contenido = [
+
         '<?xml version="1.0" encoding="UTF-8"?>',
+
         '<!--',
+
         '    INVASIÓN PIXELADA',
+
         '    SITEMAP GENERADO AUTOMÁTICAMENTE',
+
         '    GENERADOR: IP-GEN-012',
+
         '-->',
+
         '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+
     ]
 
     for url in urls:
@@ -1861,7 +2271,11 @@ def actualizar_sitemap():
         )
 
         contenido.append(
-            f"        <loc>{html.escape(url)}</loc>"
+
+            f"        <loc>"
+            f"{html.escape(url)}"
+            f"</loc>"
+
         )
 
         contenido.append(
@@ -1873,12 +2287,20 @@ def actualizar_sitemap():
     )
 
     SITEMAP.write_text(
-        "\n".join(contenido),
+
+        "\n".join(
+            contenido
+        ),
+
         encoding="utf-8"
+
     )
 
     print(
-        f"Sitemap actualizado. URLs: {len(urls)}"
+
+        f"Sitemap actualizado. "
+        f"URLs: {len(urls)}"
+
     )
 
 
@@ -1898,35 +2320,41 @@ MARCADOR_FIN = (
 def actualizar_index():
 
     if not INDEX.exists():
+
         return
 
     html_index = INDEX.read_text(
+
         encoding="utf-8"
+
     )
 
-    # -----------------------------------------------------
-    # IMPORTANTE:
-    # utiliza exactamente el mismo listado ordenado
-    # que resenas.html
-    # -----------------------------------------------------
-
-    carpetas = obtener_carpetas_reseñas()
+    carpetas = (
+        obtener_carpetas_reseñas()
+    )
 
     tarjetas = []
 
-    # Solo las tres últimas
+    # =====================================================
+    # LAS 3 RESEÑAS MÁS RECIENTES
+    # =====================================================
+
     for carpeta in carpetas[:3]:
 
         tarjeta = crear_tarjeta(
+
             carpeta.name
+
         )
 
         if tarjeta:
+
             tarjetas.append(
                 tarjeta
             )
 
-    # Siempre exactamente tres espacios
+    # Siempre exactamente tres espacios.
+
     while len(tarjetas) < 3:
 
         tarjetas.append(
@@ -1934,6 +2362,7 @@ def actualizar_index():
         )
 
     contenido = f"""
+
 {MARCADOR_INICIO}
 
 <div class="reviews-grid">
@@ -1943,55 +2372,82 @@ def actualizar_index():
 </div>
 
 {MARCADOR_FIN}
+
 """
 
     patron = re.compile(
-        re.escape(MARCADOR_INICIO)
+
+        re.escape(
+            MARCADOR_INICIO
+        )
+
         + r".*?"
-        + re.escape(MARCADOR_FIN),
+
+        + re.escape(
+            MARCADOR_FIN
+        ),
+
         re.DOTALL
+
     )
 
-    if patron.search(html_index):
+    if patron.search(
+        html_index
+    ):
 
         html_index = patron.sub(
+
             contenido.strip(),
+
             html_index,
+
             count=1
+
         )
 
     else:
 
         texto_vacio = (
+
             "Próximamente encontrarás aquí "
             "nuestras reseñas."
+
         )
 
         if texto_vacio in html_index:
 
             html_index = html_index.replace(
+
                 texto_vacio,
+
                 contenido.strip(),
+
                 1
+
             )
 
         else:
 
             print(
+
                 "No se ha encontrado la zona "
                 "de reseñas en index.html."
+
             )
 
             return
 
     INDEX.write_text(
+
         html_index,
+
         encoding="utf-8"
+
     )
 
 
 # =========================================================
-# ACTUALIZAR PÁGINA DE TODAS LAS RESEÑAS
+# ACTUALIZAR RESENAS.HTML
 # =========================================================
 
 TODAS_RESEÑAS_INICIO = (
@@ -2008,38 +2464,51 @@ def actualizar_resenas_html():
     if not REVIEWS_PAGE.exists():
 
         print(
+
             "resenas.html todavía no existe. "
             "Se actualizará cuando sea creada."
+
         )
 
         return
 
     html_resenas = REVIEWS_PAGE.read_text(
+
         encoding="utf-8"
+
     )
 
-    # -----------------------------------------------------
-    # EXACTAMENTE EL MISMO ORDEN QUE INDEX.HTML
-    # -----------------------------------------------------
-
-    carpetas = obtener_carpetas_reseñas()
+    carpetas = (
+        obtener_carpetas_reseñas()
+    )
 
     tarjetas = []
 
-    # Todas las reseñas, de más reciente a más antigua
+    # =====================================================
+    # TODAS LAS RESEÑAS
+    #
+    # obtener_carpetas_reseñas() ya las devuelve
+    # de MÁS RECIENTE a MÁS ANTIGUA.
+    # =====================================================
+
     for carpeta in carpetas:
 
         tarjeta = crear_tarjeta(
+
             carpeta.name,
+
             ruta_base="reseñas"
+
         )
 
         if tarjeta:
+
             tarjetas.append(
                 tarjeta
             )
 
     contenido = f"""
+
 {TODAS_RESEÑAS_INICIO}
 
 <div class="reviews-grid">
@@ -2049,35 +2518,56 @@ def actualizar_resenas_html():
 </div>
 
 {TODAS_RESEÑAS_FIN}
+
 """
 
     patron = re.compile(
-        re.escape(TODAS_RESEÑAS_INICIO)
+
+        re.escape(
+            TODAS_RESEÑAS_INICIO
+        )
+
         + r".*?"
-        + re.escape(TODAS_RESEÑAS_FIN),
+
+        + re.escape(
+            TODAS_RESEÑAS_FIN
+        ),
+
         re.DOTALL
+
     )
 
-    if patron.search(html_resenas):
+    if patron.search(
+        html_resenas
+    ):
 
         html_resenas = patron.sub(
+
             contenido.strip(),
+
             html_resenas,
+
             count=1
+
         )
 
     else:
 
         print(
+
             "No se han encontrado los marcadores "
             "de todas las reseñas en resenas.html."
+
         )
 
         return
 
     REVIEWS_PAGE.write_text(
+
         html_resenas,
+
         encoding="utf-8"
+
     )
 
     print(
@@ -2113,18 +2603,18 @@ def main():
             generadas += 1
 
             print(
+
                 f"Reseña generada: "
                 f"{carpeta.name}"
+
             )
 
-    # -----------------------------------------------------
-    # ACTUALIZAMOS LAS TRES ZONAS UTILIZANDO SIEMPRE
-    # EL MISMO ORDEN:
+    # =====================================================
+    # ACTUALIZACIONES
     #
-    # 1. INDEX
-    # 2. RESENAS
-    # 3. SITEMAP
-    # -----------------------------------------------------
+    # Las tres utilizan exactamente el mismo orden:
+    # fecha del DOCX, más reciente primero.
+    # =====================================================
 
     actualizar_index()
 
@@ -2132,11 +2622,49 @@ def main():
 
     actualizar_sitemap()
 
+    # =====================================================
+    # MOSTRAMOS EL ORDEN FINAL EN EL LOG
+    # =====================================================
+
+    print("")
+    print("ORDEN DE RESEÑAS:")
+
+    carpetas = (
+        obtener_carpetas_reseñas()
+    )
+
+    for posicion, carpeta in enumerate(
+        carpetas,
+        start=1
+    ):
+
+        docx = buscar_docx(
+            carpeta
+        )
+
+        fecha = obtener_fecha_reseña(
+            carpeta
+        )
+
+        print(
+
+            f"{posicion}. "
+            f"{carpeta.name} "
+            f"-> {docx.name if docx else 'SIN DOCX'} "
+            f"-> timestamp {fecha}"
+
+        )
+
+    print("")
+
     print(
+
         "Proceso terminado. "
         f"Reseñas generadas: {generadas}"
+
     )
 
 
 if __name__ == "__main__":
+
     main()
