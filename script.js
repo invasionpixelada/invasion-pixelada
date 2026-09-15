@@ -3,6 +3,18 @@
     SCRIPT PRINCIPAL
 */
 
+/* =========================================================
+   CONTROL DE POSICIÓN INICIAL
+   ========================================================= */
+
+if ("scrollRestoration" in history) {
+    history.scrollRestoration = "manual";
+}
+
+if (window.location.hash === "#inicio") {
+    window.scrollTo(0, 0);
+}
+
 
 /* =========================================================
    VÍDEOS DE YOUTUBE
@@ -1422,3 +1434,17 @@ document.addEventListener(
 
     }
 );
+
+/* =========================================================
+   VOLVER SIEMPRE AL INICIO DE LA PÁGINA
+   ========================================================= */
+
+if (window.location.hash === "#inicio") {
+
+    window.scrollTo({
+        top: 0,
+        left: 0,
+        behavior: "instant"
+    });
+
+}
