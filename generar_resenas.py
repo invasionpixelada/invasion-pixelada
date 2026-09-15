@@ -180,7 +180,7 @@ def leer_docx(ruta):
 #
 # El generador deja de leer metadatos en cuanto encuentra
 # el primer párrafo que no corresponde a uno de estos campos.
-
+#
 CAMPOS = [
     "Título",
     "Año",
@@ -1600,10 +1600,6 @@ def crear_tarjeta(
 
     # -----------------------------------------------------
     # EL PRIMER PÁRRAFO REAL DE LA RESEÑA
-    #
-    # Como extraer_metadatos() ya ha separado todos los
-    # campos de ficha, aquí el primer elemento de contenido
-    # es el primer párrafo real de la reseña.
     # -----------------------------------------------------
 
     for texto in contenido:
@@ -1736,25 +1732,24 @@ def obtener_carpetas_reseñas():
             carpetas.append(carpeta)
 
     # -----------------------------------------------------
-    # MÁS RECIENTE PRIMERO
+    # ORDEN DE PUBLICACIÓN
     #
-    # El orden se determina por la fecha de modificación
-    # del archivo DOCX de cada reseña.
+    # Se utiliza la fecha del archivo DOCX.
     #
-    # reverse=True garantiza:
+    # Más reciente primero.
     #
-    #   1. Reseña modificada más recientemente
-    #   2. Segunda más reciente
-    #   3. Tercera más reciente
-    #   ...
+    # Esto afecta tanto a:
+    # - index.html
+    # - resenas.html
+    # - sitemap.xml
     #
-    # Esto se utiliza tanto para index.html como para
-    # resenas.html.
+    # No se modifica ninguna URL ni el contenido.
     # -----------------------------------------------------
 
     carpetas.sort(
-        key=lambda carpeta:
-            buscar_docx(carpeta).stat().st_mtime,
+        key=lambda carpeta: (
+            buscar_docx(carpeta).stat().st_mtime
+        ),
         reverse=True
     )
 
@@ -1843,18 +1838,11 @@ def actualizar_index():
         encoding="utf-8"
     )
 
-    # obtener_carpetas_reseñas()
-    # YA devuelve las reseñas ordenadas de
-    # más reciente a más antigua.
-
     carpetas = obtener_carpetas_reseñas()
 
     tarjetas = []
 
-    # Solo las tres últimas.
-    # Como la lista está ordenada de más reciente
-    # a más antigua, aquí entran las tres más recientes.
-
+    # Las tres más recientes primero
     for carpeta in carpetas[:3]:
 
         tarjeta = crear_tarjeta(
@@ -1867,7 +1855,6 @@ def actualizar_index():
             )
 
     # Siempre exactamente tres espacios
-
     while len(tarjetas) < 3:
 
         tarjetas.append(
@@ -1959,21 +1946,11 @@ def actualizar_resenas_html():
         encoding="utf-8"
     )
 
-    # obtener_carpetas_reseñas()
-    # YA devuelve las reseñas ordenadas de
-    # más reciente a más antigua.
-
     carpetas = obtener_carpetas_reseñas()
 
     tarjetas = []
 
-    # -----------------------------------------------------
-    # TODAS LAS RESEÑAS
-    #
-    # El primer elemento es SIEMPRE la reseña cuyo DOCX
-    # tiene la fecha de modificación más reciente.
-    # -----------------------------------------------------
-
+    # Todas las reseñas, de más reciente a más antigua
     for carpeta in carpetas:
 
         tarjeta = crear_tarjeta(
@@ -2063,12 +2040,6 @@ def main():
                 f"Reseña generada: "
                 f"{carpeta.name}"
             )
-
-    # IMPORTANTE:
-    #
-    # Primero se generan las páginas individuales.
-    # Después se actualizan index.html y resenas.html
-    # utilizando el orden de fecha de modificación del DOCX.
 
     actualizar_index()
 
