@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
     INVASIÓN PIXELADA
-    VERSIÓN INTERNA: IP-INDEX-011
+    VERSIÓN INTERNA: IP-INDEX-012
 -->
 <html lang="es">
 
@@ -441,7 +441,10 @@
 
             <nav class="main-nav">
 
-                <a href="#inicio">
+                <a
+                    href="#inicio"
+                    id="nav-inicio"
+                >
                     Inicio
                 </a>
 
@@ -1280,31 +1283,47 @@
 
 
                 /* =================================================
-                   LOGOTIPO → INICIO REAL
+                   INICIO → PUNTO ABSOLUTAMENTE SUPERIOR
                    ================================================= */
 
-                const logoInicio =
+                /*
+                 * Tanto el logo como el botón "Inicio" de la
+                 * barra superior deben llevar al píxel 0 de
+                 * la página.
+                 */
+
+                const enlacesInicio = [
+
                     document.getElementById(
                         "logo-inicio"
-                    );
+                    ),
+
+                    document.getElementById(
+                        "nav-inicio"
+                    )
+
+                ];
 
 
-                if (logoInicio) {
+                enlacesInicio.forEach(
+                    function (enlace) {
 
-                    logoInicio.addEventListener(
-                        "click",
-                        function (evento) {
-
-                            evento.preventDefault();
+                        if (!enlace) {
+                            return;
+                        }
 
 
-                            /*
-                             * Quitamos cualquier hash anterior.
-                             */
+                        enlace.addEventListener(
+                            "click",
+                            function (evento) {
 
-                            if (
-                                window.location.hash
-                            ) {
+                                evento.preventDefault();
+
+
+                                /*
+                                 * Eliminamos el hash #inicio
+                                 * de la URL.
+                                 */
 
                                 history.replaceState(
                                     null,
@@ -1313,24 +1332,23 @@
                                     window.location.search
                                 );
 
+
+                                /*
+                                 * Vamos directamente al
+                                 * píxel 0 de la página.
+                                 */
+
+                                window.scrollTo({
+                                    top: 0,
+                                    left: 0,
+                                    behavior: "auto"
+                                });
+
                             }
+                        );
 
-
-                            /*
-                             * Volvemos al punto absolutamente superior
-                             * de la página.
-                             */
-
-                            window.scrollTo({
-                                top: 0,
-                                left: 0,
-                                behavior: "auto"
-                            });
-
-                        }
-                    );
-
-                }
+                    }
+                );
 
 
                 /* =================================================
