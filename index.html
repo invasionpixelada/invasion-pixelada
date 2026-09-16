@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
     INVASIÓN PIXELADA
-    VERSIÓN INTERNA: IP-INDEX-010
+    VERSIÓN INTERNA: IP-INDEX-011
 -->
 <html lang="es">
 
@@ -421,7 +421,11 @@
 
         <div class="header-content">
 
-            <a href="#inicio" class="logo">
+            <a
+                href="#inicio"
+                class="logo"
+                id="logo-inicio"
+            >
 
                 <img
                     src="imagenes/nuevo_logo_invasion_pixelada.png"
@@ -1273,6 +1277,60 @@
         document.addEventListener(
             "DOMContentLoaded",
             function () {
+
+
+                /* =================================================
+                   LOGOTIPO → INICIO REAL
+                   ================================================= */
+
+                const logoInicio =
+                    document.getElementById(
+                        "logo-inicio"
+                    );
+
+
+                if (logoInicio) {
+
+                    logoInicio.addEventListener(
+                        "click",
+                        function (evento) {
+
+                            evento.preventDefault();
+
+
+                            /*
+                             * Quitamos cualquier hash anterior.
+                             */
+
+                            if (
+                                window.location.hash
+                            ) {
+
+                                history.replaceState(
+                                    null,
+                                    "",
+                                    window.location.pathname +
+                                    window.location.search
+                                );
+
+                            }
+
+
+                            /*
+                             * Volvemos al punto absolutamente superior
+                             * de la página.
+                             */
+
+                            window.scrollTo({
+                                top: 0,
+                                left: 0,
+                                behavior: "auto"
+                            });
+
+                        }
+                    );
+
+                }
 
 
                 /* =================================================
