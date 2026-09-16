@@ -1890,3 +1890,22 @@ a {
     }
 
 }
+
+
+/* =================================================
+   NAVEGACIÓN POR ANCLAS
+   VERSIÓN INTERNA: IP-NAV-001
+   ================================================= */
+
+html {
+    scroll-behavior: smooth;
+}
+
+#inicio,
+#proximos,
+#noticias,
+#videos,
+#resenas,
+#tienda {
+    scroll-margin-top: 100px;
+}
