@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
     INVASIÓN PIXELADA
-    VERSIÓN INTERNA: IP-INDEX-013
+    VERSIÓN INTERNA: IP-INDEX-014
 -->
 <html lang="es">
 
@@ -126,10 +126,37 @@
 
 
     <!-- =================================================
-         ESTILOS DE PRÓXIMOS LANZAMIENTOS
+         AJUSTE DE ANCLAS CON CABECERA FIJA
          ================================================= -->
 
     <style>
+
+        /*
+         * La cabecera permanece fija.
+         * Este margen evita que al saltar mediante #ancla
+         * el comienzo de una sección quede oculto debajo
+         * de la cabecera.
+         */
+
+        #inicio,
+        #proximos,
+        #noticias,
+        #videos,
+        #resenas,
+        #tienda {
+            scroll-margin-top: 110px;
+        }
+
+
+        /*
+         * Mantener visible el inicio real de cada sección
+         * también cuando se accede mediante una URL con hash.
+         */
+
+        html {
+            scroll-behavior: smooth;
+        }
+
 
         .upcoming-section {
             overflow: visible;
@@ -318,6 +345,16 @@
 
         @media (max-width: 900px) {
 
+            #inicio,
+            #proximos,
+            #noticias,
+            #videos,
+            #resenas,
+            #tienda {
+                scroll-margin-top: 90px;
+            }
+
+
             .upcoming-grid {
                 grid-template-columns:
                     repeat(2, minmax(0, 1fr));
@@ -334,6 +371,16 @@
 
 
         @media (max-width: 600px) {
+
+            #inicio,
+            #proximos,
+            #noticias,
+            #videos,
+            #resenas,
+            #tienda {
+                scroll-margin-top: 80px;
+            }
+
 
             .upcoming-grid {
                 grid-template-columns: 1fr;
@@ -407,7 +454,10 @@
             </a>
 
 
-            <nav class="main-nav">
+            <nav
+                class="main-nav"
+                aria-label="Navegación principal"
+            >
 
                 <a
                     href="index.html#inicio"
@@ -1212,7 +1262,7 @@
 
 
     <!-- =================================================
-         LANZAMIENTOS + SCRIPT GENERAL
+         PRÓXIMOS LANZAMIENTOS + NAVEGACIÓN POR ANCLAS
          ================================================= -->
 
     <script>
@@ -1223,87 +1273,132 @@
 
 
                 /* =================================================
-                   INICIO → PUNTO ABSOLUTAMENTE SUPERIOR
+                   NAVEGACIÓN EXACTA POR ANCLAS
                    ================================================= */
 
-                /*
-                 * Solo interceptamos Inicio cuando ya estamos
-                 * dentro de index.html.
-                 *
-                 * Si estamos en tienda.html, resenas.html,
-                 * etc., dejamos que el enlace:
-                 *
-                 * index.html#inicio
-                 *
-                 * funcione normalmente.
-                 */
+                function desplazarASeccion(
+                    id,
+                    actualizarURL = true
+                ) {
 
-                const enlacesInicio = [
-
-                    document.getElementById(
-                        "logo-inicio"
-                    ),
-
-                    document.getElementById(
-                        "nav-inicio"
-                    )
-
-                ];
+                    const seccion =
+                        document.getElementById(id);
 
 
-                enlacesInicio.forEach(
+                    if (!seccion) {
+                        return;
+                    }
+
+
+                    /*
+                     * Calculamos la posición real de la sección
+                     * y restamos la altura actual de la cabecera.
+                     *
+                     * Así no dependemos de una altura fija.
+                     */
+
+                    const cabecera =
+                        document.querySelector(
+                            ".site-header"
+                        );
+
+
+                    const alturaCabecera =
+                        cabecera
+                            ? cabecera.getBoundingClientRect().height
+                            : 0;
+
+
+                    const margen =
+                        10;
+
+
+                    const posicion =
+                        seccion.getBoundingClientRect().top +
+                        window.scrollY -
+                        alturaCabecera -
+                        margen;
+
+
+                    window.scrollTo({
+                        top: Math.max(0, posicion),
+                        left: 0,
+                        behavior: "smooth"
+                    });
+
+
+                    if (actualizarURL) {
+
+                        history.pushState(
+                            null,
+                            "",
+                            "#" + id
+                        );
+
+                    }
+
+                }
+
+
+                /* =================================================
+                   ENLACES DE NAVEGACIÓN
+                   ================================================= */
+
+                const enlacesNavegacion =
+                    document.querySelectorAll(
+                        ".main-nav a[href*='#']"
+                    );
+
+
+                enlacesNavegacion.forEach(
                     function (enlace) {
-
-                        if (!enlace) {
-                            return;
-                        }
-
 
                         enlace.addEventListener(
                             "click",
                             function (evento) {
 
-                                const paginaActual =
-                                    window.location.pathname
-                                        .split("/")
-                                        .pop();
-
-
-                                /*
-                                 * Estamos en index.html.
-                                 */
-
-                                if (
-                                    paginaActual === "" ||
-                                    paginaActual === "index.html"
-                                ) {
-
-                                    evento.preventDefault();
-
-
-                                    history.replaceState(
-                                        null,
-                                        "",
-                                        window.location.pathname +
-                                        window.location.search
+                                const url =
+                                    new URL(
+                                        enlace.href,
+                                        window.location.href
                                     );
 
 
-                                    window.scrollTo({
-                                        top: 0,
-                                        left: 0,
-                                        behavior: "auto"
-                                    });
+                                /*
+                                 * Solo interceptamos enlaces que
+                                 * realmente terminan en esta misma
+                                 * página.
+                                 */
 
+                                const mismaPagina =
+                                    url.pathname ===
+                                    window.location.pathname;
+
+
+                                if (!mismaPagina) {
+                                    return;
                                 }
 
-                                /*
-                                 * En cualquier otra página NO
-                                 * bloqueamos el enlace.
-                                 *
-                                 * El navegador irá a:
-                                 * index.html#inicio
-                                 */
+
+                                const id =
+                                    url.hash.replace(
+                                        "#",
+                                        ""
+                                    );
+
+
+                                if (!id) {
+                                    return;
+                                }
+
+
+                                evento.preventDefault();
+
+
+                                desplazarASeccion(
+                                    id,
+                                    true
+                                );
 
                             }
                         );
@@ -1313,7 +1408,167 @@
 
 
                 /* =================================================
-                   CONFIGURACIÓN
+                   LOGO → INICIO
+                   ================================================= */
+
+                const logo =
+                    document.getElementById(
+                        "logo-inicio"
+                    );
+
+
+                if (logo) {
+
+                    logo.addEventListener(
+                        "click",
+                        function (evento) {
+
+                            const url =
+                                new URL(
+                                    logo.href,
+                                    window.location.href
+                                );
+
+
+                            if (
+                                url.pathname ===
+                                window.location.pathname
+                            ) {
+
+                                evento.preventDefault();
+
+
+                                history.pushState(
+                                    null,
+                                    "",
+                                    window.location.pathname +
+                                    window.location.search
+                                );
+
+
+                                window.scrollTo({
+                                    top: 0,
+                                    left: 0,
+                                    behavior: "smooth"
+                                });
+
+                            }
+
+                        }
+                    );
+
+                }
+
+
+                /* =================================================
+                   NAV-INICIO
+                   ================================================= */
+
+                const navInicio =
+                    document.getElementById(
+                        "nav-inicio"
+                    );
+
+
+                if (navInicio) {
+
+                    navInicio.addEventListener(
+                        "click",
+                        function (evento) {
+
+                            const url =
+                                new URL(
+                                    navInicio.href,
+                                    window.location.href
+                                );
+
+
+                            if (
+                                url.pathname ===
+                                window.location.pathname
+                            ) {
+
+                                evento.preventDefault();
+
+
+                                history.pushState(
+                                    null,
+                                    "",
+                                    window.location.pathname +
+                                    window.location.search
+                                );
+
+
+                                window.scrollTo({
+                                    top: 0,
+                                    left: 0,
+                                    behavior: "smooth"
+                                });
+
+                            }
+
+                        }
+                    );
+
+                }
+
+
+                /* =================================================
+                   SI ENTRAMOS CON #ANCLA DESDE OTRA PÁGINA
+                   ================================================= */
+
+                function comprobarHashInicial() {
+
+                    const hash =
+                        window.location.hash;
+
+
+                    if (!hash) {
+                        return;
+                    }
+
+
+                    const id =
+                        decodeURIComponent(
+                            hash.substring(1)
+                        );
+
+
+                    if (!document.getElementById(id)) {
+                        return;
+                    }
+
+
+                    /*
+                     * Esperamos un instante para que el navegador
+                     * haya terminado de calcular el layout.
+                     */
+
+                    requestAnimationFrame(
+                        function () {
+
+                            requestAnimationFrame(
+                                function () {
+
+                                    desplazarASeccion(
+                                        id,
+                                        false
+                                    );
+
+                                }
+                            );
+
+                        }
+                    );
+
+                }
+
+
+                comprobarHashInicial();
+
+
+                /* =================================================
+                   CONFIGURACIÓN DE PRÓXIMOS LANZAMIENTOS
                    ================================================= */
 
                 const JUEGOS_POR_PAGINA = 3;
@@ -1743,14 +1998,10 @@
 
                     if (hacerScroll) {
 
-                        document
-                            .getElementById(
-                                "proximos"
-                            )
-                            .scrollIntoView({
-                                behavior: "smooth",
-                                block: "start"
-                            });
+                        desplazarASeccion(
+                            "proximos",
+                            true
+                        );
 
                     }
 
