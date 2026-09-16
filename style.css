@@ -1872,3 +1872,21 @@ a {
     }
 
 }
+
+/* =========================================================
+   INVASIÓN PIXELADA — LOGO → INICIO
+   VERSIÓN INTERNA: IP-CSS-005
+   Corrección del desplazamiento superior en móvil
+   ========================================================= */
+
+@media (max-width: 700px) {
+
+    html {
+        scroll-padding-top: 0;
+    }
+
+    body {
+        scroll-margin-top: 0;
+    }
+
+}
