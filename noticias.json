@@ -1,10 +1,18 @@
 [
   {
+    "title": "Nerial entra en modo \"hibernación\", comunica su matrimonio fundador",
+    "link": "https://uvejuegos.com/noticia/Nerial-entra-en-modo-hibernacion-comunica-su-matrimonio-fundador/151955",
+    "description": "No permanece ningún trabajador en el estudio, ninguno de la saga Reigns",
+    "category": "MULTI",
+    "pubDate": "Mon, 05 Oct 2026 17:44:08 +0200",
+    "image": "https://uvejuegos.com/img/noticias/151955/cabecera/reigns.jpg"
+  },
+  {
     "title": "Beastfolk Barber será un simulador de peluquería y amistad laboral",
     "link": "https://uvejuegos.com/noticia/Beastfolk-Barber-sera-un-simulador-de-peluqueria-y-amistad-laboral/151854",
     "description": "¿Barbería de los amigos? No, gracias, prefiero a las bestias con tijeras",
     "category": "MULTI",
-    "pubDate": "Sun, 04 Oct 2026 23:30:09 +0200",
+    "pubDate": "Mon, 05 Oct 2026 17:13:28 +0200",
     "image": "https://uvejuegos.com/img/noticias/151854/cabecera/ss_2a6f98b9d676ea3d86fa686484f422e5f6d40d68.1920x1080.jpg"
   },
   {
@@ -12,8 +20,16 @@
     "link": "https://uvejuegos.com/noticia/AntonBlast-se-estrena-este-mes-en-PlayStation-con-rabia-obrera-y-odio-a-Satan/151952",
     "description": "¡Quieto, parao! No es un pizzero estresado sino un albañil cabreado",
     "category": "MULTI",
-    "pubDate": "Sun, 04 Oct 2026 17:02:07 +0200",
+    "pubDate": "Mon, 05 Oct 2026 17:07:25 +0200",
     "image": "https://uvejuegos.com/img/noticias/151952/cabecera/ss_8301c6278937bd32285eeb757bfad1ec001934ee.1920x1080.jpg"
+  },
+  {
+    "title": "Análisis de\nThe Walking Dead: Streets of Survival",
+    "link": "https://uvejuegos.com/analisis/The-Walking-Dead-Streets-of-Survival/Analisis-de-The-Walking-Dead-Streets-of-Survival---Yo-contra-el-barrio%E2%80%A6-de-Alexandria/10808/77235",
+    "description": "Análisis de The Walking Dead: Streets of Survival - Yo contra el barrio? de Alexandria",
+    "category": "PS5",
+    "pubDate": "Mon, 05 Oct 2026 08:47:30 +0200",
+    "image": "https://uvejuegos.com/img/destacados/analisis/10808/IMG-20260930-WA0003.jpg"
   },
   {
     "title": "Signal Veil mostrará el terror noventero de los institutos con monstruos",
@@ -142,21 +158,5 @@
     "category": "PC",
     "pubDate": "Sun, 27 Sep 2026 18:27:42 +0200",
     "image": "https://uvejuegos.com/img/noticias/151942/cabecera/WoW_Camelot_AnnounceSupport_Horde_BnetShop_1920x1080_(1).jpg"
-  },
-  {
-    "title": "Castlevania: Belmont?s Curse regala demos y dolores entre lágrimas de sangre",
-    "link": "https://uvejuegos.com/noticia/Castlevania-Belmonts-Curse-regala-demos-y-dolores-entre-lagrimas-de-sangre/151941",
-    "description": "La demo es gratuita y nos llega a todos, como los dolores",
-    "category": "MULTI",
-    "pubDate": "Sat, 26 Sep 2026 04:43:53 +0200",
-    "image": "https://uvejuegos.com/img/noticias/151941/cabecera/Castlevania-Demo_09-20-26-1024x576.jpg"
-  },
-  {
-    "title": "The Walking Dead: Streets of Survival está disponible entre salvadores y pecadores",
-    "link": "https://uvejuegos.com/noticia/The-Walking-Dead-Streets-of-Survival-esta-disponible-entre-salvadores-y-pecadores/151940",
-    "description": "Rick, Shane y Michonne pelean como si fuesen de barrio, pues tienen mucha calle",
-    "category": "MULTI",
-    "pubDate": "Fri, 25 Sep 2026 19:04:14 +0200",
-    "image": "https://uvejuegos.com/img/noticias/151940/cabecera/ss_e888a0f639222c7c354c8d081779bcfb0e4d1190.1920x1080.jpg"
   }
 ]
