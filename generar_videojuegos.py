@@ -531,6 +531,9 @@ def buscar_juegos(titulo):
 
     datos = respuesta.json()
 
+    print("ESTRUCTURA DE LA RESPUESTA:")
+    print(repr(datos.get("include", {})))
+
     juegos = (
         datos.get("data", {})
         .get("games", [])
