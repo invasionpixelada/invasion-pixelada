@@ -1,6 +1,6 @@
 # =========================================================
 # INVASIÓN PIXELADA — GENERADOR DE VIDEOJUEGOS
-# VERSIÓN INTERNA: IP-GAMEGEN-004
+# VERSIÓN INTERNA: IP-GAMEGEN-005
 # =========================================================
 
 from pathlib import Path
@@ -39,69 +39,44 @@ MARCADOR_FIN = (
 
 
 # ---------------------------------------------------------
-# PLATAFORMAS
+# PLATAFORMAS Y SUS IDENTIFICADORES EN THEGAMESDB
 # ---------------------------------------------------------
 
 PLATAFORMAS = [
     (
         "Sony Playstation 5",
         ["ps5", "playstation 5", "playstation5",
-         "sony playstation 5"]
+         "sony playstation 5"],
+        "4980"
     ),
     (
         "Sony Playstation 4",
         ["ps4", "playstation 4", "playstation4",
-         "sony playstation 4"]
+         "sony playstation 4"],
+        "4919"
     ),
     (
         "Nintendo Switch",
-        ["nintendo switch", "switch"]
+        ["nintendo switch", "switch"],
+        "4971"
     ),
     (
         "Xbox Series X/S",
         ["xbox series x/s", "xbox series x",
-         "xbox series s"]
+         "xbox series s"],
+        "4981"
     ),
     (
         "Xbox One",
-        ["xbox one"]
+        ["xbox one"],
+        "4920"
     ),
     (
         "PC",
-        ["pc", "windows"]
+        ["pc", "windows"],
+        "1"
     ),
 ]
-
-
-ALIAS_PLATAFORMAS = {
-    "sony playstation 5": [
-        "playstation 5",
-        "playstation5",
-        "ps5"
-    ],
-    "sony playstation 4": [
-        "playstation 4",
-        "playstation4",
-        "ps4"
-    ],
-    "nintendo switch": [
-        "nintendo switch",
-        "switch"
-    ],
-    "xbox series x/s": [
-        "xbox series x",
-        "xbox series s",
-        "xbox series"
-    ],
-    "xbox one": [
-        "xbox one"
-    ],
-    "pc": [
-        "pc",
-        "windows",
-        "computer"
-    ],
-}
 
 
 # ---------------------------------------------------------
@@ -173,7 +148,7 @@ def detectar_plataforma(titulo):
 
     titulo_normalizado = normalizar_texto(titulo)
 
-    for nombre, variantes in PLATAFORMAS:
+    for nombre, variantes, identificador in PLATAFORMAS:
 
         for variante in sorted(
             variantes,
@@ -194,6 +169,26 @@ def detectar_plataforma(titulo):
                 return nombre, variante
 
     return None, None
+
+
+def obtener_id_plataforma(nombre):
+
+    if not nombre:
+        return None
+
+    buscada = normalizar_texto(nombre)
+
+    for plataforma, variantes, identificador in PLATAFORMAS:
+
+        if normalizar_texto(plataforma) == buscada:
+            return identificador
+
+        for variante in variantes:
+
+            if normalizar_texto(variante) == buscada:
+                return identificador
+
+    return None
 
 
 # ---------------------------------------------------------
@@ -347,191 +342,25 @@ def leer_productos():
 
 
 # ---------------------------------------------------------
-
-# EXTRAER METADATOS DE PLATAFORMA
-
-# VERSIÓN INTERNA: IP-GAMEGEN-005
-
+# CONSULTAR THEGAMESDB CON FILTRO DE PLATAFORMA
 # ---------------------------------------------------------
 
-def obtener_mapa_plataformas(datos):
-
-    """
-
-    TheGamesDB puede devolver las plataformas directamente
-
-    dentro de include.platform o dentro de include.platform.data.
-
-    Admite ambas estructuras.
-
-    """
-
-    include = datos.get("include", {}) or {}
-
-    plataforma = include.get("platform", {}) or {}
-
-    if not isinstance(plataforma, dict):
-
-        return {}
-
-    # Algunas respuestas incluyen un nivel adicional: data.
-
-    if isinstance(plataforma.get("data"), dict):
-
-        return plataforma["data"]
-
-    # En la respuesta observada, los identificadores
-
-    # aparecen directamente dentro de include.platform.
-
-    return plataforma
-
-
-def resolver_plataforma(identificador, mapa):
-
-    if identificador is None:
-        return []
-
-    detalle = mapa.get(
-        str(identificador)
-    )
-
-    if detalle is None:
-        detalle = mapa.get(
-            identificador
-        )
-
-    if isinstance(detalle, dict):
-
-        nombre = (
-            detalle.get("name")
-            or detalle.get("platform_name")
-        )
-
-        if nombre:
-            return [str(nombre)]
-
-    return []
-
-
-def obtener_plataformas_juego(
-    juego,
-    mapa_plataformas
-):
-
-    nombres = []
-
-    # Algunas respuestas contienen objetos directamente.
-
-    plataforma = juego.get("platform")
-
-    if isinstance(plataforma, dict):
-
-        nombre = (
-            plataforma.get("name")
-            or plataforma.get("platform_name")
-        )
-
-        if nombre:
-            nombres.append(str(nombre))
-
-        identificador = plataforma.get("id")
-
-        nombres.extend(
-            resolver_plataforma(
-                identificador,
-                mapa_plataformas
-            )
-        )
-
-    # En otras respuestas platform es un identificador.
-
-    elif isinstance(
-        plataforma,
-        (int, str)
-    ):
-
-        nombres.extend(
-            resolver_plataforma(
-                plataforma,
-                mapa_plataformas
-            )
-        )
-
-    # Compatibilidad con respuestas que utilizan otros campos.
-
-    for campo in (
-        "platform_id",
-        "platform_ids",
-        "platforms"
-    ):
-
-        valor = juego.get(campo)
-
-        if valor is None:
-            continue
-
-        elementos = (
-            valor
-            if isinstance(valor, list)
-            else [valor]
-        )
-
-        for elemento in elementos:
-
-            if isinstance(elemento, dict):
-
-                nombre = (
-                    elemento.get("name")
-                    or elemento.get("platform_name")
-                )
-
-                if nombre:
-                    nombres.append(str(nombre))
-
-                identificador = elemento.get("id")
-
-                nombres.extend(
-                    resolver_plataforma(
-                        identificador,
-                        mapa_plataformas
-                    )
-                )
-
-            else:
-
-                nombres.extend(
-                    resolver_plataforma(
-                        elemento,
-                        mapa_plataformas
-                    )
-                )
-
-    # Eliminar duplicados.
-
-    return list(
-        dict.fromkeys(nombres)
-    )
-
-
-# ---------------------------------------------------------
-# CONSULTAR THEGAMESDB
-# ---------------------------------------------------------
-
-def buscar_juegos(titulo):
+def buscar_juegos(titulo, plataforma):
 
     parametros = {
         "apikey": API_KEY,
         "name": titulo,
-
-        # Solicitar explícitamente los campos necesarios.
         "fields": "platform",
-
-        # Solicitar los metadatos de plataforma.
         "include": "platform",
-
         "page": 1
     }
+
+    identificador = obtener_id_plataforma(
+        plataforma
+    )
+
+    if identificador:
+        parametros["filter[platform]"] = identificador
 
     respuesta = requests.get(
         API_URL,
@@ -543,124 +372,20 @@ def buscar_juegos(titulo):
 
     datos = respuesta.json()
 
-    print("ESTRUCTURA DE LA RESPUESTA:")
-    print(repr(datos.get("include", {})))
-
     juegos = (
         datos.get("data", {})
         .get("games", [])
         or []
     )
 
-    mapa_plataformas = obtener_mapa_plataformas(
-        datos
-    )
-
-    # Guardar los nombres resueltos en cada juego.
-
-    for juego in juegos:
-
-        juego["_platform_names"] = (
-            obtener_plataformas_juego(
-                juego,
-                mapa_plataformas
-            )
-        )
+    # El filtro de plataforma se aplica en la propia API.
+    # No dependemos de que cada resultado incluya su nombre.
 
     return juegos
 
 
 # ---------------------------------------------------------
-# VALIDAR PLATAFORMA
-# ---------------------------------------------------------
-
-def normalizar_nombre_plataforma(nombre):
-
-    nombre = normalizar_texto(nombre)
-
-    nombre = nombre.replace(
-        "sony ",
-        ""
-    )
-
-    nombre = nombre.replace(
-        "microsoft ",
-        ""
-    )
-
-    return nombre
-
-
-def coincide_plataforma(
-    producto,
-    juego
-):
-
-    buscada = producto.get("plataforma")
-
-    # Si el producto no indica plataforma,
-    # no necesitamos validar una consola concreta.
-
-    if not buscada:
-        return True
-
-    nombres = juego.get(
-        "_platform_names",
-        []
-    )
-
-    # Si no hay metadatos, no podemos confirmar
-    # la plataforma. No aceptamos el resultado a ciegas.
-
-    if not nombres:
-        return False
-
-    alias = ALIAS_PLATAFORMAS.get(
-        normalizar_texto(buscada),
-        [buscada]
-    )
-
-    alias = [
-        normalizar_nombre_plataforma(nombre)
-        for nombre in alias
-    ]
-
-    for nombre_api in nombres:
-
-        nombre_api = normalizar_nombre_plataforma(
-            nombre_api
-        )
-
-        for variante in alias:
-
-            if nombre_api == variante:
-                return True
-
-            # No confundir PS4 con PS5.
-
-            if (
-                "playstation 4" in nombre_api
-                and "playstation 5" in variante
-            ):
-                continue
-
-            if (
-                "playstation 5" in nombre_api
-                and "playstation 4" in variante
-            ):
-                continue
-
-            if variante in nombre_api:
-                return True
-
-            if nombre_api in variante:
-                return True
-
-    return False
-
-
-# ---------------------------------------------------------
-# SIMILITUD Y EDICIONES
+# SELECCIONAR CANDIDATOS
 # ---------------------------------------------------------
 
 def obtener_palabras_significativas(texto):
@@ -696,10 +421,6 @@ def calcular_bonus_edicion(
     return len(coincidencias) * 0.03
 
 
-# ---------------------------------------------------------
-# SELECCIONAR CANDIDATOS
-# ---------------------------------------------------------
-
 def seleccionar_juegos_ordenados(
     producto,
     juegos,
@@ -711,13 +432,11 @@ def seleccionar_juegos_ordenados(
     if busqueda_base:
 
         texto_comparacion = producto["titulo_base"]
-
         minimo = SIMILITUD_MINIMA_BASE
 
     else:
 
         texto_comparacion = producto["titulo_juego"]
-
         minimo = SIMILITUD_MINIMA
 
     for juego in juegos:
@@ -729,26 +448,6 @@ def seleccionar_juegos_ordenados(
         )
 
         if not titulo_api:
-            continue
-
-        plataformas = juego.get(
-            "_platform_names",
-            []
-        )
-
-        # Si se conoce la plataforma, exigir coincidencia.
-
-        if not coincide_plataforma(
-            producto,
-            juego
-        ):
-
-            print(
-                f"  - Candidato descartado: {titulo_api}; "
-                f"plataformas detectadas: "
-                f"{', '.join(plataformas) or 'sin datos'}"
-            )
-
             continue
 
         similitud = calcular_similitud(
@@ -783,7 +482,7 @@ def seleccionar_juegos_ordenados(
 
 
 # ---------------------------------------------------------
-# BUSCAR IMÁGENES
+# OBTENER PORTADAS
 # ---------------------------------------------------------
 
 def obtener_imagenes(game_id):
@@ -809,20 +508,31 @@ def obtener_imagenes(game_id):
         {}
     )
 
-    base_url = (
-        data.get("base_url", {})
-        .get("original")
+    base_url = data.get(
+        "base_url",
+        {}
     )
+
+    if isinstance(base_url, dict):
+
+        base_url = (
+            base_url.get("original")
+            or base_url.get("large")
+            or base_url.get("medium")
+        )
 
     imagenes = data.get(
         "images",
-        []
+        {}
     )
 
     if not base_url:
         return []
 
     resultados = []
+
+    # TheGamesDB normalmente devuelve las imágenes
+    # agrupadas por identificador de juego.
 
     if isinstance(imagenes, dict):
 
@@ -846,9 +556,19 @@ def obtener_imagenes(game_id):
             if not isinstance(imagen, dict):
                 continue
 
-            if str(
+            tipo = str(
+                imagen.get("type", "")
+            ).lower()
+
+            lado = str(
                 imagen.get("side", "")
-            ).lower() != "front":
+            ).lower()
+
+            # Solo portadas frontales.
+            if tipo and tipo != "boxart":
+                continue
+
+            if lado and lado != "front":
                 continue
 
             filename = imagen.get("filename")
@@ -880,9 +600,6 @@ def obtener_consultas(producto):
         producto["titulo_juego"],
         producto["titulo_base"]
     ]
-
-    # Algunos títulos pueden tener subtítulos,
-    # ediciones especiales o nombres localizados.
 
     base = producto["titulo_base"]
 
@@ -958,16 +675,26 @@ def buscar_portada(producto):
     for consulta, es_base in consultas:
 
         print(
-            f"  - Consulta alternativa: {consulta}"
+            f"  - Consulta: {consulta}"
         )
 
-        juegos = buscar_juegos(
-            consulta
-        )
+        try:
+
+            juegos = buscar_juegos(
+                consulta,
+                producto["plataforma"]
+            )
+
+        except requests.exceptions.RequestException as error:
+
+            print(
+                f"  - Error en la consulta: {error}"
+            )
+
+            continue
 
         print(
-            f"  - Resultados encontrados: "
-            f"{len(juegos)}"
+            f"  - Resultados de la API: {len(juegos)}"
         )
 
         candidatos = seleccionar_juegos_ordenados(
@@ -980,11 +707,10 @@ def buscar_portada(producto):
 
             game_id = candidato["juego"].get("id")
 
-            clave = (
-                str(game_id)
-                if game_id is not None
-                else candidato["titulo_api"]
-            )
+            if game_id is None:
+                continue
+
+            clave = str(game_id)
 
             if clave in ids_vistos:
                 continue
@@ -1000,9 +726,6 @@ def buscar_portada(producto):
         reverse=True
     )
 
-    # Probar candidatos por orden de similitud.
-    # Si uno no tiene portada, continuar con el siguiente.
-
     for candidato in candidatos_totales:
 
         juego = candidato["juego"]
@@ -1013,17 +736,16 @@ def buscar_portada(producto):
             continue
 
         print(
-            f"  ✓ Candidato: "
-            f"{candidato['titulo_api']}"
+            f"  - Candidato: {candidato['titulo_api']}"
         )
 
         print(
-            f"  ✓ Similitud: "
+            f"  - Similitud: "
             f"{candidato['similitud'] * 100:.1f}%"
         )
 
         print(
-            f"  ✓ Game ID: {game_id}"
+            f"  - Game ID: {game_id}"
         )
 
         try:
@@ -1043,14 +765,13 @@ def buscar_portada(producto):
         if imagenes:
 
             print(
-                "  ✓ Portada frontal encontrada"
+                "  ✓ Portada encontrada"
             )
 
             return imagenes[0]
 
         print(
-            "  - Sin portada frontal; "
-            "probando otro resultado."
+            "  - Este juego no tiene portada frontal disponible."
         )
 
     print(
@@ -1141,9 +862,7 @@ def generar_tarjeta(
 # ACTUALIZAR TIENDA.HTML
 # ---------------------------------------------------------
 
-def actualizar_tienda(
-    productos
-):
+def actualizar_tienda(productos):
 
     contenido = TIENDA_HTML.read_text(
         encoding="utf-8"
@@ -1171,8 +890,7 @@ def actualizar_tienda(
         print("")
 
         print(
-            f"Generando tarjeta: "
-            f"{producto['titulo']}"
+            f"Generando tarjeta: {producto['titulo']}"
         )
 
         try:
@@ -1236,12 +954,11 @@ def actualizar_tienda(
 
 def main():
 
-    print("PRUEBA: el programa ha llegado a main()")
     print("")
     print("==============================================")
     print(" INVASIÓN PIXELADA")
     print(" GENERADOR DE VIDEOJUEGOS")
-    print(" VERSIÓN: IP-GAMEGEN-004")
+    print(" VERSIÓN: IP-GAMEGEN-005")
     print("==============================================")
     print("")
 
@@ -1262,8 +979,7 @@ def main():
     productos = leer_productos()
 
     print(
-        f"Videojuegos encontrados: "
-        f"{len(productos)}"
+        f"Videojuegos encontrados: {len(productos)}"
     )
 
     if not productos:
@@ -1274,15 +990,11 @@ def main():
 
         return
 
-    actualizar_tienda(
-        productos
-    )
+    actualizar_tienda(productos)
 
     print("")
     print("----------------------------------------------")
-    print(
-        "✓ tienda.html actualizada con videojuegos"
-    )
+    print("✓ tienda.html actualizada con videojuegos")
     print("----------------------------------------------")
     print("")
 
