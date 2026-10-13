@@ -1,1003 +1,213 @@
 # =========================================================
 # INVASIÓN PIXELADA — GENERADOR DE VIDEOJUEGOS
-# VERSIÓN INTERNA: IP-GAMEGEN-005
+# VERSIÓN INTERNA: IP-GAMEGEN-006
 # =========================================================
-
 from pathlib import Path
-import re
-import os
-import html
+import os, re, html
 import requests
 from difflib import SequenceMatcher
 from docx import Document
 
-
-# ---------------------------------------------------------
-# CONFIGURACIÓN
-# ---------------------------------------------------------
-
 DOCUMENTO = Path("tienda/Videojuegos.docx")
 TIENDA_HTML = Path("tienda.html")
-
 API_URL = "https://api.thegamesdb.net/v1/Games/ByGameName"
 IMAGES_URL = "https://api.thegamesdb.net/v1/Games/Images"
-
 API_KEY = os.environ.get("THEGAMESDB_API_KEY")
-
 TIMEOUT = 20
-
-SIMILITUD_MINIMA = 0.65
-SIMILITUD_MINIMA_BASE = 0.50
-
-MARCADOR_INICIO = (
-    "<!-- VIDEOJUEGOS AUTOMÁTICOS: INICIO -->"
-)
-
-MARCADOR_FIN = (
-    "<!-- VIDEOJUEGOS AUTOMÁTICOS: FIN -->"
-)
-
-
-# ---------------------------------------------------------
-# PLATAFORMAS Y SUS IDENTIFICADORES EN THEGAMESDB
-# ---------------------------------------------------------
-
+MARCADOR_INICIO = "<!-- VIDEOJUEGOS AUTOMÁTICOS: INICIO -->"
+MARCADOR_FIN = "<!-- VIDEOJUEGOS AUTOMÁTICOS: FIN -->"
 PLATAFORMAS = [
-    (
-        "Sony Playstation 5",
-        ["ps5", "playstation 5", "playstation5",
-         "sony playstation 5"],
-        "4980"
-    ),
-    (
-        "Sony Playstation 4",
-        ["ps4", "playstation 4", "playstation4",
-         "sony playstation 4"],
-        "4919"
-    ),
-    (
-        "Nintendo Switch",
-        ["nintendo switch", "switch"],
-        "4971"
-    ),
-    (
-        "Xbox Series X/S",
-        ["xbox series x/s", "xbox series x",
-         "xbox series s"],
-        "4981"
-    ),
-    (
-        "Xbox One",
-        ["xbox one"],
-        "4920"
-    ),
-    (
-        "PC",
-        ["pc", "windows"],
-        "1"
-    ),
+    ("Sony Playstation 5", ["ps5", "playstation 5", "playstation5", "sony playstation 5"], "4980"),
+    ("Sony Playstation 4", ["ps4", "playstation 4", "playstation4", "sony playstation 4"], "4919"),
+    ("Nintendo Switch", ["nintendo switch", "switch"], "4971"),
+    ("Xbox Series X/S", ["xbox series x/s", "xbox series x", "xbox series s"], "4981"),
+    ("Xbox One", ["xbox one"], "4920"),
+    ("PC", ["pc", "windows"], "1"),
 ]
-
-
-# ---------------------------------------------------------
-# COMPROBACIONES
-# ---------------------------------------------------------
+HEADERS = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/128.0.0.0 Safari/537.36"}
 
 def comprobar_api_key():
-
     if not API_KEY:
-        raise RuntimeError(
-            "No se ha encontrado la variable "
-            "THEGAMESDB_API_KEY."
-        )
-
-
-# ---------------------------------------------------------
-# NORMALIZAR TEXTO
-# ---------------------------------------------------------
+        raise RuntimeError("No se ha encontrado THEGAMESDB_API_KEY.")
 
 def normalizar_texto(texto):
-
-    texto = html.unescape(str(texto or "")).lower()
-
-    texto = texto.replace("’", "'")
-    texto = texto.replace("‘", "'")
-    texto = texto.replace("´", "'")
-
+    texto = html.unescape(str(texto or "")).lower().replace("’", "'").replace("‘", "'").replace("´", "'")
     texto = re.sub(r"[¿?¡!]", "", texto)
+    texto = re.sub(r"[-–—_:,;()/]+", " ", texto)
+    return re.sub(r"\s+", " ", texto).strip()
 
-    texto = re.sub(
-        r"[-–—_:,;()/]+",
-        " ",
-        texto
-    )
-
-    texto = re.sub(
-        r"\s+",
-        " ",
-        texto
-    )
-
-    return texto.strip()
-
-
-# ---------------------------------------------------------
-# SIMILITUD
-# ---------------------------------------------------------
-
-def calcular_similitud(texto_1, texto_2):
-
-    texto_1 = normalizar_texto(texto_1)
-    texto_2 = normalizar_texto(texto_2)
-
-    if texto_1 == texto_2:
-        return 1.0
-
-    return SequenceMatcher(
-        None,
-        texto_1,
-        texto_2
-    ).ratio()
-
-
-# ---------------------------------------------------------
-# DETECTAR PLATAFORMA
-# ---------------------------------------------------------
+def similitud(a, b):
+    a, b = normalizar_texto(a), normalizar_texto(b)
+    return 1.0 if a == b else SequenceMatcher(None, a, b).ratio()
 
 def detectar_plataforma(titulo):
-
-    titulo_normalizado = normalizar_texto(titulo)
-
-    for nombre, variantes, identificador in PLATAFORMAS:
-
-        for variante in sorted(
-            variantes,
-            key=len,
-            reverse=True
-        ):
-
-            patron = (
-                r"(?<![a-z0-9])"
-                + re.escape(variante)
-                + r"(?![a-z0-9])"
-            )
-
-            if re.search(
-                patron,
-                titulo_normalizado
-            ):
-                return nombre, variante
-
+    texto = normalizar_texto(titulo)
+    for nombre, variantes, _ in PLATAFORMAS:
+        for v in sorted(variantes, key=len, reverse=True):
+            if re.search(r"(?<![a-z0-9])" + re.escape(v) + r"(?![a-z0-9])", texto):
+                return nombre, v
     return None, None
 
+def quitar_plataforma(titulo, variante):
+    if not variante: return titulo.strip()
+    return re.sub(r"\s*[-–—:]?\s*" + re.escape(variante) + r"\s*$", "", titulo, flags=re.I).strip()
 
-def obtener_id_plataforma(nombre):
-
-    if not nombre:
-        return None
-
-    buscada = normalizar_texto(nombre)
-
-    for plataforma, variantes, identificador in PLATAFORMAS:
-
-        if normalizar_texto(plataforma) == buscada:
-            return identificador
-
-        for variante in variantes:
-
-            if normalizar_texto(variante) == buscada:
-                return identificador
-
-    return None
-
-
-# ---------------------------------------------------------
-# QUITAR PLATAFORMA DEL TÍTULO
-# ---------------------------------------------------------
-
-def quitar_plataforma(
-    titulo,
-    variante_plataforma
-):
-
-    if not variante_plataforma:
-        return titulo.strip()
-
-    patron = re.compile(
-        r"\s*[-–—:]?\s*"
-        + re.escape(variante_plataforma)
-        + r"\s*$",
-        re.IGNORECASE
-    )
-
-    return patron.sub(
-        "",
-        titulo
-    ).strip()
-
-
-# ---------------------------------------------------------
-# OBTENER NOMBRE BASE
-# ---------------------------------------------------------
-
-def obtener_nombre_base(titulo):
-
-    resultado = titulo.strip()
-
-    # Eliminar ediciones entre paréntesis o corchetes.
-
-    resultado = re.sub(
-        r"\s*[\[(].*?(edition|edición|deluxe|collector|"
-        r"collectors|limited|special|ultimate|gold|"
-        r"complete|definitive|game of the year|goty|"
-        r"martyrs|martyr).*?[\])]",
-        "",
-        resultado,
-        flags=re.IGNORECASE
-    )
-
-    # Eliminar ediciones al final del título.
-
-    resultado = re.sub(
-        r"\s*[-–—:]\s*"
-        r"(martyrs?[’']?\s*edition|"
-        r"deluxe\s+edition|"
-        r"collector'?s?\s+edition|"
-        r"limited\s+edition|"
-        r"special\s+edition|"
-        r"ultimate\s+edition|"
-        r"gold\s+edition|"
-        r"complete\s+edition|"
-        r"definitive\s+edition|"
-        r"game\s+of\s+the\s+year|"
-        r"goty|"
-        r"25th\s+anniversary\s+edition)"
-        r"\s*$",
-        "",
-        resultado,
-        flags=re.IGNORECASE
-    )
-
-    resultado = re.sub(
-        r"\s+",
-        " ",
-        resultado
-    )
-
-    resultado = re.sub(
-        r"\s*[-–—:]\s*$",
-        "",
-        resultado
-    )
-
-    return resultado.strip()
-
-
-# ---------------------------------------------------------
-# LEER WORD
-# ---------------------------------------------------------
+def nombre_base(titulo):
+    s = re.sub(r"\s*[\[(].*?(edition|edición|deluxe|collector|collectors|limited|special|ultimate|gold|complete|definitive|game of the year|goty).*?[\])]", "", titulo, flags=re.I)
+    s = re.sub(r"\s*[-–—:]\s*(deluxe|collector'?s?|limited|special|ultimate|gold|complete|definitive)\s+edition\s*$", "", s, flags=re.I)
+    s = re.sub(r"\s*[-–—:]\s*25th\s+anniversary\s+edition\s*$", "", s, flags=re.I)
+    return re.sub(r"\s+", " ", s).strip(" -–—:")
 
 def leer_productos():
-
-    document = Document(DOCUMENTO)
-
-    productos = []
-
-    titulo_actual = None
-    enlace_actual = None
-
-    for paragraph in document.paragraphs:
-
-        texto = paragraph.text.strip()
-
-        if not texto:
-            continue
-
-        if texto.upper() == "VIDEOJUEGOS":
-            continue
-
-        if texto.startswith("Título:"):
-
-            titulo_actual = texto.replace(
-                "Título:",
-                "",
-                1
-            ).strip()
-
-        elif texto.startswith("Enlace:"):
-
-            enlace_actual = texto.replace(
-                "Enlace:",
-                "",
-                1
-            ).strip()
-
-        if titulo_actual and enlace_actual:
-
-            plataforma, variante = detectar_plataforma(
-                titulo_actual
-            )
-
-            titulo_juego = quitar_plataforma(
-                titulo_actual,
-                variante
-            )
-
-            titulo_base = obtener_nombre_base(
-                titulo_juego
-            )
-
-            productos.append({
-                "titulo": titulo_actual,
-                "titulo_juego": titulo_juego,
-                "titulo_base": titulo_base,
-                "plataforma": plataforma,
-                "enlace": enlace_actual
-            })
-
-            titulo_actual = None
-            enlace_actual = None
-
+    productos, titulo, enlace = [], None, None
+    for p in Document(DOCUMENTO).paragraphs:
+        t = p.text.strip()
+        if t.startswith("Título:"): titulo = t[len("Título:"):].strip()
+        elif t.startswith("Enlace:"): enlace = t[len("Enlace:"):].strip()
+        if titulo and enlace:
+            plataforma, variante = detectar_plataforma(titulo)
+            juego = quitar_plataforma(titulo, variante)
+            productos.append({"titulo": titulo, "titulo_juego": juego, "titulo_base": nombre_base(juego), "plataforma": plataforma, "enlace": enlace})
+            titulo = enlace = None
     return productos
 
-
-# ---------------------------------------------------------
-# CONSULTAR THEGAMESDB CON FILTRO DE PLATAFORMA
-# ---------------------------------------------------------
-
 def buscar_juegos(titulo, plataforma):
-
-    parametros = {
-        "apikey": API_KEY,
-        "name": titulo,
-        "fields": "platform",
-        "include": "platform",
-        "page": 1
-    }
-
-    identificador = obtener_id_plataforma(
-        plataforma
-    )
-
-    if identificador:
-        parametros["filter[platform]"] = identificador
-
-    respuesta = requests.get(
-        API_URL,
-        params=parametros,
-        timeout=TIMEOUT
-    )
-
-    respuesta.raise_for_status()
-
-    datos = respuesta.json()
-
-    juegos = (
-        datos.get("data", {})
-        .get("games", [])
-        or []
-    )
-
-    # El filtro de plataforma se aplica en la propia API.
-    # No dependemos de que cada resultado incluya su nombre.
-
-    return juegos
-
-
-# ---------------------------------------------------------
-# SELECCIONAR CANDIDATOS
-# ---------------------------------------------------------
-
-def obtener_palabras_significativas(texto):
-
-    return {
-        palabra
-        for palabra in normalizar_texto(texto).split()
-        if len(palabra) >= 4
-    }
-
-
-def calcular_bonus_edicion(
-    titulo_producto,
-    titulo_api
-):
-
-    palabras_producto = obtener_palabras_significativas(
-        titulo_producto
-    )
-
-    palabras_api = obtener_palabras_significativas(
-        titulo_api
-    )
-
-    if not palabras_producto:
-        return 0
-
-    coincidencias = (
-        palabras_producto
-        & palabras_api
-    )
-
-    return len(coincidencias) * 0.03
-
-
-def seleccionar_juegos_ordenados(
-    producto,
-    juegos,
-    busqueda_base=False
-):
-
-    candidatos = []
-
-    if busqueda_base:
-
-        texto_comparacion = producto["titulo_base"]
-        minimo = SIMILITUD_MINIMA_BASE
-
-    else:
-
-        texto_comparacion = producto["titulo_juego"]
-        minimo = SIMILITUD_MINIMA
-
-    for juego in juegos:
-
-        titulo_api = (
-            juego.get("game_title")
-            or juego.get("name")
-            or ""
-        )
-
-        if not titulo_api:
-            continue
-
-        similitud = calcular_similitud(
-            texto_comparacion,
-            titulo_api
-        )
-
-        if similitud < minimo:
-            continue
-
-        puntuacion = (
-            similitud
-            + calcular_bonus_edicion(
-                producto["titulo_juego"],
-                titulo_api
-            )
-        )
-
-        candidatos.append({
-            "juego": juego,
-            "titulo_api": titulo_api,
-            "similitud": similitud,
-            "puntuacion": puntuacion
-        })
-
-    candidatos.sort(
-        key=lambda candidato: candidato["puntuacion"],
-        reverse=True
-    )
-
-    return candidatos
-
-
-# ---------------------------------------------------------
-# OBTENER PORTADAS
-# ---------------------------------------------------------
+    params = {"apikey": API_KEY, "name": titulo, "fields": "platform", "include": "platform", "page": 1}
+    for nombre, variantes, pid in PLATAFORMAS:
+        if plataforma == nombre:
+            params["filter[platform]"] = pid
+            break
+    r = requests.get(API_URL, params=params, timeout=TIMEOUT)
+    r.raise_for_status()
+    return r.json().get("data", {}).get("games", []) or []
 
 def obtener_imagenes(game_id):
-
-    parametros = {
-        "apikey": API_KEY,
-        "games_id": str(game_id),
-        "filter[type]": "boxart"
-    }
-
-    respuesta = requests.get(
-        IMAGES_URL,
-        params=parametros,
-        timeout=TIMEOUT
-    )
-
-    respuesta.raise_for_status()
-
-    datos = respuesta.json()
-
-    data = datos.get(
-        "data",
-        {}
-    )
-
-    base_url = data.get(
-        "base_url",
-        {}
-    )
-
-    if isinstance(base_url, dict):
-
-        base_url = (
-            base_url.get("original")
-            or base_url.get("large")
-            or base_url.get("medium")
-        )
-
-    imagenes = data.get(
-        "images",
-        {}
-    )
-
-    if not base_url:
-        return []
-
-    resultados = []
-
-    # TheGamesDB normalmente devuelve las imágenes
-    # agrupadas por identificador de juego.
-
-    if isinstance(imagenes, dict):
-
-        listas = imagenes.values()
-
-    elif isinstance(imagenes, list):
-
-        listas = [imagenes]
-
-    else:
-
-        listas = []
-
+    r = requests.get(IMAGES_URL, params={"apikey": API_KEY, "games_id": str(game_id), "filter[type]": "boxart"}, timeout=TIMEOUT)
+    r.raise_for_status()
+    data = r.json().get("data", {})
+    base = data.get("base_url", {})
+    if isinstance(base, dict): base = base.get("original") or base.get("large") or base.get("medium")
+    if not base: return []
+    images = data.get("images", {})
+    listas = images.values() if isinstance(images, dict) else ([images] if isinstance(images, list) else [])
+    out = []
     for lista in listas:
-
-        if not isinstance(lista, list):
-            continue
-
-        for imagen in lista:
-
-            if not isinstance(imagen, dict):
-                continue
-
-            tipo = str(
-                imagen.get("type", "")
-            ).lower()
-
-            lado = str(
-                imagen.get("side", "")
-            ).lower()
-
-            # Solo portadas frontales.
-            if tipo and tipo != "boxart":
-                continue
-
-            if lado and lado != "front":
-                continue
-
-            filename = imagen.get("filename")
-
-            if not filename:
-                continue
-
-            url = (
-                base_url.rstrip("/")
-                + "/"
-                + str(filename).lstrip("/")
-            )
-
-            if url not in resultados:
-                resultados.append(url)
-
-    return resultados
-
-
-# ---------------------------------------------------------
-# BÚSQUEDAS ALTERNATIVAS
-# ---------------------------------------------------------
-
-def obtener_consultas(producto):
-
-    consultas = []
-
-    nombres = [
-        producto["titulo_juego"],
-        producto["titulo_base"]
-    ]
-
-    base = producto["titulo_base"]
-
-    if ":" in base:
-
-        nombres.append(
-            base.split(":", 1)[0].strip()
-        )
-
-    if " - " in base:
-
-        nombres.append(
-            base.split(" - ", 1)[0].strip()
-        )
-
-    if " – " in base:
-
-        nombres.append(
-            base.split(" – ", 1)[0].strip()
-        )
-
-    for nombre in nombres:
-
-        nombre = nombre.strip()
-
-        if not nombre:
-            continue
-
-        if all(
-            normalizar_texto(nombre)
-            != normalizar_texto(existente)
-            for existente, _ in consultas
-        ):
-
-            es_base = (
-                normalizar_texto(nombre)
-                != normalizar_texto(
-                    producto["titulo_juego"]
-                )
-            )
-
-            consultas.append(
-                (nombre, es_base)
-            )
-
-    return consultas
-
-
-# ---------------------------------------------------------
-# BUSCAR PORTADA
-# ---------------------------------------------------------
-
-def buscar_portada(producto):
-
-    print(
-        f"  - Buscando: "
-        f"{producto['titulo_juego']}"
-    )
-
-    print(
-        f"  - Plataforma: "
-        f"{producto['plataforma'] or 'no detectada'}"
-    )
-
-    candidatos_totales = []
-
-    ids_vistos = set()
-
-    consultas = obtener_consultas(
-        producto
-    )
-
-    for consulta, es_base in consultas:
-
-        print(
-            f"  - Consulta: {consulta}"
-        )
-
-        try:
-
-            juegos = buscar_juegos(
-                consulta,
-                producto["plataforma"]
-            )
-
-        except requests.exceptions.RequestException as error:
-
-            print(
-                f"  - Error en la consulta: {error}"
-            )
-
-            continue
-
-        print(
-            f"  - Resultados de la API: {len(juegos)}"
-        )
-
-        candidatos = seleccionar_juegos_ordenados(
-            producto,
-            juegos,
-            busqueda_base=es_base
-        )
-
-        for candidato in candidatos:
-
-            game_id = candidato["juego"].get("id")
-
-            if game_id is None:
-                continue
-
-            clave = str(game_id)
-
-            if clave in ids_vistos:
-                continue
-
-            ids_vistos.add(clave)
-
-            candidatos_totales.append(
-                candidato
-            )
-
-    candidatos_totales.sort(
-        key=lambda candidato: candidato["puntuacion"],
-        reverse=True
-    )
-
-    for candidato in candidatos_totales:
-
-        juego = candidato["juego"]
-
-        game_id = juego.get("id")
-
-        if not game_id:
-            continue
-
-        print(
-            f"  - Candidato: {candidato['titulo_api']}"
-        )
-
-        print(
-            f"  - Similitud: "
-            f"{candidato['similitud'] * 100:.1f}%"
-        )
-
-        print(
-            f"  - Game ID: {game_id}"
-        )
-
-        try:
-
-            imagenes = obtener_imagenes(
-                game_id
-            )
-
-        except requests.exceptions.RequestException as error:
-
-            print(
-                f"  - Error consultando imágenes: {error}"
-            )
-
-            continue
-
-        if imagenes:
-
-            print(
-                "  ✓ Portada encontrada"
-            )
-
-            return imagenes[0]
-
-        print(
-            "  - Este juego no tiene portada frontal disponible."
-        )
-
-    print(
-        "  ✗ No se ha encontrado una portada válida."
-    )
-
+        if not isinstance(lista, list): continue
+        for im in lista:
+            if not isinstance(im, dict): continue
+            side, typ = str(im.get("side", "")).lower(), str(im.get("type", "")).lower()
+            if typ and typ != "boxart": continue
+            if side and side not in ("front", "front boxart"): continue
+            filename = im.get("filename")
+            if filename:
+                url = base.rstrip("/") + "/" + str(filename).lstrip("/")
+                if url not in out: out.append(url)
+    return out
+
+def imagen_desde_amazon(enlace):
+    # Alternativa automática: intenta leer la imagen principal de la página Amazon.
+    try:
+        r = requests.get(enlace, headers=HEADERS, timeout=TIMEOUT, allow_redirects=True)
+        r.raise_for_status()
+        page = r.text
+        patterns = [
+            r'<meta[^>]+property=["\']og:image["\'][^>]+content=["\']([^"\']+)["\']',
+            r'<meta[^>]+content=["\']([^"\']+)["\'][^>]+property=["\']og:image["\']',
+            r'"hiRes"\s*:\s*"([^"]+)"',
+            r'"large"\s*:\s*"([^"]+)"',
+        ]
+        for pattern in patterns:
+            m = re.search(pattern, page, re.I)
+            if m:
+                url = html.unescape(m.group(1)).replace("\\u0026", "&").replace("\\/", "/")
+                if url.startswith("https://") and ("amazon" in url.lower() or re.search(r"\.(jpg|jpeg|png)(\?|$)", url, re.I)):
+                    print("  ✓ Imagen recuperada desde la página de Amazon.")
+                    return url
+        print("  - Amazon no expuso una imagen legible automáticamente.")
+    except requests.RequestException as e:
+        print(f"  - No se pudo consultar Amazon: {e}")
     return None
 
+def buscar_portada(producto):
+    print(f"  - Buscando {producto['titulo_juego']} ({producto['plataforma'] or 'plataforma no detectada'})")
+    consultas = []
+    for n in (producto["titulo_juego"], producto["titulo_base"]):
+        if n and all(normalizar_texto(n) != normalizar_texto(x) for x in consultas): consultas.append(n)
+    base = producto["titulo_base"]
+    for sep in (":", " - ", " – "):
+        if sep in base:
+            n = base.split(sep, 1)[0].strip()
+            if n and all(normalizar_texto(n) != normalizar_texto(x) for x in consultas): consultas.append(n)
+    candidatos, vistos = [], set()
+    for q in consultas:
+        try: juegos = buscar_juegos(q, producto["plataforma"])
+        except requests.RequestException as e:
+            print(f"  - Error en TheGamesDB: {e}"); continue
+        for juego in juegos:
+            nombre = juego.get("game_title") or juego.get("name") or ""
+            if not nombre: continue
+            score = similitud(producto["titulo_juego"], nombre)
+            umbral = 0.50 if normalizar_texto(q) == normalizar_texto(producto["titulo_base"]) else 0.65
+            if score < umbral: continue
+            gid = juego.get("id")
+            if gid is None or str(gid) in vistos: continue
+            vistos.add(str(gid)); candidatos.append((score, nombre, gid))
+    candidatos.sort(reverse=True)
+    for score, nombre, gid in candidatos:
+        print(f"  - Candidato TheGamesDB: {nombre} (ID {gid}, coincidencia {score:.0%})")
+        try: imgs = obtener_imagenes(gid)
+        except requests.RequestException as e:
+            print(f"  - Error consultando imágenes: {e}"); continue
+        if imgs:
+            print("  ✓ Portada encontrada en TheGamesDB.")
+            return imgs[0]
+    print("  - Sin portada válida en TheGamesDB; probando Amazon.")
+    return imagen_desde_amazon(producto["enlace"])
 
-# ---------------------------------------------------------
-# GENERAR TARJETA
-# ---------------------------------------------------------
-
-def generar_tarjeta(
-    producto,
-    imagen
-):
-
-    titulo = html.escape(
-        producto["titulo"]
-    )
-
-    enlace = html.escape(
-        producto["enlace"],
-        quote=True
-    )
-
+def generar_tarjeta(producto, imagen):
+    titulo = html.escape(producto["titulo"])
+    enlace = html.escape(producto["enlace"], quote=True)
     if imagen:
-
-        imagen_html = f'''
-                            <img
-                                src="{html.escape(imagen, quote=True)}"
-                                alt="{titulo}"
-                                loading="lazy"
-                            >
-'''
-
+        imagen_html = f'<img src="{html.escape(imagen, quote=True)}" alt="{titulo}" loading="lazy">'
     else:
-
-        imagen_html = '''
-                            <div class="store-card-placeholder-inner">
-                                <span>
-                                    IMAGEN NO DISPONIBLE
-                                </span>
-                            </div>
-'''
-
+        imagen_html = '<div class="store-card-placeholder-inner"><span>IMAGEN NO DISPONIBLE</span></div>'
     return f'''
                     <article class="store-card">
-
-                        <a
-                            href="{enlace}"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            class="store-card-image"
-                        >
-
-{imagen_html}
-
+                        <a href="{enlace}" target="_blank" rel="noopener noreferrer" class="store-card-image">
+                            {imagen_html}
                         </a>
-
                         <div class="store-card-content">
-
-                            <p class="store-card-label">
-                                RECOMENDADO
-                            </p>
-
-                            <h3>
-                                {titulo}
-                            </h3>
-
-                            <a
-                                href="{enlace}"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                class="store-card-link"
-                            >
-                                VER EN AMAZON
-                            </a>
-
+                            <p class="store-card-label">RECOMENDADO</p>
+                            <h3>{titulo}</h3>
+                            <a href="{enlace}" target="_blank" rel="noopener noreferrer" class="store-card-link">VER EN AMAZON</a>
                         </div>
-
                     </article>
 '''
 
-
-# ---------------------------------------------------------
-# ACTUALIZAR TIENDA.HTML
-# ---------------------------------------------------------
-
 def actualizar_tienda(productos):
-
-    contenido = TIENDA_HTML.read_text(
-        encoding="utf-8"
-    )
-
-    inicio = contenido.find(
-        MARCADOR_INICIO
-    )
-
-    fin = contenido.find(
-        MARCADOR_FIN
-    )
-
-    if inicio == -1 or fin == -1 or fin < inicio:
-
-        raise RuntimeError(
-            "No se han encontrado los marcadores "
-            "automáticos de videojuegos en tienda.html"
-        )
-
+    contenido = TIENDA_HTML.read_text(encoding="utf-8")
+    inicio, fin = contenido.find(MARCADOR_INICIO), contenido.find(MARCADOR_FIN)
+    if inicio < 0 or fin < inicio:
+        raise RuntimeError("No se encuentran los marcadores automáticos de videojuegos en tienda.html.")
     tarjetas = []
-
-    for producto in productos:
-
-        print("")
-
-        print(
-            f"Generando tarjeta: {producto['titulo']}"
-        )
-
-        try:
-
-            imagen = buscar_portada(
-                producto
-            )
-
-        except requests.exceptions.RequestException as error:
-
-            print(
-                f"  ✗ Error de TheGamesDB: {error}"
-            )
-
-            imagen = None
-
-        except (
-            ValueError,
-            KeyError,
-            TypeError
-        ) as error:
-
-            print(
-                f"  ✗ Error procesando la respuesta: {error}"
-            )
-
-            imagen = None
-
-        tarjetas.append(
-            generar_tarjeta(
-                producto,
-                imagen
-            )
-        )
-
-    nuevo_bloque = (
-        MARCADOR_INICIO
-        + "\n"
-        + "\n".join(tarjetas)
-        + "\n                    "
-        + MARCADOR_FIN
-    )
-
-    contenido_nuevo = (
-        contenido[:inicio]
-        + nuevo_bloque
-        + contenido[
-            fin + len(MARCADOR_FIN):
-        ]
-    )
-
-    TIENDA_HTML.write_text(
-        contenido_nuevo,
-        encoding="utf-8"
-    )
-
-
-# ---------------------------------------------------------
-# PROGRAMA PRINCIPAL
-# ---------------------------------------------------------
+    for p in productos:
+        print(f"\nGenerando tarjeta: {p['titulo']}")
+        try: img = buscar_portada(p)
+        except (requests.RequestException, ValueError, KeyError, TypeError) as e:
+            print(f"  ✗ Error buscando portada: {e}"); img = None
+        tarjetas.append(generar_tarjeta(p, img))
+    bloque = MARCADOR_INICIO + "\n" + "\n".join(tarjetas) + "\n                    " + MARCADOR_FIN
+    TIENDA_HTML.write_text(contenido[:inicio] + bloque + contenido[fin + len(MARCADOR_FIN):], encoding="utf-8")
 
 def main():
-
-    print("")
-    print("==============================================")
-    print(" INVASIÓN PIXELADA")
-    print(" GENERADOR DE VIDEOJUEGOS")
-    print(" VERSIÓN: IP-GAMEGEN-005")
-    print("==============================================")
-    print("")
-
+    print("\nINVASIÓN PIXELADA — GENERADOR DE VIDEOJUEGOS IP-GAMEGEN-006\n")
     comprobar_api_key()
-
-    if not DOCUMENTO.exists():
-
-        raise FileNotFoundError(
-            f"No se encuentra {DOCUMENTO}"
-        )
-
-    if not TIENDA_HTML.exists():
-
-        raise FileNotFoundError(
-            f"No se encuentra {TIENDA_HTML}"
-        )
-
+    if not DOCUMENTO.exists(): raise FileNotFoundError(f"No se encuentra {DOCUMENTO}")
+    if not TIENDA_HTML.exists(): raise FileNotFoundError(f"No se encuentra {TIENDA_HTML}")
     productos = leer_productos()
-
-    print(
-        f"Videojuegos encontrados: {len(productos)}"
-    )
-
-    if not productos:
-
-        print(
-            "No hay videojuegos que generar."
-        )
-
-        return
-
-    actualizar_tienda(productos)
-
-    print("")
-    print("----------------------------------------------")
-    print("✓ tienda.html actualizada con videojuegos")
-    print("----------------------------------------------")
-    print("")
-
+    print(f"Videojuegos encontrados: {len(productos)}")
+    if productos: actualizar_tienda(productos)
+    print("\n✓ Proceso terminado.\n")
 
 if __name__ == "__main__":
     main()
