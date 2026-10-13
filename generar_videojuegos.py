@@ -347,32 +347,44 @@ def leer_productos():
 
 
 # ---------------------------------------------------------
+
 # EXTRAER METADATOS DE PLATAFORMA
+
+# VERSIÓN INTERNA: IP-GAMEGEN-005
+
 # ---------------------------------------------------------
 
 def obtener_mapa_plataformas(datos):
 
     """
-    TheGamesDB devuelve los metadatos de plataforma dentro
-    de include.platform.data.
 
-    Los juegos pueden contener un identificador numérico
-    en el campo platform. Aquí relacionamos ambos datos.
+    TheGamesDB puede devolver las plataformas directamente
+
+    dentro de include.platform o dentro de include.platform.data.
+
+    Admite ambas estructuras.
+
     """
 
     include = datos.get("include", {}) or {}
 
-    plataforma = include.get(
-        "platform",
-        {}
-    ) or {}
+    plataforma = include.get("platform", {}) or {}
 
-    mapa = plataforma.get(
-        "data",
-        {}
-    ) or {}
+    if not isinstance(plataforma, dict):
 
-    return mapa
+        return {}
+
+    # Algunas respuestas incluyen un nivel adicional: data.
+
+    if isinstance(plataforma.get("data"), dict):
+
+        return plataforma["data"]
+
+    # En la respuesta observada, los identificadores
+
+    # aparecen directamente dentro de include.platform.
+
+    return plataforma
 
 
 def resolver_plataforma(identificador, mapa):
