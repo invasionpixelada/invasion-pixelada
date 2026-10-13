@@ -546,6 +546,10 @@ def buscar_juegos(titulo):
     print("ESTRUCTURA DE LA RESPUESTA:")
     print(repr(datos.get("include", {})))
 
+    print("PRIMER JUEGO DEVUELTO POR LA API:")
+
+    print(repr(datos.get("data", {}).get("games", [{}])[0]))
+
     juegos = (
         datos.get("data", {})
         .get("games", [])
