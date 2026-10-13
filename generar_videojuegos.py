@@ -1240,6 +1240,7 @@ def actualizar_tienda(
 
 def main():
 
+    print("PRUEBA: el programa ha llegado a main()")
     print("")
     print("==============================================")
     print(" INVASIÓN PIXELADA")
