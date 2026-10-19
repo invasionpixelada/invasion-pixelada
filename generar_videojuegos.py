@@ -1,6 +1,6 @@
 # =========================================================
 # INVASIÓN PIXELADA — GENERADOR DE VIDEOJUEGOS
-# VERSIÓN INTERNA: IP-GAMEGEN-008
+# VERSIÓN INTERNA: IP-GAMEGEN-009
 # =========================================================
 from pathlib import Path
 import os, re, html
@@ -104,6 +104,48 @@ def obtener_imagenes(game_id):
                 if url not in out: out.append(url)
     return out
 
+
+def buscar_portada_bing(producto):
+    """
+    Fuente alternativa sin credenciales: busca imágenes en Bing Images.
+    Es un fallback best-effort; el buscador puede cambiar su HTML o bloquear
+    peticiones automatizadas. Se construye la búsqueda con juego + plataforma
+    + portada para reducir resultados de otras consolas.
+    """
+    titulo = producto["titulo_base"]
+    plataforma = producto.get("plataforma") or ""
+    consulta = f'{titulo} {plataforma} game cover box art front'
+    url_busqueda = "https://www.bing.com/images/search"
+    try:
+        r = requests.get(
+            url_busqueda,
+            params={"q": consulta, "form": "HDRSC3"},
+            headers=HEADERS,
+            timeout=TIMEOUT,
+        )
+        r.raise_for_status()
+        pagina = r.text
+
+        # Bing incluye URLs de imágenes en atributos JSON "murl".
+        urls = re.findall(r'"murl"\s*:\s*"([^"]+)"', pagina)
+        vistas = set()
+        for raw_url in urls:
+            imagen = html.unescape(raw_url).replace("\\u002f", "/").replace("\\u0026", "&").replace("\\/", "/")
+            if not imagen.startswith(("https://", "http://")) or imagen in vistas:
+                continue
+            vistas.add(imagen)
+            # Excluir miniaturas de Bing y páginas HTML; buscar archivos de imagen conocidos.
+            if not re.search(r"\.(jpg|jpeg|png|webp)(?:[?#]|$)", imagen, re.I):
+                continue
+            print("  ✓ Bing Images ha proporcionado una posible portada.")
+            return imagen
+
+        print("  - Bing Images no devolvió una imagen directa utilizable.")
+    except requests.RequestException as e:
+        print(f"  - No se pudo consultar Bing Images: {e}")
+    return None
+
+
 def imagen_desde_amazon(enlace):
     # Alternativa automática: intenta leer la imagen principal de la página Amazon.
     try:
@@ -201,7 +243,12 @@ def buscar_portada(producto):
         if imgs:
             print("  ✓ Portada encontrada en TheGamesDB.")
             return imgs[0]
-    print("  - Sin portada válida en TheGamesDB; probando Amazon.")
+    print("  - Sin portada válida en TheGamesDB; probando búsqueda pública de imágenes.")
+    imagen_bing = buscar_portada_bing(producto)
+    if imagen_bing:
+        return imagen_bing
+
+    print("  - Sin imagen en el buscador; probando Amazon.")
     return imagen_desde_amazon(producto["enlace"])
 
 def generar_tarjeta(producto, imagen):
@@ -240,7 +287,7 @@ def actualizar_tienda(productos):
     TIENDA_HTML.write_text(contenido[:inicio] + bloque + contenido[fin + len(MARCADOR_FIN):], encoding="utf-8")
 
 def main():
-    print("\nINVASIÓN PIXELADA — GENERADOR DE VIDEOJUEGOS IP-GAMEGEN-008\n")
+    print("\nINVASIÓN PIXELADA — GENERADOR DE VIDEOJUEGOS IP-GAMEGEN-009\n")
     comprobar_api_key()
     if not DOCUMENTO.exists(): raise FileNotFoundError(f"No se encuentra {DOCUMENTO}")
     if not TIENDA_HTML.exists(): raise FileNotFoundError(f"No se encuentra {TIENDA_HTML}")
