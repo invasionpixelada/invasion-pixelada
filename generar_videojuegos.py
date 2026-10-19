@@ -1,6 +1,6 @@
 # =========================================================
 # INVASIÓN PIXELADA — GENERADOR DE VIDEOJUEGOS
-# VERSIÓN INTERNA: IP-GAMEGEN-007
+# VERSIÓN INTERNA: IP-GAMEGEN-008
 # =========================================================
 from pathlib import Path
 import os, re, html
@@ -141,9 +141,26 @@ PORTADAS_DIRECTAS = {
 }
 
 def buscar_portada_directa(producto):
-    clave = normalizar_texto(producto["titulo"]).replace("'", "")
+    # Normalizamos apóstrofos y espacios: el título del Word usa
+    # "Explorer´s", mientras que otras fuentes usan "Explorer's".
+    clave = normalizar_texto(producto["titulo"])
+    clave_sin_apostrofos = clave.replace("'", "").replace(" ", "")
+
+    # Amerzone: detectar por palabras clave para no depender de que
+    # el apóstrofo o el texto "25th Anniversary" coincidan exactamente.
+    if (
+        "amerzone" in clave
+        and "legacy" in clave
+        and "ps5" in clave
+    ):
+        print("  ✓ Usando portada directa de Amerzone PS5.")
+        return PORTADAS_DIRECTAS[
+            "amerzone the explorer s legacy 25th anniversary edition ps5"
+        ]
+
     for titulo, url in PORTADAS_DIRECTAS.items():
-        if clave == normalizar_texto(titulo).replace("'", ""):
+        clave_mapa = normalizar_texto(titulo)
+        if clave == clave_mapa or clave_sin_apostrofos == clave_mapa.replace("'", "").replace(" ", ""):
             print("  ✓ Usando portada directa para este producto.")
             return url
     return None
@@ -223,7 +240,7 @@ def actualizar_tienda(productos):
     TIENDA_HTML.write_text(contenido[:inicio] + bloque + contenido[fin + len(MARCADOR_FIN):], encoding="utf-8")
 
 def main():
-    print("\nINVASIÓN PIXELADA — GENERADOR DE VIDEOJUEGOS IP-GAMEGEN-007\n")
+    print("\nINVASIÓN PIXELADA — GENERADOR DE VIDEOJUEGOS IP-GAMEGEN-008\n")
     comprobar_api_key()
     if not DOCUMENTO.exists(): raise FileNotFoundError(f"No se encuentra {DOCUMENTO}")
     if not TIENDA_HTML.exists(): raise FileNotFoundError(f"No se encuentra {TIENDA_HTML}")
