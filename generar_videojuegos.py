@@ -1,6 +1,6 @@
 # =========================================================
 # INVASIÓN PIXELADA — GENERADOR DE VIDEOJUEGOS
-# VERSIÓN INTERNA: IP-GAMEGEN-006
+# VERSIÓN INTERNA: IP-GAMEGEN-007
 # =========================================================
 from pathlib import Path
 import os, re, html
@@ -128,7 +128,30 @@ def imagen_desde_amazon(enlace):
         print(f"  - No se pudo consultar Amazon: {e}")
     return None
 
+
+# Portadas directas verificadas para los tres productos problemáticos.
+# No hay que descargar ni guardar imágenes manualmente.
+PORTADAS_DIRECTAS = {
+    "neon blood limited edition ps5":
+        "https://www.rpgfan.com/wp-content/uploads/2024/06/Neon-Blood-Cover-Art-PS5-Limited-Edition-EU-697x720.webp",
+    "amerzone the explorer s legacy 25th anniversary edition ps5":
+        "https://media.game.es/COVERV2/3D_L/228/228620.png",
+    "the gap limited edition ps5":
+        "https://media.game.es/COVERV2/3D_L/228/228668.png",
+}
+
+def buscar_portada_directa(producto):
+    clave = normalizar_texto(producto["titulo"]).replace("'", "")
+    for titulo, url in PORTADAS_DIRECTAS.items():
+        if clave == normalizar_texto(titulo).replace("'", ""):
+            print("  ✓ Usando portada directa para este producto.")
+            return url
+    return None
+
 def buscar_portada(producto):
+    portada_directa = buscar_portada_directa(producto)
+    if portada_directa:
+        return portada_directa
     print(f"  - Buscando {producto['titulo_juego']} ({producto['plataforma'] or 'plataforma no detectada'})")
     consultas = []
     for n in (producto["titulo_juego"], producto["titulo_base"]):
@@ -200,7 +223,7 @@ def actualizar_tienda(productos):
     TIENDA_HTML.write_text(contenido[:inicio] + bloque + contenido[fin + len(MARCADOR_FIN):], encoding="utf-8")
 
 def main():
-    print("\nINVASIÓN PIXELADA — GENERADOR DE VIDEOJUEGOS IP-GAMEGEN-006\n")
+    print("\nINVASIÓN PIXELADA — GENERADOR DE VIDEOJUEGOS IP-GAMEGEN-007\n")
     comprobar_api_key()
     if not DOCUMENTO.exists(): raise FileNotFoundError(f"No se encuentra {DOCUMENTO}")
     if not TIENDA_HTML.exists(): raise FileNotFoundError(f"No se encuentra {TIENDA_HTML}")
