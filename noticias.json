@@ -1,5 +1,37 @@
 [
   {
+    "title": "Evercade Nexus ya está en las tiendas",
+    "link": "https://uvejuegos.com/noticia/Evercade-Nexus-ya-esta-en-las-tiendas/151998",
+    "description": "Ya está en tiendas la Evercade Nexus, y llega con dos pesos pesados: la colección Doom en un solo cartucho y el doble pack de Banjo-Kazooie y Banjo-Tooie, ahora en versión nativa.",
+    "category": "MULTI",
+    "pubDate": "Fri, 30 Oct 2026 23:50:58 +0100",
+    "image": "https://uvejuegos.com/img/noticias/151998/cabecera/nexus2.jpg"
+  },
+  {
+    "title": "Remothered: Red Nun's Legacy, neogiallo con monjas rojas y madres persistentes, ya está a la venta",
+    "link": "https://uvejuegos.com/noticia/Remothered-Red-Nuns-Legacy-neogiallo-con-monjas-rojas-y-madres-persistentes-ya-esta-a-la-venta/151993",
+    "description": "En Sicilia desaparecen los jóvenes",
+    "category": "MULTI",
+    "pubDate": "Fri, 30 Oct 2026 23:49:44 +0100",
+    "image": "https://uvejuegos.com/img/noticias/151993/cabecera/ss_915c6f25c91915513fc54621695746d80cda19b9.1920x1080.jpg"
+  },
+  {
+    "title": "INANIMA, tecnoterror español de Fe, estrena demo sobre el Proyecto Lazarus",
+    "link": "https://uvejuegos.com/noticia/INANIMA-tecnoterror-espanol-de-Fe-estrena-demo-sobre-el-Proyecto-Lazarus-/51343",
+    "description": "Obscure Tales ha trabajado duro en una demo muy completa",
+    "category": "MULTI",
+    "pubDate": "Fri, 30 Oct 2026 20:40:22 +0100",
+    "image": "https://uvejuegos.com/img/noticias/51343/cabecera/INANIMA.jpg"
+  },
+  {
+    "title": "Análisis de\nSilver Pines",
+    "link": "https://uvejuegos.com/analisis/Silver-Pines/Analisis-de-Silver-Pines-Un-pueblo-un-hombre-con-pasado-misterioso-y-una-chica-desaparecida-que-podria-salir-mal/10818/77686",
+    "description": "Análisis de Silver Pines: Un pueblo, un hombre con pasado misterioso y una chica desaparecida... ¿qué podría salir mal?",
+    "category": "MULTI",
+    "pubDate": "Fri, 30 Oct 2026 20:31:07 +0100",
+    "image": "https://uvejuegos.com/img/destacados/analisis/10818/Silver-Pines-1-4198972506.png"
+  },
+  {
     "title": "Premier de Street Fighter en Madrid, y valoración de la película",
     "link": "https://uvejuegos.com/articulo/Premier-de-Street-Fighter-en-Madrid-y-valoracion-de-la-pelicula/1839",
     "description": "Una experiencia recomendable",
@@ -126,37 +158,5 @@
     "category": "MULTI",
     "pubDate": "Fri, 23 Oct 2026 16:51:56 +0200",
     "image": "https://uvejuegos.com/img/noticias/151982/cabecera/1000332854.png"
-  },
-  {
-    "title": "Final Fantasy Resonance, homenaje a un spin-off desaparecido, está a la venta",
-    "link": "https://uvejuegos.com/noticia/Final-Fantasy-Resonance-homenaje-a-un-spin-off-desaparecido-esta-a-la-venta/151985",
-    "description": "Tiene homenajes, cariño y demo jugable",
-    "category": "MULTI",
-    "pubDate": "Thu, 22 Oct 2026 22:59:35 +0200",
-    "image": "https://uvejuegos.com/img/noticias/151985/cabecera/ss_148bbbc6e17ef0241fdfc9a94e5627519d791717.1920x1080.jpg"
-  },
-  {
-    "title": "BioWare cierra tras treinta años de trabajo",
-    "link": "https://uvejuegos.com/noticia/BioWare-cierra-tras-treinta-anos-de-trabajo/151984",
-    "description": "Sus últimos años fueron complicados",
-    "category": "MULTI",
-    "pubDate": "Wed, 21 Oct 2026 23:08:38 +0200",
-    "image": "https://uvejuegos.com/img/noticias/151984/cabecera/BIOWARE-900x503.jpg"
-  },
-  {
-    "title": "Xbox anuncia su sello XP y su mando Nano",
-    "link": "https://uvejuegos.com/noticia/Xbox-anuncia-su-sello-XP-y-su-mando-Nano/151983",
-    "description": "El Nano, XP, Xbox... los años 2000 han vuelto, sólo falta la estética trasparente",
-    "category": "MULTI",
-    "pubDate": "Wed, 21 Oct 2026 20:11:44 +0200",
-    "image": "https://uvejuegos.com/img/noticias/151983/cabecera/6796_639275689806997082.jpeg"
-  },
-  {
-    "title": "Análisis de\nMoonlighter 2: The Endless Vault",
-    "link": "https://uvejuegos.com/analisis/Moonlighter-2-The-Endless-Vault/Analisis-de-Mooonlighter-2-La-vida-del-aventurero-autonomo/10812/74546",
-    "description": "Análisis de Mooonlighter 2: La vida del aventurero autónomo",
-    "category": "MULTI",
-    "pubDate": "Wed, 21 Oct 2026 08:56:49 +0200",
-    "image": "https://uvejuegos.com/img/destacados/analisis/10812/1000007725.jpg"
   }
 ]
