@@ -1,5 +1,21 @@
 [
   {
+    "title": "Nintendo actualiza su lista de juegos más vendidos",
+    "link": "https://uvejuegos.com/noticia/Nintendo-actualiza-su-lista-de-juegos-mas-vendidos/152008",
+    "description": "Splatoon Raiders y Rhythm Paradise Groove son las entradas más destacadas",
+    "category": "MULTI",
+    "pubDate": "Thu, 05 Nov 2026 16:19:05 +0100",
+    "image": "https://uvejuegos.com/img/noticias/152008/cabecera/rhythm-paradise-groove.jpg"
+  },
+  {
+    "title": "Nintendo Switch 2 supera los 26 millones de consolas vendidas",
+    "link": "https://uvejuegos.com/noticia/Nintendo-Switch-2-supera-los-26-millones-de-consolas-vendidas/152005",
+    "description": "La subida de precio de la consola no parece querer frenar sus ventas",
+    "category": "MULTI",
+    "pubDate": "Thu, 05 Nov 2026 12:14:08 +0100",
+    "image": "https://uvejuegos.com/img/noticias/152005/cabecera/nintendo-switch-2-alt.jpg"
+  },
+  {
     "title": "Godzilla: Destroy All Monsters Melee Remastered ya está a la venta, gracias a la buena voluntad de Atari y Rodan",
     "link": "https://uvejuegos.com/noticia/Godzilla-Destroy-All-Monsters-Melee-Remastered-ya-esta-a-la-venta-gracias-a-la-buena-voluntad-de-Atari-y-Rodan/152007",
     "description": "Lo antidiluviano y nostálgico de los años 2000 han regresado, y con cambios",
@@ -142,21 +158,5 @@
     "category": "MULTI",
     "pubDate": "Fri, 30 Oct 2026 20:40:22 +0100",
     "image": "https://uvejuegos.com/img/noticias/51343/cabecera/INANIMA.jpg"
-  },
-  {
-    "title": "Análisis de\nSilver Pines",
-    "link": "https://uvejuegos.com/analisis/Silver-Pines/Analisis-de-Silver-Pines-Un-pueblo-un-hombre-con-pasado-misterioso-y-una-chica-desaparecida-que-podria-salir-mal/10818/77686",
-    "description": "Análisis de Silver Pines: Un pueblo, un hombre con pasado misterioso y una chica desaparecida... ¿qué podría salir mal?",
-    "category": "MULTI",
-    "pubDate": "Fri, 30 Oct 2026 20:31:07 +0100",
-    "image": "https://uvejuegos.com/img/destacados/analisis/10818/Silver-Pines-1-4198972506-(1)-(1).png"
-  },
-  {
-    "title": "Premier de Street Fighter en Madrid, y valoración de la película",
-    "link": "https://uvejuegos.com/articulo/Premier-de-Street-Fighter-en-Madrid-y-valoracion-de-la-pelicula/1839",
-    "description": "Una experiencia recomendable",
-    "category": "MULTI",
-    "pubDate": "Fri, 30 Oct 2026 11:57:09 +0100",
-    "image": "https://uvejuegos.com/img/destacados/articulos/1839/1000335628.jpg"
   }
 ]
